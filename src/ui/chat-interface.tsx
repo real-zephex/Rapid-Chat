@@ -31,9 +31,9 @@ const ChatInterface = ({ id }: { id: string }) => {
     setMessages(chats);
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -159,7 +159,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                         ),
                         li: ({ children, ...props }) => (
                           <li
-                            className="text-lg text-white list-disc pl-4"
+                            className="text-lg text-white list-disc pl-4 leading-6.5"
                             {...props}
                           >
                             {children}

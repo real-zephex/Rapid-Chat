@@ -41,7 +41,15 @@ export async function POST(req: NextRequest) {
   const query = url.get("message") as string;
   const chats: Messages[] = await req.json();
 
-  const allowedHosts = ["localhost", "127.0.0.1", "::1"];
+  const allowedHosts = [
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    ...Array.from({ length: 256 }, (_, i) => `192.168.0.${i}`),
+    ...Array.from({ length: 256 }, (_, i) => `192.168.1.${i}`),
+    ...Array.from({ length: 256 }, (_, i) => `10.0.0.${i}`),
+    ...Array.from({ length: 256 }, (_, i) => `10.0.1.${i}`),
+  ];
   const reqHost = req.headers.get("host")?.split(":")[0];
   if (!reqHost || !allowedHosts.includes(reqHost)) {
     console.log("error occured");

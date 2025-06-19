@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
 // import { Router, useRouter } from "next/router";
 function GetStarted() {
@@ -9,7 +10,7 @@ function GetStarted() {
   function handlePress(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
 
-    const uuid = crypto.randomUUID();
+    const uuid = uuidv4();
     router.push("/chat/" + uuid);
   }
 
