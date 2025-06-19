@@ -2,11 +2,13 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
 import { retrieveChats, saveChats } from "@/utils/localStoraage";
 import { FaArrowCircleRight } from "react-icons/fa";
 import ModelProvider from "@/models";
+import rehypeKatex from "rehype-katex";
 
 const modelInformation: Record<string, string> = {
   scout: "All round fast model",
@@ -199,8 +201,8 @@ const ChatInterface = ({ id }: { id: string }) => {
                   <div className="prose prose-invert prose-lg max-w-none leading-7">
                     {message.content ? (
                       <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeHighlight, rehypeKatex]}
                         components={{
                           code: ({ node, className, children, ...props }) => {
                             const match = /language-(\w+)/.exec(

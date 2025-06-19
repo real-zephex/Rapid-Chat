@@ -12,6 +12,7 @@
     "@google/genai": "^1.5.1",
     "@tailwindcss/typography": "^0.5.16",
     "groq-sdk": "^0.25.0",
+    "katex": "^0.16.22",
     "next": "15.3.4",
     "openai": "^5.5.1",
     "react": "^19.0.0",
@@ -19,8 +20,10 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
+    "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
