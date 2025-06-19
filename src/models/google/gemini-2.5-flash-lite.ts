@@ -1,6 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 import { Messages } from "../types";
-
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function* FlashLite(message: string, chats: Messages[]) {

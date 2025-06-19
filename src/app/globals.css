@@ -167,6 +167,94 @@ body {
   padding: 0;
 }
 
+/* Highlight.js styles for syntax highlighting */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #1f2937;
+  color: #f3f4f6;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: #a78bfa;
+}
+
+.hljs-section,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+  color: #f87171;
+}
+
+.hljs-literal {
+  color: #34d399;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta-string {
+  color: #fbbf24;
+}
+
+.hljs-built_in,
+.hljs-class .hljs-title {
+  color: #60a5fa;
+}
+
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+  color: #fb7185;
+}
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+  color: #a78bfa;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-link {
+  text-decoration: underline;
+}
+
+/* Code block specific styles */
+pre code.hljs {
+  background: transparent;
+  padding: 0;
+}
+
+code.hljs {
+  border-radius: 0.375rem;
+}
+
 /* Animations */
 @keyframes fadeInSlideUp {
   from {
