@@ -8,18 +8,18 @@ import Phi4 from "@/models/openrouter/phi-4-reasoning";
 import Phi4Plus from "@/models/openrouter/phi-4-reasoning-plus";
 import Sarvam from "@/models/openrouter/sarvam";
 import { NextRequest } from "next/server";
-
-const models = [
-  "compound",
-  "flash",
-  "qwen",
-  "scout",
-  "devstral",
-  "deepseek",
-  "phi4",
-  "phi4plus",
-  "sarvam",
-];
+import { models } from "../../utils/model-list";
+// export const models = [
+//   "compound",
+//   "flash",
+//   "qwen",
+//   "scout",
+//   "devstral",
+//   "deepseek",
+//   "phi4",
+//   "phi4plus",
+//   "sarvam",
+// ];
 const mappings = {
   compound: CompoundBeta,
   flash: FlashLite,
