@@ -9,19 +9,8 @@ import Phi4Plus from "@/models/openrouter/phi-4-reasoning-plus";
 import Sarvam from "@/models/openrouter/sarvam";
 import { NextRequest } from "next/server";
 import { models } from "../../utils/model-list";
-import { retrieveChats } from "@/utils/localStoraage";
 import { Messages } from "@/models/types";
-// export const models = [
-//   "compound",
-//   "flash",
-//   "qwen",
-//   "scout",
-//   "devstral",
-//   "deepseek",
-//   "phi4",
-//   "phi4plus",
-//   "sarvam",
-// ];
+
 const mappings = {
   compound: CompoundBeta,
   flash: FlashLite,
@@ -41,20 +30,6 @@ export async function POST(req: NextRequest) {
   const query = url.get("message") as string;
   const chats: Messages[] = await req.json();
 
-  const allowedHosts = [
-    "localhost",
-    "127.0.0.1",
-    "::1",
-    ...Array.from({ length: 256 }, (_, i) => `192.168.0.${i}`),
-    ...Array.from({ length: 256 }, (_, i) => `192.168.1.${i}`),
-    ...Array.from({ length: 256 }, (_, i) => `10.0.0.${i}`),
-    ...Array.from({ length: 256 }, (_, i) => `10.0.1.${i}`),
-  ];
-  const reqHost = req.headers.get("host")?.split(":")[0];
-  if (!reqHost || !allowedHosts.includes(reqHost)) {
-    console.log("error occured");
-    return Response.json({ message: "Access denied" }, { status: 403 });
-  }
   console.log(model, query);
 
   if (!model || !query) {

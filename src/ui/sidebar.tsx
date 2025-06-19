@@ -1,10 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaHome } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { retrieveChats, retrieveTabs } from "@/utils/localStoraage";
-import { getImageEtag } from "next/dist/server/image-optimizer";
 
 const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);

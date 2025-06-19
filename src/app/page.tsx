@@ -8,8 +8,8 @@ export default function Home() {
           Welcome to <span className="text-teal-200 font-bold">FastChat !</span>
         </p>
         <p className="tracking-wider text-sm lg:text-lg">
-          My attempt at making superfast AI interfaces so you don't have to wait
-          for LLMs to respond.
+          My attempt at making superfast AI interfaces so you don&#39;t have to
+          wait for LLMs to respond.
         </p>
         <GetStarted />
       </div>

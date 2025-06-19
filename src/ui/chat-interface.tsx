@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -336,7 +336,9 @@ const ChatInterface = ({ id }: { id: string }) => {
                   </option>
                 ))}
               </select>
-              <p className="bg-cyan-300 rounded-lg p-2 text-xs text-black">{modelInformation[model] || "Select a model for chat"}</p>
+              <p className="bg-cyan-300 rounded-lg p-2 text-xs text-black">
+                {modelInformation[model] || "Select a model for chat"}
+              </p>
             </div>
             <button
               type="submit"
