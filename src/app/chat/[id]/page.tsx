@@ -1,7 +1,7 @@
 import ChatInterface from "@/ui/chat-interface";
 
 export default async function ChatPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = await params;
 
   console.log(id);
 

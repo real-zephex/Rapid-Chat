@@ -38,9 +38,16 @@ export async function GET(req: NextRequest) {
   const model = url.get("model") as keyof typeof mappings;
   const query = url.get("message") as string;
 
+  const allowedHosts = ["localhost", "127.0.0.1", "::1"];
+  const reqHost = req.headers.get("host")?.split(":")[0];
+  if (!reqHost || !allowedHosts.includes(reqHost)) {
+    console.log("error occured");
+    return Response.json({ message: "Access denied" }, { status: 403 });
+  }
   console.log(model, query);
 
   if (!model || !query) {
+    console.log("error occured - 2");
     return Response.json(
       { message: "please provide valid inputs" },
       { status: 501 }
@@ -48,6 +55,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!models.includes(model)) {
+    console.log("error occured - 3");
     return Response.json({ message: "Invalid model" }, { status: 404 });
   }
   const fin = mappings[model];

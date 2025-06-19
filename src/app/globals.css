@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
 
 :root {
   --background: #ffffff31;
@@ -24,6 +26,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 /* Reduce the width of the default scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -43,4 +46,27 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: #cccccc transparent;
-} 
+}
+
+/* Syntax highlighting styles */
+@import "highlight.js/styles/github-dark.css";
+
+/* Custom markdown styles for better appearance */
+.prose code {
+  background-color: rgb(64 64 64);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.prose pre {
+  background-color: rgb(23 23 23);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+}
