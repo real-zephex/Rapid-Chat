@@ -27,11 +27,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "FastAI - Rapid AI Chat Interface",
-    template: "%s | FastAI",
+    default: "Rapid AI - Rapid AI Chat Interface",
+    template: "%s | Rapid AI",
   },
   description:
-    "A fast, modern AI chat interface supporting multiple AI models including GPT, Claude, Gemini, and more. Experience lightning-fast conversations with cutting-edge AI technology.",
+    "A fast, modern AI chat interface supporting multiple AI models. Experience lightning-fast conversations with cutting-edge AI technology.",
   keywords: [
     "AI chat",
     "artificial intelligence",
@@ -44,10 +44,10 @@ export const metadata: Metadata = {
     "fast AI",
     "AI assistant",
   ],
-  authors: [{ name: "FastAI Team" }],
-  creator: "FastAI",
-  publisher: "FastAI",
-  metadataBase: new URL("https://fastai.chat"), // Replace with your actual domain
+  authors: [{ name: "Rapid AI Team" }],
+  creator: "Rapid AI",
+  publisher: "Rapid AI",
+  metadataBase: new URL("https://fafb.vercel.app"), // Replace with your actual domain
   alternates: {
     canonical: "/",
   },
@@ -55,22 +55,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "FastAI - Rapid AI Chat Interface",
+    title: "Rapid AI - Rapid AI Chat Interface",
     description:
       "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with GPT, Claude, Gemini, and more.",
-    siteName: "FastAI",
+    siteName: "Rapid AI",
     images: [
       {
         url: "https://fafb.vercel.app/logo.png",
         width: 1200,
         height: 630,
-        alt: "FastAI - Rapid AI Chat Interface",
+        alt: "Rapid AI - Rapid AI Chat Interface",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FastAI - Rapid AI Chat Interface",
+    title: "Rapid AI - Rapid AI Chat Interface",
     description:
       "Experience lightning-fast conversations with multiple AI models in one unified interface.",
     images: ["https://fafb.vercel.app/logo.png"],
@@ -125,7 +125,7 @@ export const metadata: Metadata = {
   manifest: "https://fafb.vercel.app/manifest.json", // You might want to create this
   category: "technology",
   classification: "AI Chat Application",
-  applicationName: "FastAI",
+  applicationName: "Rapid AI",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
   colorScheme: "dark light",
