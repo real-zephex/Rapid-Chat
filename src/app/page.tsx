@@ -13,7 +13,7 @@ export default function Home() {
         <div className="relative space-y-6 max-w-3xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-8">
             <h1 className="text-3xl lg:text-5xl font-bold bg-gradient-to-r from-blue-400 via-teal-200 to-emerald-400 bg-clip-text text-transparent">
-              Welcome to FastChat
+              Welcome to Rapid Chat
             </h1>
             <FaBolt className="text-teal-200 animate-pulse" size={24} />
           </div>

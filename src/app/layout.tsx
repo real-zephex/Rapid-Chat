@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/ui/sidebar";
+import { Analytics } from "@vercel/analytics/next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +26,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fast AI Chat",
+  title: "Rapid AI Chat",
   description: "A modern AI chat interface",
 };
 
@@ -35,6 +37,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <Analytics />
+      <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased m-1.5 flex flex-row gap-2 h-full`}
       >

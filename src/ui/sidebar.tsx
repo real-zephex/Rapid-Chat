@@ -35,7 +35,7 @@ const Sidebar = () => {
         onClick={() => setExpanded((prev) => !prev)}
       >
         <p className="font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-          {expand ? "Fast Chat" : "FC"}
+          {expand ? "Rapid Chat" : "RC"}
         </p>
         <FaChevronRight
           className={`text-gray-400 transition-transform duration-300 ${
