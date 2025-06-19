@@ -5,6 +5,8 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
 import { retrieveChats, saveChats } from "@/utils/localStoraage";
+import { FaArrowCircleRight } from "react-icons/fa";
+import ModelProvider from "@/models";
 
 const modelInformation: Record<string, string> = {
   scout: "All round fast model",
@@ -116,21 +118,17 @@ const ChatInterface = ({ id }: { id: string }) => {
 
     try {
       const prevChats = retrieveChats(id);
-      const response = await fetch(
-        `/api?model=${model}&message=${encodeURIComponent(input)}`,
-        {
-          method: "POST",
-          body: JSON.stringify(prevChats),
-        }
-      );
+      const response = await ModelProvider({
+        type: model,
+        query: input,
+        chats: prevChats,
+      });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      if (!(response instanceof ReadableStream)) {
+        throw new Error("Expected a ReadableStream response");
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) return;
-
+      const reader = response.getReader();
       let assistantMessage = "";
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
@@ -138,7 +136,8 @@ const ChatInterface = ({ id }: { id: string }) => {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const text = new TextDecoder().decode(value);
+        const text =
+          typeof value === "string" ? value : new TextDecoder().decode(value);
         assistantMessage += text;
 
         setMessages((prev) => {
@@ -174,7 +173,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-12px)]">
+    <div className="flex flex-col h-[calc(100dvh-70px)]">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-48">
         <div className="container mx-auto max-w-6xl">
@@ -198,120 +197,136 @@ const ChatInterface = ({ id }: { id: string }) => {
                   </div>
                 ) : (
                   <div className="prose prose-invert prose-lg max-w-none leading-7">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeHighlight]}
-                      components={{
-                        code: ({ node, className, children, ...props }) => {
-                          const match = /language-(\w+)/.exec(className || "");
-                          const language = match ? match[1] : "";
+                    {message.content ? (
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                        components={{
+                          code: ({ node, className, children, ...props }) => {
+                            const match = /language-(\w+)/.exec(
+                              className || ""
+                            );
+                            const language = match ? match[1] : "";
 
-                          return match ? (
-                            <code className={`${className} hljs`} {...props}>
-                              {children}
-                            </code>
-                          ) : (
-                            <code
-                              className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
-                              {...props}
-                            >
-                              {children}
-                            </code>
-                          );
-                        },
-                        pre: ({ children, ...props }) => {
-                          // Extract text content from children for copy functionality
-                          const getTextContent = (element: any): string => {
-                            if (typeof element === "string") return element;
-                            if (element?.props?.children) {
-                              if (Array.isArray(element.props.children)) {
-                                return element.props.children
-                                  .map(getTextContent)
-                                  .join("");
-                              }
-                              return getTextContent(element.props.children);
-                            }
-                            return "";
-                          };
-
-                          // Extract language from code element
-                          const getLanguage = (element: any): string => {
-                            if (element?.props?.className) {
-                              const match = /language-(\w+)/.exec(
-                                element.props.className
-                              );
-                              return match ? match[1] : "";
-                            }
-                            if (element?.props?.children) {
-                              if (Array.isArray(element.props.children)) {
-                                for (const child of element.props.children) {
-                                  const lang = getLanguage(child);
-                                  if (lang) return lang;
-                                }
-                              } else {
-                                return getLanguage(element.props.children);
-                              }
-                            }
-                            return "";
-                          };
-
-                          const codeText = getTextContent(children);
-                          const language = getLanguage(children);
-
-                          return (
-                            <div className="relative group">
-                              {language && (
-                                <div className="flex justify-between items-center bg-gray-800 px-4 py-2 rounded-t-lg border border-gray-700 border-b-0">
-                                  <span className="text-sm text-gray-300 font-medium">
-                                    {language}
-                                  </span>
-                                </div>
-                              )}
-                              <pre
-                                className={`bg-gray-900 p-4 overflow-x-auto border border-gray-700 ${
-                                  language
-                                    ? "rounded-t-none rounded-b-lg"
-                                    : "rounded-lg"
-                                }`}
+                            return match ? (
+                              <code className={`${className} hljs`} {...props}>
+                                {children}
+                              </code>
+                            ) : (
+                              <code
+                                className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
                                 {...props}
                               >
                                 {children}
-                              </pre>
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                <CopyButton
-                                  text={codeText}
-                                  hasLanguageLabel={!!language}
-                                />
+                              </code>
+                            );
+                          },
+                          pre: ({ children, ...props }) => {
+                            // Extract text content from children for copy functionality
+                            const getTextContent = (element: any): string => {
+                              if (typeof element === "string") return element;
+                              if (element?.props?.children) {
+                                if (Array.isArray(element.props.children)) {
+                                  return element.props.children
+                                    .map(getTextContent)
+                                    .join("");
+                                }
+                                return getTextContent(element.props.children);
+                              }
+                              return "";
+                            };
+
+                            // Extract language from code element
+                            const getLanguage = (element: any): string => {
+                              if (element?.props?.className) {
+                                const match = /language-(\w+)/.exec(
+                                  element.props.className
+                                );
+                                return match ? match[1] : "";
+                              }
+                              if (element?.props?.children) {
+                                if (Array.isArray(element.props.children)) {
+                                  for (const child of element.props.children) {
+                                    const lang = getLanguage(child);
+                                    if (lang) return lang;
+                                  }
+                                } else {
+                                  return getLanguage(element.props.children);
+                                }
+                              }
+                              return "";
+                            };
+
+                            const codeText = getTextContent(children);
+                            const language = getLanguage(children);
+
+                            return (
+                              <div className="relative group">
+                                {language && (
+                                  <div className="flex justify-between items-center bg-gray-800 px-4 py-2 rounded-t-lg border border-gray-700 border-b-0">
+                                    <span className="text-sm text-gray-300 font-medium">
+                                      {language}
+                                    </span>
+                                  </div>
+                                )}
+                                <pre
+                                  className={`bg-gray-900 p-4 overflow-x-auto border border-gray-700 ${
+                                    language
+                                      ? "rounded-t-none rounded-b-lg"
+                                      : "rounded-lg"
+                                  }`}
+                                  {...props}
+                                >
+                                  {children}
+                                </pre>
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <CopyButton
+                                    text={codeText}
+                                    hasLanguageLabel={!!language}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          );
-                        },
-                        li: ({ children, ...props }) => (
-                          <li
-                            className="text-lg text-white list-disc pl-4 leading-6.5"
-                            {...props}
-                          >
-                            {children}
-                          </li>
-                        ),
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                            );
+                          },
+                          li: ({ children, ...props }) => (
+                            <li
+                              className="text-lg text-white list-disc pl-4 leading-6.5"
+                              {...props}
+                            >
+                              {children}
+                            </li>
+                          ),
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <div className="w-30 rounded-xl h-2 animate-pulse bg-neutral-700"></div>
+                        <div className="w-40 rounded-xl h-2 animate-pulse bg-neutral-700"></div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           ))}
+          {/* {isLoading && (
+            <div className="flex justify-start mb-4">
+              <div className="max-w-full lg:max-w-[70%] p-3 bg-neutral-800 text-white rounded-r-xl rounded-bl-xl">
+                <div className="text-lg text-white">Loading...</div>
+              </div>
+            </div>
+          )} */}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 ">
+      <div className="absolute bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 border border-gray-500">
         <form onSubmit={handleSubmit}>
           <textarea
-            className="w-full bg-black/60 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
+            className="w-full bg-black/40 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
             rows={3}
             placeholder="Type your message..."
             value={input}
@@ -326,7 +341,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
               <select
-                className="bg-black text-white rounded-lg px-4 h-full py-2 outline-none "
+                className="bg-neutral-900 text-white rounded-lg px-4 h-full py-2 outline-none "
                 value={model}
                 onChange={handleModelChange}
               >
@@ -344,10 +359,10 @@ const ChatInterface = ({ id }: { id: string }) => {
               type="submit"
               disabled={isLoading}
               className={`${
-                isLoading ? "bg-teal-700" : "bg-teal-500 hover:bg-teal-600"
+                isLoading ? "bg-teal-700" : "bg-neutral-900 hover:bg-teal-600"
               } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
             >
-              {isLoading ? "Sending..." : "Send"}
+              {isLoading ? "Sending..." : <FaArrowCircleRight />}
             </button>
           </div>
         </form>

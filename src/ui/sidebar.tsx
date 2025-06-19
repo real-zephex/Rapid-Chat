@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaHome } from "react-icons/fa";
+import { FaHome, FaChevronRight } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { retrieveChats, retrieveTabs } from "@/utils/localStoraage";
 
@@ -26,35 +26,50 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`bg-black/90 select-none ${
+      className={`backdrop-blur-md select-none ${
         expand ? "w-72" : "w-16"
-      } min-h-[calc(100dvh-15px)] rounded-xl transition-width duration-300 ease-in-out flex flex-col`}
+      } min-h-[calc(100dvh-15px)] rounded-xl transition-all duration-300 ease-in-out flex flex-col shadow-xl border border-white/10`}
     >
-      <p
-        className="p-4 text-center font-semibold"
+      <div
+        className={`p-4 flex items-center justify-between cursor-pointer group hover:bg-white/5 transition-colors rounded-t-xl`}
         onClick={() => setExpanded((prev) => !prev)}
       >
-        {expand ? "Fast Chat" : "FC"}
-      </p>
-      <hr />
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-1 p-2">
+        <p className="font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          {expand ? "Fast Chat" : "FC"}
+        </p>
+        <FaChevronRight
+          className={`text-gray-400 transition-transform duration-300 ${
+            expand ? "rotate-180" : ""
+          } opacity-0 group-hover:opacity-100`}
+          size={14}
+        />
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
+      <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-2 p-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
         {tabs.map((tab) => (
-          <p
-            className=" hover:bg-gray-700 bg-neutral-800 rounded-lg cursor-pointer line-clamp-1 p-1"
+          <div
+            className="group relative hover:bg-white/10 bg-white/5 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg"
             key={tab}
             onClick={() => router.push("/chat/" + tab)}
           >
-            {getTitle(tab)}
-          </p>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity" />
+            <p className="p-3 line-clamp-1 text-sm text-gray-200">
+              {getTitle(tab)}
+            </p>
+          </div>
         ))}
       </div>
-      <div className="flex justify-center pb-4">
-        <FaHome
-          size={22}
-          onClick={() => {
-            router.push("/");
-          }}
-        />
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
+      <div className="flex justify-center py-4">
+        <button
+          onClick={() => router.push("/")}
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors group"
+        >
+          <FaHome
+            size={20}
+            className="text-gray-400 group-hover:text-gray-200 transition-colors"
+          />
+        </button>
       </div>
     </div>
   );
