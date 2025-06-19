@@ -1,11 +1,12 @@
 import OpenAI from "openai";
+import { Messages } from "../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function* Phi4Plus(message: string) {
+async function* Phi4Plus(message: string, chats: Messages[]) {
   const completion = await openai.chat.completions.create({
     model: "microsoft/phi-4-reasoning-plus:free",
     messages: [
@@ -47,6 +48,7 @@ async function* Phi4Plus(message: string) {
           Your role is to elevate the conversation — to turn curiosity into clarity and complexity into insight.
           `,
       },
+      ...chats,
       {
         role: "user",
         content: message,

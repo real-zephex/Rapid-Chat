@@ -9,6 +9,8 @@ import Phi4Plus from "@/models/openrouter/phi-4-reasoning-plus";
 import Sarvam from "@/models/openrouter/sarvam";
 import { NextRequest } from "next/server";
 import { models } from "../../utils/model-list";
+import { retrieveChats } from "@/utils/localStoraage";
+import { Messages } from "@/models/types";
 // export const models = [
 //   "compound",
 //   "flash",
@@ -32,11 +34,12 @@ const mappings = {
   sarvam: Sarvam,
 };
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const url = new URL(req.url).searchParams;
 
   const model = url.get("model") as keyof typeof mappings;
   const query = url.get("message") as string;
+  const chats: Messages[] = await req.json();
 
   const allowedHosts = ["localhost", "127.0.0.1", "::1"];
   const reqHost = req.headers.get("host")?.split(":")[0];
@@ -63,7 +66,7 @@ export async function GET(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of fin(query)) {
+        for await (const chunk of fin(query, chats)) {
           if (chunk.length > 0) {
             controller.enqueue(`${chunk}`);
           }

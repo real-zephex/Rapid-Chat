@@ -1,11 +1,12 @@
 import OpenAI from "openai";
+import { Messages } from "../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function* Phi4(message: string) {
+async function* Phi4(message: string, chats: Messages[]) {
   const completion = await openai.chat.completions.create({
     model: "microsoft/phi-4-reasoning:free",
     messages: [
@@ -46,6 +47,7 @@ async function* Phi4(message: string) {
           Your ultimate goal is to help users deeply understand — not just get answers, but develop insight, confidence, and curiosity.
           `,
       },
+      ...chats,
       {
         role: "user",
         content: message,

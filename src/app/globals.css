@@ -3,70 +3,239 @@
 
 
 :root {
-  --background: #ffffff31;
-  --foreground: #171717;
+  /* Core colors */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #4f46e5;
+  --accent: #8b5cf6;
+
+  /* Surface colors */
+  --surface-0: #ffffff;
+  --surface-50: #fafafa;
+  --surface-100: #f4f4f5;
+  --surface-200: #e4e4e7;
+
+  /* Dark mode colors */
+  --dark-surface-0: #18181b;
+  --dark-surface-50: #27272a;
+  --dark-surface-100: #3f3f46;
+  --dark-surface-200: #52525b;
+
+  /* Semantic colors */
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Font family stack */
+  --font-sans: var(--font-geist-sans), var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Base styles */
+  --background: var(--surface-50);
+  --foreground: var(--dark-surface-0);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #ffffff1c;
-    --foreground: #ededed;
+    --background: var(--dark-surface-0);
+    --foreground: var(--surface-50);
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* Reduce the width of the default scrollbar */
+/* Modern scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cccccc;
-  border-radius: 4px;
+  background-color: var(--surface-200);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Firefox */
+/* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cccccc transparent;
+  scrollbar-color: var(--surface-200) transparent;
 }
 
-/* Syntax highlighting styles */
-@import "highlight.js/styles/github-dark.css";
+/* Message bubbles */
+.message {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  animation: fadeInSlideUp 0.3s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--surface-200);
+}
 
-/* Custom markdown styles for better appearance */
+.message.user {
+  background-color: var(--surface-100);
+}
+
+.message.assistant {
+  background-color: var(--surface-50);
+}
+
+/* Input styling */
+.chat-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background-color: var(--surface-0);
+  border: 1px solid var(--surface-200);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--surface-100);
+  color: var(--foreground);
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-200);
+}
+
+/* Code blocks */
 .prose code {
-  background-color: rgb(64 64 64);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
+  background-color: var(--surface-100);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
+  border: 1px solid var(--surface-200);
+  font-family: var(--font-mono);
 }
 
 .prose pre {
-  background-color: rgb(23 23 23);
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  background-color: var(--dark-surface-0);
+  padding: 1rem;
+  border-radius: 0.75rem;
   overflow-x: auto;
+  border: 1px solid var(--surface-200);
 }
 
 .prose pre code {
   background-color: transparent;
+  border: none;
   padding: 0;
+}
+
+/* Animations */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading indicator */
+.loading {
+  position: relative;
+  display: inline-flex;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  border-top-color: var(--foreground);
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  .message.user {
+    background-color: var(--dark-surface-50);
+  }
+
+  .message.assistant {
+    background-color: var(--dark-surface-100);
+  }
+
+  .chat-input {
+    background-color: var(--dark-surface-50);
+    border-color: var(--dark-surface-200);
+  }
+
+  .btn-secondary {
+    background-color: var(--dark-surface-100);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--dark-surface-200);
+  }
+
+  .prose code {
+    background-color: var(--dark-surface-100);
+    border-color: var(--dark-surface-200);
+  }
+
+  .prose pre {
+    background-color: var(--dark-surface-50);
+    border-color: var(--dark-surface-200);
+  }
 }

@@ -1,10 +1,12 @@
 import { Groq } from "groq-sdk";
+import { Messages } from "../types";
 
 const groq = new Groq();
 
-async function* LlamaScout(message: string) {
+async function* LlamaScout(message: string, chats: Messages[]) {
   const chatCompletion = await groq.chat.completions.create({
     messages: [
+      ...chats,
       {
         role: "user",
         content: message,

@@ -1,11 +1,12 @@
 import OpenAI from "openai";
+import { Messages } from "../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function* Sarvam(message: string) {
+async function* Sarvam(message: string, chats: Messages[]) {
   const completion = await openai.chat.completions.create({
     model: "sarvamai/sarvam-m:free",
     messages: [
@@ -33,6 +34,7 @@ async function* Sarvam(message: string) {
           Your job is to bridge knowledge and language with clarity, depth, and cultural intelligence.
           `,
       },
+      ...chats,
       {
         role: "user",
         content: message,

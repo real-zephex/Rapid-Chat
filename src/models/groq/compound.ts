@@ -1,8 +1,9 @@
 import { Groq } from "groq-sdk";
+import { Messages } from "../types";
 
 const groq = new Groq();
 
-async function* CompoundBeta(message: string) {
+async function* CompoundBeta(message: string, chats: Messages[]) {
   const chatCompletion = await groq.chat.completions.create({
     messages: [
       {
@@ -28,6 +29,7 @@ async function* CompoundBeta(message: string) {
           You’re designed for users who want answers **now**, not later. Be the assistant that gets things done in seconds.
         `,
       },
+      ...chats,
       {
         role: "user",
         content: message,

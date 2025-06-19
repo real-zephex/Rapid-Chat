@@ -1,9 +1,10 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
+import { retrieveChats, saveChats } from "@/utils/localStoraage";
 
 type Message = {
   role: "user" | "assistant";
@@ -11,6 +12,10 @@ type Message = {
 };
 
 const ChatInterface = ({ id }: { id: string }) => {
+  if (!id) {
+    return;
+  }
+
   const [model, setModel] = useState<string>("scout");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -22,23 +27,32 @@ const ChatInterface = ({ id }: { id: string }) => {
   };
 
   useEffect(() => {
+    const chats = retrieveChats(id);
+    setMessages(chats);
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    console.log(id);
 
     const userMessage: Message = { role: "user", content: input };
+    saveChats(id, [...messages, userMessage]);
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
+      const prevChats = retrieveChats(id);
       const response = await fetch(
         `/api?model=${model}&message=${encodeURIComponent(input)}`,
         {
-          method: "GET",
+          method: "POST",
+          body: JSON.stringify(prevChats),
         }
       );
 
@@ -65,6 +79,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             role: "assistant",
             content: assistantMessage,
           };
+          saveChats(id, newMessages);
           return newMessages;
         });
       }
@@ -164,7 +179,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="fixed bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 mb-1.5 ">
+      <div className="absolute bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 ">
         <form onSubmit={handleSubmit}>
           <textarea
             className="w-full bg-black/60 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
