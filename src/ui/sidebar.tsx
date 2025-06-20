@@ -54,7 +54,7 @@ const Sidebar = () => {
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
       <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-2 p-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <div
             className="group relative hover:bg-white/10 bg-white/5 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg"
             key={tab}
@@ -66,8 +66,8 @@ const Sidebar = () => {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity" />
             <div className="flex flex-row items-center justify-between">
-              <p className="p-3 line-clamp-1 text-sm text-gray-200">
-                {expand ? getTitle(tab) : getTitle(tab).slice(0, 2)}
+              <p className="px-2 py-1 line-clamp-1 text-sm text-gray-200 leading-10 text-center">
+                {expand ? getTitle(tab) : index + 1}
               </p>
               {expand && (
                 <button
