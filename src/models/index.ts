@@ -11,6 +11,7 @@ import Phi4 from "./openrouter/phi-4-reasoning";
 import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
 import Sarvam from "./openrouter/sarvam";
 import { Messages } from "./types";
+import LlamaInstant81 from "./groq/llama-8.1b-instant";
 
 type ModelFunction = (
   query: string,
@@ -18,6 +19,7 @@ type ModelFunction = (
 ) => AsyncIterable<string>;
 
 const mappings: Record<string, ModelFunction> = {
+  llama_instant: LlamaInstant81,
   compound: CompoundBeta,
   flash: FlashLite,
   qwen: Qwen,

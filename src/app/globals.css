@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@theme {
+  --color-midnight: #121063;
+  --color-tahiti: #3ab7bf;
+  --color-bermuda: #78dcca;
+
+
+  --color-bg: #414141;
+  --color-text: #CA3E47;
+}
 
 :root {
   /* Core colors */
@@ -39,7 +48,7 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: var(--dark-surface-0);
+    --background: #202020;
     --foreground: var(--surface-50);
   }
 }

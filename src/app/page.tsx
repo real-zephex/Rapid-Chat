@@ -3,7 +3,7 @@ import { FaBolt } from "react-icons/fa6";
 
 export default function Home() {
   return (
-    <div className="backdrop-blur-md bg-black/75 rounded-xl w-full overflow-y-auto border border-white/10 shadow-2xl">
+    <div className="backdrop-blur-md bg-bg rounded-xl w-full overflow-y-auto border border-white/10 shadow-2xl">
       <div className="relative w-full min-h-[calc(100dvh-15px)] flex flex-col items-center justify-center p-8 lg:p-28 gap-8">
         {/* Background gradient effects */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-teal-500/10 rounded-xl" />

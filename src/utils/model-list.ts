@@ -1,11 +1,12 @@
 export const models = [
-  "compound",
+  // "compound",
+  "llama_instant",
   "flash",
   "qwen",
   "scout",
   "devstral",
-  "deepseek",
-  "phi4",
-  "phi4plus",
-  "sarvam",
+  // "deepseek",
+  // "phi4",
+  // "phi4plus",
+  // "sarvam",
 ];
