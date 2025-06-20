@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
 import { retrieveChats, saveChats } from "@/utils/localStoraage";
-import { FaArrowCircleRight } from "react-icons/fa";
+import { FaArrowCircleDown, FaArrowCircleRight, FaCopy } from "react-icons/fa";
 import ModelProvider from "@/models";
 import rehypeKatex from "rehype-katex";
 
@@ -94,6 +94,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const copyButtonRef = useRef<HTMLButtonElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -178,6 +179,23 @@ const ChatInterface = ({ id }: { id: string }) => {
     setModel(model);
   }
 
+  const handleCopyResponse = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch (error) {
+      console.error("Error copying response:", error);
+      // Handle the error as needed, e.g., show a notification
+    }
+  };
+
+  function handleCopyButtonPress() {
+    if (copyButtonRef.current) {
+      const target = copyButtonRef.current;
+      target.innerHTML = "Copied!";
+      target.disabled = true;
+    }
+  }
+
   return (
     <div className="flex flex-col h-[calc(100dvh-20px)]">
       {/* Messages Container */}
@@ -204,7 +222,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 ) : (
                   <div className="prose prose-invert prose-lg max-w-none leading-7">
                     {message.content ? (
-                      <div className="flex flex-col">
+                      <div className="flex flex-col p-1">
                         <div className="flex flex-row items-center ">
                           <div className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-700 mr-2">
                             AI
@@ -315,6 +333,21 @@ const ChatInterface = ({ id }: { id: string }) => {
                         >
                           {message.content}
                         </ReactMarkdown>
+                        <div className="flex flex-row items-center gap-2">
+                          <button
+                            className="flex flex-row items-center gap-2 bg-bg h-10 p-2 rounded-lg"
+                            onClick={(e) => {
+                              handleCopyResponse(message.content);
+                              e.currentTarget.innerHTML = "Copied";
+                              // e.currentTarget.disabled = true;
+                            }}
+                            id={new Date().getTime().toString()}
+                            ref={copyButtonRef}
+                          >
+                            <FaCopy />
+                            <p>Copy to clipboard</p>
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2 select-none">
@@ -377,15 +410,24 @@ const ChatInterface = ({ id }: { id: string }) => {
                 ))}
               </select>
             </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`${
-                isLoading ? "bg-teal-700" : "bg-bg hover:bg-teal-600"
-              } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
-            >
-              {isLoading ? "..." : <FaArrowCircleRight size={21} />}
-            </button>
+            <div className="flex flex-row items-center gap-2">
+              <button
+                className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black"
+                onClick={() => scrollToBottom()}
+                title="Scroll to bottom"
+              >
+                <FaArrowCircleDown size={21} />
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`${
+                  isLoading ? "bg-teal-700" : "bg-bg hover:bg-teal-600"
+                } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
+              >
+                {isLoading ? "..." : <FaArrowCircleRight size={21} />}
+              </button>
+            </div>
           </div>
         </form>
       </div>

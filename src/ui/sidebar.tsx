@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaHome, FaChevronRight } from "react-icons/fa";
+import { FaHome, FaChevronRight, FaDumpster } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { retrieveChats, retrieveTabs } from "@/utils/localStoraage";
 
@@ -65,9 +65,22 @@ const Sidebar = () => {
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity" />
-            <p className="p-3 line-clamp-1 text-sm text-gray-200">
-              {expand ? getTitle(tab) : getTitle(tab).slice(0, 2)}
-            </p>
+            <div className="flex flex-row items-center justify-between">
+              <p className="p-3 line-clamp-1 text-sm text-gray-200">
+                {expand ? getTitle(tab) : getTitle(tab).slice(0, 2)}
+              </p>
+              {expand && (
+                <button
+                  className="p-2 mr-2 rounded-lg bg-neutral-900/50"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <FaDumpster color="red" />
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
