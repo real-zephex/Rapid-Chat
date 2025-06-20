@@ -115,7 +115,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    console.log(id);
 
     const userMessage: Message = { role: "user", content: input };
     saveChats(id, [...messages, userMessage]);
