@@ -100,16 +100,16 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [isLoading]);
+  }, []);
 
   useEffect(() => {
     const chats = retrieveChats(id);
     setMessages(chats);
   }, []);
 
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [isLoading]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
