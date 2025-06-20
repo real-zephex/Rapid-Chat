@@ -128,16 +128,6 @@ export const metadata: Metadata = {
   applicationName: "Rapid AI",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
-  colorScheme: "dark light",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
 };
 
 export default function RootLayout({

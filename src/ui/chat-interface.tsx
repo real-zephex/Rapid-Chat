@@ -99,6 +99,10 @@ const ChatInterface = ({ id }: { id: string }) => {
   };
 
   useEffect(() => {
+    scrollToBottom();
+  }, [isLoading, []]);
+
+  useEffect(() => {
     const chats = retrieveChats(id);
     setMessages(chats);
   }, []);
@@ -175,7 +179,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-70px)]">
+    <div className="flex flex-col h-[calc(100dvh-20px)]">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-48">
         <div className="container mx-auto max-w-6xl">
@@ -325,10 +329,10 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 border border-gray-500">
+      <div className="absolute bottom-0 left-0 bg-black/30 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 border-b-0 border border-gray-500">
         <form onSubmit={handleSubmit}>
           <textarea
-            className="w-full bg-black/40 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
+            className="w-full bg-black/30 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
             rows={3}
             placeholder="Type your message..."
             value={input}
@@ -343,19 +347,17 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
               <select
-                className="bg-neutral-900 text-white rounded-lg px-4 h-full py-2 outline-none "
+                className="bg-neutral-900 text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full"
                 value={model}
                 onChange={handleModelChange}
               >
                 {models.map((model) => (
                   <option value={model} key={model} className="text-md">
-                    {model}
+                    {model} -{" "}
+                    {modelInformation[model] || "No description available"}
                   </option>
                 ))}
               </select>
-              <p className="bg-cyan-300 rounded-lg p-2 text-xs text-black">
-                {modelInformation[model] || "Select a model for chat"}
-              </p>
             </div>
             <button
               type="submit"
@@ -364,7 +366,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 isLoading ? "bg-teal-700" : "bg-neutral-900 hover:bg-teal-600"
               } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
             >
-              {isLoading ? "Sending..." : <FaArrowCircleRight />}
+              {isLoading ? "Sending..." : <FaArrowCircleRight size={21} />}
             </button>
           </div>
         </form>

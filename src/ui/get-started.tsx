@@ -14,6 +14,7 @@ export function handlePress(
 
   const uuid = uuidv4();
   addTabs(uuid);
+  window.dispatchEvent(new Event("new-tab"));
   router.push("/chat/" + uuid);
 }
 

@@ -7,10 +7,10 @@ export default async function ChatPage({
 }) {
   const { id } = await params;
   return (
-    <div className="bg-black/20 rounded-xl w-full overflow-y-auto relative flex flex-col  gap-1">
-      <div className="w-full bg-black/80 p-4 font-mono">
+    <div className="bg-black/15 rounded-xl w-full overflow-y-auto relative">
+      {/* <div className="w-full bg-black/80 px-2 py-1 font-mono line-clamp-1">
         Chat ID: <code>{id}</code>
-      </div>
+      </div> */}
       <ChatInterface id={id} />
     </div>
   );
