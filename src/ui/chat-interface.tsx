@@ -100,7 +100,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [isLoading, []]);
+  }, [isLoading]);
 
   useEffect(() => {
     const chats = retrieveChats(id);
