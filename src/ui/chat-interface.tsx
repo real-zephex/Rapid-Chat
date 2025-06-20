@@ -101,6 +101,9 @@ const ChatInterface = ({ id }: { id: string }) => {
   useEffect(() => {
     const chats = retrieveChats(id);
     setMessages(chats);
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, []);
 
