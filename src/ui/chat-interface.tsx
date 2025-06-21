@@ -9,6 +9,7 @@ import { retrieveChats, saveChats } from "@/utils/localStoraage";
 import { FaArrowCircleDown, FaArrowCircleRight, FaCopy } from "react-icons/fa";
 import ModelProvider from "@/models";
 import rehypeKatex from "rehype-katex";
+import { processMessageContent } from "@/utils/responseCleaner";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate & reliable general knowledge",
@@ -26,6 +27,7 @@ const modelInformation: Record<string, string> = {
 type Message = {
   role: "user" | "assistant";
   content: string;
+  reasoning?: string;
 };
 
 // Copy button component for code blocks
@@ -128,7 +130,12 @@ const ChatInterface = ({ id }: { id: string }) => {
       const response = await ModelProvider({
         type: model,
         query: input,
-        chats: prevChats,
+        chats: prevChats.map((msg) => {
+          return {
+            role: msg.role,
+            content: msg.content,
+          };
+        }),
       });
 
       if (!(response instanceof ReadableStream)) {
@@ -136,7 +143,10 @@ const ChatInterface = ({ id }: { id: string }) => {
       }
 
       const reader = response.getReader();
+
       let assistantMessage = "";
+      let lastDisplayContent = "";
+
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       while (true) {
@@ -147,16 +157,37 @@ const ChatInterface = ({ id }: { id: string }) => {
           typeof value === "string" ? value : new TextDecoder().decode(value);
         assistantMessage += text;
 
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: "assistant",
-            content: assistantMessage,
-          };
-          saveChats(id, newMessages);
-          return newMessages;
-        });
+        const { displayContent, reasoning } =
+          processMessageContent(assistantMessage);
+
+        if (displayContent !== lastDisplayContent) {
+          lastDisplayContent = displayContent;
+
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1] = {
+              role: "assistant",
+              content: displayContent,
+              reasoning: reasoning || "",
+            };
+            saveChats(id, newMessages);
+            return newMessages;
+          });
+        }
       }
+
+      const { displayContent, reasoning } =
+        processMessageContent(assistantMessage);
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: "assistant",
+          content: displayContent,
+          reasoning: reasoning || "",
+        };
+        saveChats(id, newMessages);
+        return newMessages;
+      });
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -231,6 +262,52 @@ const ChatInterface = ({ id }: { id: string }) => {
                             {model}
                           </span>
                         </div>
+                        {message.reasoning && (
+                          <div className="mt-2 mb-4">
+                            <button
+                              onClick={() => {
+                                const el = document.getElementById(
+                                  `reasoning-${index}`
+                                );
+                                if (el) {
+                                  el.style.display =
+                                    el.style.display === "none"
+                                      ? "block"
+                                      : "none";
+                                  const arrow = document.getElementById(
+                                    `arrow-${index}`
+                                  );
+                                  if (arrow) {
+                                    arrow.style.transform =
+                                      el.style.display === "none"
+                                        ? "rotate(0deg)"
+                                        : "rotate(90deg)";
+                                  }
+                                }
+                              }}
+                              className="flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors"
+                            >
+                              <svg
+                                id={`arrow-${index}`}
+                                className="w-4 h-4 transition-transform duration-200"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M9 18l6-6-6-6" />
+                              </svg>
+                              <span className="font-semibold">Reasoning</span>
+                            </button>
+                            <div
+                              id={`reasoning-${index}`}
+                              className="text-sm text-gray-400 mt-2 pl-6"
+                              style={{ display: "none" }}
+                            >
+                              {message.reasoning}
+                            </div>
+                          </div>
+                        )}
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm, remarkMath]}
                           rehypePlugins={[rehypeHighlight, rehypeKatex]}
