@@ -55,7 +55,7 @@ const CopyButton = ({
       onClick={handleCopy}
       className={`absolute ${
         hasLanguageLabel ? "top-14" : "top-2"
-      } right-2 p-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors z-10`}
+      } right-2 p-2 rounded-md bg-gray-700/80 hover:bg-gray-600/90 transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
       title={copied ? "Copied!" : "Copy code"}
     >
       {copied ? (
@@ -245,8 +245,8 @@ const ChatInterface = ({ id }: { id: string }) => {
   return (
     <div className="flex flex-col h-[calc(100dvh-20px)]">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-48">
-        <div className="container mx-auto max-w-6xl">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-48">
+        <div className="container mx-auto max-w-4xl">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -255,10 +255,10 @@ const ChatInterface = ({ id }: { id: string }) => {
               }`}
             >
               <div
-                className={`max-w-full lg:max-w-[70%] p-3 ${
+                className={`max-w-full lg:max-w-[70%] p-4 shadow-sm ${
                   message.role === "user"
-                    ? "bg-neutral-700 text-white rounded-l-xl rounded-br-xl"
-                    : "bg-neutral-800 text-white rounded-r-xl rounded-bl-xl"
+                    ? "bg-neutral-700 text-white rounded-2xl rounded-br-lg"
+                    : "bg-neutral-800 text-white rounded-2xl rounded-bl-lg"
                 }`}
               >
                 {message.role === "user" ? (
@@ -269,11 +269,11 @@ const ChatInterface = ({ id }: { id: string }) => {
                   <div className="prose prose-invert prose-lg max-w-none leading-7">
                     {message.content ? (
                       <div className="flex flex-col p-1">
-                        <div className="flex flex-row items-center ">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-700 mr-2">
+                        <div className="flex flex-row items-center mb-3">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
                             AI
                           </div>
-                          <span className="text-sm text-gray-400 font-medium">
+                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
                             {model}
                           </span>
                         </div>
@@ -388,8 +388,8 @@ const ChatInterface = ({ id }: { id: string }) => {
                               return (
                                 <div className="relative group">
                                   {language && (
-                                    <div className="flex justify-between items-center bg-gray-800 px-4 py-2 rounded-t-lg border border-gray-700 border-b-0">
-                                      <span className="text-sm text-gray-300 font-medium">
+                                    <div className="flex justify-between items-center bg-gray-800/90 px-4 py-2 rounded-t-lg border border-gray-700/50 border-b-0">
+                                      <span className="text-xs text-gray-300 font-medium uppercase tracking-wide">
                                         {language}
                                       </span>
                                     </div>
@@ -425,9 +425,9 @@ const ChatInterface = ({ id }: { id: string }) => {
                         >
                           {message.content}
                         </ReactMarkdown>
-                        <div className="flex flex-row items-center gap-2">
+                        <div className="flex flex-row items-center gap-2 mt-4">
                           <button
-                            className="flex flex-row items-center gap-2 bg-bg h-10 p-2 rounded-lg"
+                            className="flex flex-row items-center gap-2 bg-neutral-700/60 hover:bg-neutral-600/80 h-9 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
                             onClick={(e) => {
                               handleCopyResponse(message.content);
                               e.currentTarget.innerHTML = "Copied";
@@ -436,23 +436,23 @@ const ChatInterface = ({ id }: { id: string }) => {
                             id={new Date().getTime().toString()}
                             ref={copyButtonRef}
                           >
-                            <FaCopy />
-                            <p>Copy to clipboard</p>
+                            <FaCopy size={12} />
+                            <span>Copy</span>
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2 select-none">
                         <div className="flex flex-row items-center select-none">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-700 mr-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
                             AI
                           </div>
-                          <span className="text-sm text-gray-400 font-medium ">
+                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
                             {model}
                           </span>
                         </div>
-                        <div className="w-30 rounded-xl h-2 animate-pulse bg-neutral-700"></div>
-                        <div className="w-40 rounded-xl h-2 animate-pulse bg-neutral-700"></div>
+                        <div className="w-32 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
+                        <div className="w-40 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
                       </div>
                     )}
                   </div>
