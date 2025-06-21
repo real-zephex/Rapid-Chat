@@ -4,18 +4,38 @@ import "@/app/globals.css";
 
 import { useEffect, useState } from "react";
 import { FaHome, FaChevronRight, FaDumpster } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { retrieveChats, retrieveTabs } from "@/utils/localStoraage";
 
 const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);
   const [tabs, setTabs] = useState<string[]>([]);
+  const [tabTitles, setTabTitles] = useState<Record<string, string>>({});
   const router = useRouter();
 
+  const pathname = usePathname().split("/")[2];
+
   useEffect(() => {
-    const func = () => {
-      const tabs = retrieveTabs();
+    const func = async () => {
+      const tabs = await retrieveTabs();
       setTabs(tabs);
+
+      // Load titles for all tabs
+      const titles: Record<string, string> = {};
+      for (const tab of tabs) {
+        const chats = await retrieveChats(tab);
+        if (chats.length === 0) {
+          titles[tab] = "New Chat";
+        } else {
+          const lastMessage = chats[chats.length - 1];
+          titles[tab] =
+            lastMessage.role === "user"
+              ? lastMessage.content.slice(0, 24) +
+                (lastMessage.content.length > 24 ? "..." : "")
+              : lastMessage.content.slice(0, 24) + "...";
+        }
+      }
+      setTabTitles(titles);
     };
 
     window.addEventListener("new-tab", func);
@@ -26,12 +46,7 @@ const Sidebar = () => {
   }, []);
 
   const getTitle = (id: string) => {
-    const chats = retrieveChats(id);
-    if (chats.length === 0) return "New Chat";
-    const lastMessage = chats[chats.length - 1];
-    return lastMessage.role === "user"
-      ? lastMessage.content
-      : lastMessage.content.slice(0, 24) + "...";
+    return tabTitles[id] || "Loading...";
   };
 
   return (
@@ -55,11 +70,11 @@ const Sidebar = () => {
         )}
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-2 p-2  max-h-[calc(100vh-150px)] scrollbar-track-only">
+      <div className="flex-1 flex flex-col gap-3 overflow-y-auto mt-2 p-2  max-h-[calc(100vh-150px)] scrollbar-track-only">
         {expand &&
           tabs.map((tab, index) => (
             <div
-              className="group relative hover:bg-white/10 bg-white/5 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg"
+              className="group relative hover:bg-white/10 bg-white/5 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg "
               key={tab}
               onClick={(e) => {
                 e.preventDefault();
@@ -67,22 +82,16 @@ const Sidebar = () => {
                 router.push("/chat/" + tab);
               }}
             >
+              {pathname === tab && (
+                <div className="absolute -top-2 left-2 text-xs text-gray-400 group-hover:text-gray-200 transition-colors">
+                  <p>Active</p>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity" />
               <div className="flex flex-row items-center justify-between">
                 <p className="px-2 py-1 line-clamp-1 text-sm text-gray-200 leading-10 text-center">
                   {expand ? getTitle(tab) : index + 1}
                 </p>
-                {expand && (
-                  <button
-                    className="p-2 mr-2 rounded-lg bg-neutral-900/50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <FaDumpster color="red" />
-                  </button>
-                )}
               </div>
             </div>
           ))}

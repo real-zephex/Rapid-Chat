@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { FaArrowRight } from "react-icons/fa6";
 
-export function handlePress(
+export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement>,
   router: AppRouterInstance
 ) {
   event.preventDefault();
 
   const uuid = uuidv4();
-  addTabs(uuid);
+  await addTabs(uuid);
   window.dispatchEvent(new Event("new-tab"));
   router.push("/chat/" + uuid);
 }

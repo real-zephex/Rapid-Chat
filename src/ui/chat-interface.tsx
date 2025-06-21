@@ -1,15 +1,22 @@
 "use client";
-import { useState, useRef, useEffect, MouseEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
-import { retrieveChats, saveChats } from "@/utils/localStoraage";
+import {
+  deleteChat,
+  deleteTab,
+  retrieveChats,
+  saveChats,
+} from "@/utils/localStoraage";
 import { FaArrowCircleDown, FaArrowCircleRight, FaCopy } from "react-icons/fa";
 import ModelProvider from "@/models";
 import rehypeKatex from "rehype-katex";
+import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
+import { useRouter } from "next/navigation";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate & reliable general knowledge",
@@ -98,14 +105,19 @@ const ChatInterface = ({ id }: { id: string }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
 
+  const router = useRouter();
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    const chats = retrieveChats(id);
-    setMessages(chats);
-  }, []);
+    const loadChats = async () => {
+      const chats = await retrieveChats(id);
+      setMessages(chats);
+    };
+    loadChats();
+  }, [id]);
 
   useEffect(() => {
     window.addEventListener("offline", () => {
@@ -141,7 +153,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     setIsLoading(true);
 
     try {
-      const prevChats = retrieveChats(id);
+      const prevChats = await retrieveChats(id);
       const response = await ModelProvider({
         type: model,
         query: input,
@@ -234,16 +246,24 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   };
 
-  function handleCopyButtonPress() {
-    if (copyButtonRef.current) {
-      const target = copyButtonRef.current;
-      target.innerHTML = "Copied!";
-      target.disabled = true;
-    }
-  }
-
   return (
-    <div className="flex flex-col h-[calc(100dvh-20px)]">
+    <div className="flex flex-col h-[calc(100dvh-20px)] relative">
+      {/* Delete Button */}
+
+      <div className="absolute top-0 left-0 m-4 z-20">
+        <button
+          className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
+          onClick={() => {
+            deleteChat(id);
+            deleteTab(id);
+            window.dispatchEvent(new Event("new-tab"));
+            router.push("/");
+          }}
+        >
+          <RiDeleteBin2Fill size={20} color="red" />
+        </button>
+      </div>
+
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-48">
         <div className="container mx-auto max-w-4xl">
