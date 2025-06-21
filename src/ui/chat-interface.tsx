@@ -108,7 +108,22 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    window.addEventListener("offline", () => {
+      setIsLoading(true);
+    });
+
+    window.addEventListener("online", () => {
+      setIsLoading(false);
+    });
+
+    return () => {
+      window.removeEventListener("offline", () => {
+        setIsLoading(true);
+      });
+      window.removeEventListener("online", () => {
+        setIsLoading(false);
+      });
+    };
   }, []);
 
   useEffect(() => {
