@@ -11,16 +11,16 @@ import ModelProvider from "@/models";
 import rehypeKatex from "rehype-katex";
 
 const modelInformation: Record<string, string> = {
-  scout: "All round fast model",
+  scout: "Accurate & reliable general knowledge",
   // compound: "Fast and reliable model (with internet access)",
-  llama_instant: "Instant response model",
-  flash: "Lightweight and efficient",
-  qwen: "High performance model",
-  devstral: "Developer-friendly model",
-  deepseek: "Deep learning optimized model",
-  phi4: "Advanced AI model (overthinks)",
-  phi4plus: "Enhanced version of Phi4 (overthinks even more)",
-  sarvam: "Sarvam model (Multilingual)",
+  llama_instant: "Ultra-fast & conversational",
+  flash: "Direct & concise for quick facts",
+  qwen: "Deep reasoning & expert analysis",
+  devstral: "Coding assistant & practical solutions",
+  // deepseek: "Deep learning optimized model",
+  // phi4: "Advanced AI model (overthinks)",
+  // phi4plus: "Enhanced version of Phi4 (overthinks even more)",
+  // sarvam: "Sarvam model (Multilingual)",
 };
 
 type Message = {

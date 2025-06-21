@@ -336,3 +336,17 @@ code.hljs {
     border-color: var(--dark-surface-200);
   }
 }
+
+/* styles.css or inside your Tailwind @layer */
+.scrollbar-track-only {
+  scrollbar-width: thin;
+  /* For Firefox */
+  scrollbar-color: rgba(175, 175, 175, 0.336) transparent;
+  /* thumb and track both transparent */
+}
+
+.scrollbar-track-only::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import "@/app/globals.css";
+
 import { useEffect, useState } from "react";
 import { FaHome, FaChevronRight, FaDumpster } from "react-icons/fa";
 import { useRouter } from "next/navigation";
@@ -53,7 +55,7 @@ const Sidebar = () => {
         )}
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-2 p-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+      <div className="flex-1 flex flex-col gap-2 overflow-y-auto mt-2 p-2  max-h-[calc(100vh-150px)] scrollbar-track-only">
         {expand &&
           tabs.map((tab, index) => (
             <div
