@@ -1,5 +1,13 @@
 "use client";
-import { useState, useRef, useEffect, ChangeEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+  ChangeEvent,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -44,61 +52,63 @@ type Message = {
   reasoning?: string;
 };
 
-// Copy button component for code blocks
-const CopyButton = ({
-  text,
-  hasLanguageLabel,
-}: {
-  text: string;
-  hasLanguageLabel?: boolean;
-}) => {
-  const [copied, setCopied] = useState(false);
+// Copy button component for code blocks - Memoized to prevent unnecessary re-renders
+const CopyButton = memo(
+  ({
+    text,
+    hasLanguageLabel,
+  }: {
+    text: string;
+    hasLanguageLabel?: boolean;
+  }) => {
+    const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
-  };
+    const handleCopy = useCallback(async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy text: ", err);
+      }
+    }, [text]);
 
-  return (
-    <button
-      onClick={handleCopy}
-      className={`absolute ${
-        hasLanguageLabel ? "top-14" : "top-2"
-      } right-2 p-2 rounded-md bg-gray-700/80 hover:bg-gray-600/90 transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
-      title={copied ? "Copied!" : "Copy code"}
-    >
-      {copied ? (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <polyline points="20,6 9,17 4,12"></polyline>
-        </svg>
-      ) : (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="m5,15 L5,5 A2,2 0 0,1 7,3 L17,3"></path>
-        </svg>
-      )}
-    </button>
-  );
-};
+    return (
+      <button
+        onClick={handleCopy}
+        className={`absolute ${
+          hasLanguageLabel ? "top-14" : "top-2"
+        } right-2 p-2 rounded-md bg-gray-700/80 hover:bg-gray-600/90 transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
+        title={copied ? "Copied!" : "Copy code"}
+      >
+        {copied ? (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polyline points="20,6 9,17 4,12"></polyline>
+          </svg>
+        ) : (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="m5,15 L5,5 A2,2 0 0,1 7,3 L17,3"></path>
+          </svg>
+        )}
+      </button>
+    );
+  }
+);
 
 // Utility function to convert Uint8Array to data URL for display
 const arrayBufferToDataUrl = (data: Uint8Array, mimeType: string): string => {
@@ -106,17 +116,29 @@ const arrayBufferToDataUrl = (data: Uint8Array, mimeType: string): string => {
   return URL.createObjectURL(blob);
 };
 
-// Component for displaying images
-const ImageDisplay = ({
-  images,
-}: {
-  images: { mimeType: string; data: Uint8Array }[];
-}) => {
-  return (
-    <div className="flex flex-wrap gap-2 mt-2 mb-2">
-      {images.map((image, index) => {
-        const dataUrl = arrayBufferToDataUrl(image.data, image.mimeType);
-        return (
+// Memoized component for displaying images to prevent re-creation of blob URLs
+const ImageDisplay = memo(
+  ({ images }: { images: { mimeType: string; data: Uint8Array }[] }) => {
+    // Memoize blob URL creation to prevent recreation on every render
+    const imageUrls = useMemo(() => {
+      return images.map((image) => {
+        const blob = new Blob([new Uint8Array(image.data)], {
+          type: image.mimeType,
+        });
+        return URL.createObjectURL(blob);
+      });
+    }, [images]);
+
+    // Cleanup blob URLs when component unmounts or images change
+    useEffect(() => {
+      return () => {
+        imageUrls.forEach((url) => URL.revokeObjectURL(url));
+      };
+    }, [imageUrls]);
+
+    return (
+      <div className="flex flex-wrap gap-2 mt-2 mb-2">
+        {imageUrls.map((dataUrl, index) => (
           <div key={index} className="relative">
             <Image
               src={dataUrl}
@@ -130,34 +152,46 @@ const ImageDisplay = ({
                 maxWidth: "300px",
                 maxHeight: "192px",
               }}
-              unoptimized={true} // Required for blob URLs
-              onLoad={() => {
-                // Clean up the object URL after the image loads
-                setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
-              }}
+              unoptimized={true}
             />
           </div>
-        );
-      })}
-    </div>
-  );
-};
+        ))}
+      </div>
+    );
+  }
+);
 
-// Component for image preview while typing
-const ImagePreview = ({
-  images,
-  onRemove,
-}: {
-  images: { mimeType: string; data: Uint8Array }[];
-  onRemove: (index: number) => void;
-}) => {
-  if (images.length === 0) return null;
+// Memoized component for image preview while typing
+const ImagePreview = memo(
+  ({
+    images,
+    onRemove,
+  }: {
+    images: { mimeType: string; data: Uint8Array }[];
+    onRemove: (index: number) => void;
+  }) => {
+    // Memoize blob URL creation
+    const imageUrls = useMemo(() => {
+      return images.map((image) => {
+        const blob = new Blob([new Uint8Array(image.data)], {
+          type: image.mimeType,
+        });
+        return URL.createObjectURL(blob);
+      });
+    }, [images]);
 
-  return (
-    <div className="flex flex-wrap gap-2 p-2 bg-neutral-800/50 rounded-lg mb-2">
-      {images.map((image, index) => {
-        const dataUrl = arrayBufferToDataUrl(image.data, image.mimeType);
-        return (
+    // Cleanup blob URLs when component unmounts or images change
+    useEffect(() => {
+      return () => {
+        imageUrls.forEach((url) => URL.revokeObjectURL(url));
+      };
+    }, [imageUrls]);
+
+    if (images.length === 0) return null;
+
+    return (
+      <div className="flex flex-wrap gap-2 p-2 bg-neutral-800/50 rounded-lg mb-2">
+        {imageUrls.map((dataUrl, index) => (
           <div key={index} className="relative">
             <Image
               src={dataUrl}
@@ -165,10 +199,7 @@ const ImagePreview = ({
               width={64}
               height={64}
               className="w-16 h-16 object-cover rounded border border-gray-500"
-              unoptimized={true} // Required for blob URLs
-              onLoad={() => {
-                setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
-              }}
+              unoptimized={true}
             />
             <button
               onClick={() => onRemove(index)}
@@ -178,11 +209,256 @@ const ImagePreview = ({
               ×
             </button>
           </div>
-        );
-      })}
-    </div>
-  );
-};
+        ))}
+      </div>
+    );
+  }
+);
+
+// Memoized message component to prevent unnecessary re-renders
+const MessageComponent = memo(
+  ({
+    message,
+    index,
+    model,
+    onCopyResponse,
+  }: {
+    message: Message;
+    index: number;
+    model: string;
+    onCopyResponse: (content: string) => void;
+  }) => {
+    const isUser = message.role === "user";
+
+    if (isUser) {
+      return (
+        <div className="flex mb-4 justify-end">
+          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700 text-white rounded-2xl rounded-br-lg">
+            <div className="text-white whitespace-pre-wrap text-lg leading-7">
+              {message.images && message.images.length > 0 && (
+                <ImageDisplay images={message.images} />
+              )}
+              {message.content}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex mb-4 justify-start">
+        <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-800 text-white rounded-2xl rounded-bl-lg">
+          <div className="prose prose-invert prose-lg max-w-none leading-7">
+            {message.content ? (
+              <div className="flex flex-col p-1">
+                <div className="flex flex-row items-center mb-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
+                    AI
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    {model}
+                  </span>
+                </div>
+                {message.reasoning && (
+                  <div className="mt-2 mb-4">
+                    <button
+                      onClick={() => {
+                        const el = document.getElementById(
+                          `reasoning-${index}`
+                        );
+                        if (el) {
+                          el.style.display =
+                            el.style.display === "none" ? "block" : "none";
+                          const arrow = document.getElementById(
+                            `arrow-${index}`
+                          );
+                          if (arrow) {
+                            arrow.style.transform =
+                              el.style.display === "none"
+                                ? "rotate(0deg)"
+                                : "rotate(90deg)";
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      <svg
+                        id={`arrow-${index}`}
+                        className="w-4 h-4 transition-transform duration-200"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                      <span className="font-semibold">Reasoning</span>
+                    </button>
+                    <div
+                      id={`reasoning-${index}`}
+                      className="text-sm text-gray-400 mt-2 pl-6"
+                      style={{ display: "none" }}
+                    >
+                      {message.reasoning}
+                    </div>
+                  </div>
+                )}
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeHighlight, rehypeKatex]}
+                  components={{
+                    code: ({ node, className, children, ...props }) => {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const language = match ? match[1] : "";
+                      return match ? (
+                        <code className={`${className} hljs`} {...props}>
+                          {children}
+                        </code>
+                      ) : (
+                        <code
+                          className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      );
+                    },
+                    pre: ({ children, ...props }) => {
+                      // Extract text content from children for copy functionality
+                      const getTextContent = (element: any): string => {
+                        if (typeof element === "string") return element;
+                        if (element?.props?.children) {
+                          if (Array.isArray(element.props.children)) {
+                            return element.props.children
+                              .map(getTextContent)
+                              .join("");
+                          }
+                          return getTextContent(element.props.children);
+                        }
+                        return "";
+                      };
+                      // Extract language from code element
+                      const getLanguage = (element: any): string => {
+                        if (element?.props?.className) {
+                          const match = /language-(\w+)/.exec(
+                            element.props.className
+                          );
+                          return match ? match[1] : "";
+                        }
+                        if (element?.props?.children) {
+                          if (Array.isArray(element.props.children)) {
+                            for (const child of element.props.children) {
+                              const lang = getLanguage(child);
+                              if (lang) return lang;
+                            }
+                          } else {
+                            return getLanguage(element.props.children);
+                          }
+                        }
+                        return "";
+                      };
+                      const codeText = getTextContent(children);
+                      const language = getLanguage(children);
+                      return (
+                        <div className="relative group">
+                          {language && (
+                            <div className="flex justify-between items-center bg-gray-800/90 px-4 py-2 rounded-t-lg border border-gray-700/50 border-b-0">
+                              <span className="text-xs text-gray-300 font-medium uppercase tracking-wide">
+                                {language}
+                              </span>
+                            </div>
+                          )}
+                          <pre
+                            className={`bg-gray-900 p-4 overflow-x-auto border border-gray-700 ${
+                              language
+                                ? "rounded-t-none rounded-b-lg"
+                                : "rounded-lg"
+                            }`}
+                            {...props}
+                          >
+                            {children}
+                          </pre>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <CopyButton
+                              text={codeText}
+                              hasLanguageLabel={!!language}
+                            />
+                          </div>
+                        </div>
+                      );
+                    },
+                    li: ({ children, ...props }) => (
+                      <li
+                        className="text-lg text-white list-disc pl-4 leading-6.5"
+                        {...props}
+                      >
+                        {children}
+                      </li>
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+                <div className="flex flex-row items-center gap-2 mt-4">
+                  <button
+                    className="flex flex-row items-center gap-2 bg-neutral-700/60 hover:bg-neutral-600/80 h-9 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
+                    onClick={(e) => {
+                      onCopyResponse(message.content);
+                      e.currentTarget.innerHTML = "Copied";
+                    }}
+                  >
+                    <FaCopy size={12} />
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 select-none">
+                <div className="flex flex-row items-center select-none">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
+                    AI
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    {model}
+                  </span>
+                </div>
+                <div className="w-32 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
+                <div className="w-40 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+// Messages Container Component - Memoized to prevent unnecessary re-renders
+const MessagesContainer = memo(
+  ({
+    messages,
+    model,
+    onCopyResponse,
+  }: {
+    messages: Message[];
+    model: string;
+    onCopyResponse: (content: string) => void;
+  }) => {
+    return (
+      <div className="container mx-auto max-w-4xl">
+        {messages.map((message, index) => (
+          <MessageComponent
+            key={index}
+            message={message}
+            index={index}
+            model={model}
+            onCopyResponse={onCopyResponse}
+          />
+        ))}
+      </div>
+    );
+  }
+);
 
 const ChatInterface = ({ id }: { id: string }) => {
   if (!id) {
@@ -191,10 +467,11 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const [model, setModel] = useState<string>("scout");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const copyButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Use ref for input to prevent re-renders on every keystroke
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Images
   const [images, setImages] = useState<
@@ -203,13 +480,13 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const router = useRouter();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const removeImage = (index: number) => {
+  const removeImage = useCallback((index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   useEffect(() => {
     const loadChats = async () => {
@@ -244,7 +521,9 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+
+    const input = inputRef.current?.value.trim() || "";
+    if (!input || isLoading) return;
 
     const userMessage: Message = {
       role: "user",
@@ -253,7 +532,12 @@ const ChatInterface = ({ id }: { id: string }) => {
     };
     saveChats(id, [...messages, userMessage]);
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+
+    // Clear the input ref
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+
     setIsLoading(true);
 
     try {
@@ -278,6 +562,8 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       let assistantMessage = "";
       let lastDisplayContent = "";
+      let updateCounter = 0;
+      const UPDATE_THROTTLE = 3; // Update UI every 3 chunks for smoother performance
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
@@ -288,11 +574,16 @@ const ChatInterface = ({ id }: { id: string }) => {
         const text =
           typeof value === "string" ? value : new TextDecoder().decode(value);
         assistantMessage += text;
+        updateCounter++;
 
         const { displayContent, reasoning } =
           processMessageContent(assistantMessage);
 
-        if (displayContent !== lastDisplayContent) {
+        // Throttle updates to prevent excessive re-renders during streaming
+        if (
+          displayContent !== lastDisplayContent &&
+          (updateCounter % UPDATE_THROTTLE === 0 || done)
+        ) {
           lastDisplayContent = displayContent;
 
           setMessages((prev) => {
@@ -302,12 +593,12 @@ const ChatInterface = ({ id }: { id: string }) => {
               content: displayContent,
               reasoning: reasoning || "",
             };
-            saveChats(id, newMessages);
             return newMessages;
           });
         }
       }
 
+      // Final update to ensure we have the complete message
       const { displayContent, reasoning } =
         processMessageContent(assistantMessage);
       setMessages((prev) => {
@@ -335,61 +626,66 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   }
 
-  function handleModelChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    event.preventDefault();
-    const target = event.target as HTMLSelectElement;
+  const handleModelChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      event.preventDefault();
+      const target = event.target as HTMLSelectElement;
+      const model = target.value;
+      setModel(model);
+    },
+    []
+  );
 
-    const model = target.value;
-    setModel(model);
-  }
-
-  const handleCopyResponse = async (content: string) => {
+  const handleCopyResponse = useCallback(async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
     } catch (error) {
       console.error("Error copying response:", error);
       // Handle the error as needed, e.g., show a notification
     }
-  };
+  }, []);
 
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    if (event.target.files) {
-      const file = event.target.files;
-      const fileArray = Array.from(file);
+  const handleFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files) {
+        const file = event.target.files;
+        const fileArray = Array.from(file);
 
-      if (fileArray.length > 5) {
-        alert("You can only upload a maximum of 5 images at a time.");
-        event.target.value = ""; // Clear the input
-        return;
+        if (fileArray.length > 5) {
+          alert("You can only upload a maximum of 5 images at a time.");
+          event.target.value = ""; // Clear the input
+          return;
+        }
+        const validFiles = fileArray.filter((f) => {
+          return f.type.startsWith("image/") && checkFileSize(f);
+        });
+        if (validFiles.length == 0) {
+          alert("No valid image files selected.");
+          event.target.value = ""; // Clear the input
+          return;
+        }
+        const arraizedImages = await Promise.all(
+          validFiles.map(async (f) => {
+            const buffer = await f.arrayBuffer();
+            return {
+              mimeType: f.type,
+              data: new Uint8Array(buffer),
+            };
+          })
+        );
+        setImages(arraizedImages);
+        event.target.value = ""; // Clear the input after successful processing
       }
-      const validFiles = fileArray.filter((f) => {
-        return f.type.startsWith("image/") && checkFileSize(f);
-      });
-      if (validFiles.length == 0) {
-        alert("No valid image files selected.");
-        event.target.value = ""; // Clear the input
-        return;
-      }
-      const arraizedImages = await Promise.all(
-        validFiles.map(async (f) => {
-          const buffer = await f.arrayBuffer();
-          return {
-            mimeType: f.type,
-            data: new Uint8Array(buffer),
-          };
-        })
-      );
-      setImages(arraizedImages);
-      event.target.value = ""; // Clear the input after successful processing
-    }
-  }
+    },
+    []
+  );
 
-  function checkFileSize(file: File) {
+  const checkFileSize = useCallback((file: File) => {
     if (file.size > 10 * 1024 * 1024) {
       return false;
     }
     return true;
-  }
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-20px)] relative">
@@ -411,232 +707,12 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-48">
-        <div className="container mx-auto max-w-4xl">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex mb-4 ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-full lg:max-w-[70%] p-4 shadow-sm ${
-                  message.role === "user"
-                    ? "bg-neutral-700 text-white rounded-2xl rounded-br-lg"
-                    : "bg-neutral-800 text-white rounded-2xl rounded-bl-lg"
-                }`}
-              >
-                {message.role === "user" ? (
-                  <div className="text-white whitespace-pre-wrap text-lg leading-7">
-                    {message.images && message.images.length > 0 && (
-                      <ImageDisplay images={message.images} />
-                    )}
-                    {message.content}
-                  </div>
-                ) : (
-                  <div className="prose prose-invert prose-lg max-w-none leading-7">
-                    {message.content ? (
-                      <div className="flex flex-col p-1">
-                        <div className="flex flex-row items-center mb-3">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
-                            AI
-                          </div>
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
-                            {model}
-                          </span>
-                        </div>
-                        {message.reasoning && (
-                          <div className="mt-2 mb-4">
-                            <button
-                              onClick={() => {
-                                const el = document.getElementById(
-                                  `reasoning-${index}`
-                                );
-                                if (el) {
-                                  el.style.display =
-                                    el.style.display === "none"
-                                      ? "block"
-                                      : "none";
-                                  const arrow = document.getElementById(
-                                    `arrow-${index}`
-                                  );
-                                  if (arrow) {
-                                    arrow.style.transform =
-                                      el.style.display === "none"
-                                        ? "rotate(0deg)"
-                                        : "rotate(90deg)";
-                                  }
-                                }
-                              }}
-                              className="flex items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors"
-                            >
-                              <svg
-                                id={`arrow-${index}`}
-                                className="w-4 h-4 transition-transform duration-200"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <path d="M9 18l6-6-6-6" />
-                              </svg>
-                              <span className="font-semibold">Reasoning</span>
-                            </button>
-                            <div
-                              id={`reasoning-${index}`}
-                              className="text-sm text-gray-400 mt-2 pl-6"
-                              style={{ display: "none" }}
-                            >
-                              {message.reasoning}
-                            </div>
-                          </div>
-                        )}
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkMath]}
-                          rehypePlugins={[rehypeHighlight, rehypeKatex]}
-                          components={{
-                            code: ({ node, className, children, ...props }) => {
-                              const match = /language-(\w+)/.exec(
-                                className || ""
-                              );
-                              const language = match ? match[1] : "";
-                              return match ? (
-                                <code
-                                  className={`${className} hljs`}
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              ) : (
-                                <code
-                                  className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              );
-                            },
-                            pre: ({ children, ...props }) => {
-                              // Extract text content from children for copy functionality
-                              const getTextContent = (element: any): string => {
-                                if (typeof element === "string") return element;
-                                if (element?.props?.children) {
-                                  if (Array.isArray(element.props.children)) {
-                                    return element.props.children
-                                      .map(getTextContent)
-                                      .join("");
-                                  }
-                                  return getTextContent(element.props.children);
-                                }
-                                return "";
-                              };
-                              // Extract language from code element
-                              const getLanguage = (element: any): string => {
-                                if (element?.props?.className) {
-                                  const match = /language-(\w+)/.exec(
-                                    element.props.className
-                                  );
-                                  return match ? match[1] : "";
-                                }
-                                if (element?.props?.children) {
-                                  if (Array.isArray(element.props.children)) {
-                                    for (const child of element.props
-                                      .children) {
-                                      const lang = getLanguage(child);
-                                      if (lang) return lang;
-                                    }
-                                  } else {
-                                    return getLanguage(element.props.children);
-                                  }
-                                }
-                                return "";
-                              };
-                              const codeText = getTextContent(children);
-                              const language = getLanguage(children);
-                              return (
-                                <div className="relative group">
-                                  {language && (
-                                    <div className="flex justify-between items-center bg-gray-800/90 px-4 py-2 rounded-t-lg border border-gray-700/50 border-b-0">
-                                      <span className="text-xs text-gray-300 font-medium uppercase tracking-wide">
-                                        {language}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <pre
-                                    className={`bg-gray-900 p-4 overflow-x-auto border border-gray-700 ${
-                                      language
-                                        ? "rounded-t-none rounded-b-lg"
-                                        : "rounded-lg"
-                                    }`}
-                                    {...props}
-                                  >
-                                    {children}
-                                  </pre>
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <CopyButton
-                                      text={codeText}
-                                      hasLanguageLabel={!!language}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            },
-                            li: ({ children, ...props }) => (
-                              <li
-                                className="text-lg text-white list-disc pl-4 leading-6.5"
-                                {...props}
-                              >
-                                {children}
-                              </li>
-                            ),
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                        <div className="flex flex-row items-center gap-2 mt-4">
-                          <button
-                            className="flex flex-row items-center gap-2 bg-neutral-700/60 hover:bg-neutral-600/80 h-9 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
-                            onClick={(e) => {
-                              handleCopyResponse(message.content);
-                              e.currentTarget.innerHTML = "Copied";
-                              // e.currentTarget.disabled = true;
-                            }}
-                            id={new Date().getTime().toString()}
-                            ref={copyButtonRef}
-                          >
-                            <FaCopy size={12} />
-                            <span>Copy</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2 select-none">
-                        <div className="flex flex-row items-center select-none">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
-                            AI
-                          </div>
-                          <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
-                            {model}
-                          </span>
-                        </div>
-                        <div className="w-32 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
-                        <div className="w-40 rounded-full h-2 animate-pulse bg-neutral-700/60"></div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {/* {isLoading && (
-            <div className="flex justify-start mb-4">
-              <div className="max-w-full lg:max-w-[70%] p-3 bg-neutral-800 text-white rounded-r-xl rounded-bl-xl">
-                <div className="text-lg text-white">Loading...</div>
-              </div>
-            </div>
-          )} */}
-          <div ref={messagesEndRef} />
-        </div>
+        <MessagesContainer
+          messages={messages}
+          model={model}
+          onCopyResponse={handleCopyResponse}
+        />
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Chat Input Form */}
@@ -644,11 +720,10 @@ const ChatInterface = ({ id }: { id: string }) => {
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
+            ref={inputRef}
             className="w-full bg-bg/30 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
             rows={3}
             placeholder="Type your message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -656,6 +731,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               }
             }}
             disabled={isLoading}
+            autoFocus={!isLoading}
           ></textarea>
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
