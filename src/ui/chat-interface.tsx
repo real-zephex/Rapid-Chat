@@ -109,6 +109,7 @@ const CopyButton = memo(
     );
   }
 );
+CopyButton.displayName = "CopyButton";
 
 // Utility function to convert Uint8Array to data URL for display
 const arrayBufferToDataUrl = (data: Uint8Array, mimeType: string): string => {
@@ -160,6 +161,7 @@ const ImageDisplay = memo(
     );
   }
 );
+ImageDisplay.displayName = "ImageDisplay";
 
 // Memoized component for image preview while typing
 const ImagePreview = memo(
@@ -214,6 +216,7 @@ const ImagePreview = memo(
     );
   }
 );
+ImagePreview.displayName = "ImagePreview";
 
 // Memoized message component to prevent unnecessary re-renders
 const MessageComponent = memo(
@@ -432,6 +435,7 @@ const MessageComponent = memo(
     );
   }
 );
+MessageComponent.displayName = "MessageComponent";
 
 // Messages Container Component - Memoized to prevent unnecessary re-renders
 const MessagesContainer = memo(
@@ -459,6 +463,7 @@ const MessagesContainer = memo(
     );
   }
 );
+MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
   if (!id) {
