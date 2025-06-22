@@ -655,6 +655,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 handleSubmit(e);
               }
             }}
+            disabled={isLoading}
           ></textarea>
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
