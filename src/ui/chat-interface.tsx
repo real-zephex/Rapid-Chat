@@ -4,13 +4,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
+import Image from "next/image";
 import { models } from "../utils/model-list";
 import {
   deleteChat,
   deleteTab,
   retrieveChats,
   saveChats,
-} from "@/utils/localStoraage";
+} from "@/utils/indexedDB";
 import {
   FaArrowCircleDown,
   FaArrowCircleRight,
@@ -39,6 +40,7 @@ const modelInformation: Record<string, string> = {
 type Message = {
   role: "user" | "assistant";
   content: string;
+  images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
 };
 
@@ -98,6 +100,90 @@ const CopyButton = ({
   );
 };
 
+// Utility function to convert Uint8Array to data URL for display
+const arrayBufferToDataUrl = (data: Uint8Array, mimeType: string): string => {
+  const blob = new Blob([new Uint8Array(data)], { type: mimeType });
+  return URL.createObjectURL(blob);
+};
+
+// Component for displaying images
+const ImageDisplay = ({
+  images,
+}: {
+  images: { mimeType: string; data: Uint8Array }[];
+}) => {
+  return (
+    <div className="flex flex-wrap gap-2 mt-2 mb-2">
+      {images.map((image, index) => {
+        const dataUrl = arrayBufferToDataUrl(image.data, image.mimeType);
+        return (
+          <div key={index} className="relative">
+            <Image
+              src={dataUrl}
+              alt={`Uploaded image ${index + 1}`}
+              width={300}
+              height={200}
+              className="max-w-xs max-h-48 object-cover rounded-lg border border-gray-600"
+              style={{
+                width: "auto",
+                height: "auto",
+                maxWidth: "300px",
+                maxHeight: "192px",
+              }}
+              unoptimized={true} // Required for blob URLs
+              onLoad={() => {
+                // Clean up the object URL after the image loads
+                setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Component for image preview while typing
+const ImagePreview = ({
+  images,
+  onRemove,
+}: {
+  images: { mimeType: string; data: Uint8Array }[];
+  onRemove: (index: number) => void;
+}) => {
+  if (images.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 p-2 bg-neutral-800/50 rounded-lg mb-2">
+      {images.map((image, index) => {
+        const dataUrl = arrayBufferToDataUrl(image.data, image.mimeType);
+        return (
+          <div key={index} className="relative">
+            <Image
+              src={dataUrl}
+              alt={`Preview ${index + 1}`}
+              width={64}
+              height={64}
+              className="w-16 h-16 object-cover rounded border border-gray-500"
+              unoptimized={true} // Required for blob URLs
+              onLoad={() => {
+                setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+              }}
+            />
+            <button
+              onClick={() => onRemove(index)}
+              className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              title="Remove image"
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const ChatInterface = ({ id }: { id: string }) => {
   if (!id) {
     return;
@@ -119,6 +205,10 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -156,7 +246,11 @@ const ChatInterface = ({ id }: { id: string }) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    const userMessage: Message = {
+      role: "user",
+      content: input,
+      ...(images.length > 0 && { images: [...images] }), // Include images if any
+    };
     saveChats(id, [...messages, userMessage]);
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -265,6 +359,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       if (fileArray.length > 5) {
         alert("You can only upload a maximum of 5 images at a time.");
+        event.target.value = ""; // Clear the input
         return;
       }
       const validFiles = fileArray.filter((f) => {
@@ -272,6 +367,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       });
       if (validFiles.length == 0) {
         alert("No valid image files selected.");
+        event.target.value = ""; // Clear the input
         return;
       }
       const arraizedImages = await Promise.all(
@@ -284,6 +380,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         })
       );
       setImages(arraizedImages);
+      event.target.value = ""; // Clear the input after successful processing
     }
   }
 
@@ -331,6 +428,9 @@ const ChatInterface = ({ id }: { id: string }) => {
               >
                 {message.role === "user" ? (
                   <div className="text-white whitespace-pre-wrap text-lg leading-7">
+                    {message.images && message.images.length > 0 && (
+                      <ImageDisplay images={message.images} />
+                    )}
                     {message.content}
                   </div>
                 ) : (
@@ -542,6 +642,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       {/* Chat Input Form */}
       <div className="absolute bottom-0 left-0 bg-[#313131] max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 border-b-0 border border-gray-500 z-50">
         <form onSubmit={handleSubmit}>
+          <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             className="w-full bg-bg/30 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
             rows={3}
@@ -571,24 +672,25 @@ const ChatInterface = ({ id }: { id: string }) => {
               </select>
             </div>
             <div className="flex flex-row items-center gap-2">
-              {model === "flash" && (
-                <label
-                  className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                  title="Upload file"
-                  htmlFor="fileInput"
-                >
-                  <input
-                    name="file"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    id="fileInput"
-                    onChange={handleFileChange}
-                    multiple
-                  />
-                  <FaUpload />
-                </label>
-              )}
+              {model === "flash" ||
+                (model === "scout" && (
+                  <label
+                    className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                    title="Upload file"
+                    htmlFor="fileInput"
+                  >
+                    <input
+                      name="file"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="fileInput"
+                      onChange={handleFileChange}
+                      multiple
+                    />
+                    <FaUpload />
+                  </label>
+                ))}
 
               <button
                 className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"

@@ -5,7 +5,7 @@ import "@/app/globals.css";
 import { useEffect, useState } from "react";
 import { FaHome, FaChevronRight, FaDumpster } from "react-icons/fa";
 import { usePathname, useRouter } from "next/navigation";
-import { retrieveChats, retrieveTabs } from "@/utils/localStoraage";
+import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 
 const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);

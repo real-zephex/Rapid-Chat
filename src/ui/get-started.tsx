@@ -1,6 +1,6 @@
 "use client";
 
-import { addTabs } from "@/utils/localStoraage";
+import { addTabs } from "@/utils/indexedDB";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
