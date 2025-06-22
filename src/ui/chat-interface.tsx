@@ -672,25 +672,24 @@ const ChatInterface = ({ id }: { id: string }) => {
               </select>
             </div>
             <div className="flex flex-row items-center gap-2">
-              {model === "flash" ||
-                (model === "scout" && (
-                  <label
-                    className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                    title="Upload file"
-                    htmlFor="fileInput"
-                  >
-                    <input
-                      name="file"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="fileInput"
-                      onChange={handleFileChange}
-                      multiple
-                    />
-                    <FaUpload />
-                  </label>
-                ))}
+              {model === "flash" && (
+                <label
+                  className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                  title="Upload file"
+                  htmlFor="fileInput"
+                >
+                  <input
+                    name="file"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="fileInput"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                  <FaUpload />
+                </label>
+              )}
 
               <button
                 className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
