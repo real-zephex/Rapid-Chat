@@ -1,9 +1,9 @@
 import { Groq } from "groq-sdk";
-import { Messages } from "../types";
+import { incomingData, Messages } from "../types";
 
 const groq = new Groq();
 
-async function* Qwen(message: string, chats: Messages[]) {
+async function* Qwen({ inc }: { inc: incomingData }) {
   const chatCompletion = await groq.chat.completions.create({
     messages: [
       {
@@ -52,10 +52,10 @@ async function* Qwen(message: string, chats: Messages[]) {
         Your purpose is to provide the most insightful, thoroughly reasoned, and expertly structured responses possible, acting as a reliable source of profound understanding.
       `,
       },
-      ...chats,
+      ...inc.chats,
       {
         role: "user",
-        content: message,
+        content: inc.message,
       },
     ],
     model: "qwen/qwen3-32b",

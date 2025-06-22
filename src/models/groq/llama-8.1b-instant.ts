@@ -1,9 +1,9 @@
 import { Groq } from "groq-sdk";
-import { Messages } from "../types";
+import { incomingData, Messages } from "../types";
 
 const groq = new Groq();
 
-async function* LlamaInstant81(message: string, chats: Messages[]) {
+async function* LlamaInstant81({ inc }: { inc: incomingData }) {
   const chatCompletion = await groq.chat.completions.create({
     messages: [
       {
@@ -44,10 +44,10 @@ async function* LlamaInstant81(message: string, chats: Messages[]) {
           Your ultimate goal is to be the most responsive and enjoyable AI for immediate conversational needs.
 `,
       },
-      ...chats,
+      ...inc.chats,
       {
         role: "user",
-        content: message,
+        content: inc.message,
       },
     ],
     model: "llama-3.1-8b-instant",

@@ -1,12 +1,12 @@
 import OpenAI from "openai";
-import { Messages } from "../types";
+import { incomingData, Messages } from "../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function* Devstral(message: string, chats: Messages[]) {
+async function* Devstral({ inc }: { inc: incomingData }) {
   const completion = await openai.chat.completions.create({
     model: "mistralai/devstral-small:free",
     messages: [
@@ -39,10 +39,10 @@ async function* Devstral(message: string, chats: Messages[]) {
             3. Always strive to be the go-to coding companion who provides quick, reliable, and understandable solutions.
           `,
       },
-      ...chats,
+      ...inc.chats,
       {
         role: "user",
-        content: message,
+        content: inc.message,
       },
     ],
     stream: true,

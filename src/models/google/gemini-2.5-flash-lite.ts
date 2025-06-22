@@ -1,11 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
-import { Messages } from "../types";
+import { incomingData, Messages } from "../types";
+
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-async function* FlashLite(message: string, chats: Messages[]) {
+async function* FlashLite({ inc }: { inc: incomingData }) {
+  console.log(inc.imageData);
+
   const systemPrompt = {
-    role: "user",
-    parts: [
+    responseMimeType: "text/plain",
+    systemInstruction: [
       {
         text: `
         You are a rapid, highly efficient, and exceptionally precise AI assistant. Your core mission is to deliver immediate, crystal-clear, and directly useful information without any unnecessary elaboration.
@@ -37,19 +40,45 @@ async function* FlashLite(message: string, chats: Messages[]) {
       },
     ],
   };
-  const contents = chats
+  const contents = inc.chats
     ? [
-        systemPrompt,
-        ...chats.map((chat) => ({
+        ...inc.chats.map((chat) => ({
           role: chat.role === "assistant" ? "model" : "user",
           parts: [{ text: chat.content }],
         })),
-        { role: "user", parts: [{ text: message }] },
+        {
+          role: "user",
+          parts: [
+            { text: inc.message },
+            ...(inc.imageData
+              ? inc.imageData.map((img) => ({
+                  inlineData: {
+                    data: Buffer.from(img.data).toString("base64"),
+                    mimeType: img.mimeType,
+                  },
+                }))
+              : []),
+          ],
+        },
       ]
-    : [systemPrompt, { role: "user", parts: [{ text: message }] }];
+    : [
+        {
+          role: "user",
+          parts: [{ text: inc.message }],
+          ...(inc.imageData
+            ? inc.imageData.map((img) => ({
+                inlineData: {
+                  data: Buffer.from(img.data).toString("base64"),
+                  mimeType: img.mimeType,
+                },
+              }))
+            : []),
+        },
+      ];
 
   const stream = await ai.models.generateContentStream({
     model: "gemini-2.5-flash-lite-preview-06-17",
+    config: systemPrompt,
     contents,
   });
 

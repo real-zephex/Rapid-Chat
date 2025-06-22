@@ -1,9 +1,9 @@
 import { Groq } from "groq-sdk";
-import { Messages } from "../types";
+import { incomingData, Messages } from "../types";
 
 const groq = new Groq();
 
-async function* LlamaScout(message: string, chats: Messages[]) {
+async function* LlamaScout({ inc }: { inc: incomingData }) {
   const chatCompletion = await groq.chat.completions.create({
     messages: [
       {
@@ -44,10 +44,10 @@ async function* LlamaScout(message: string, chats: Messages[]) {
           Your goal is to be a consistently reliable source of information, earning user trust through precision and correctness.
         `,
       },
-      ...chats,
+      ...inc.chats,
       {
         role: "user",
-        content: message,
+        content: inc.message,
       },
     ],
     model: "meta-llama/llama-4-scout-17b-16e-instruct",

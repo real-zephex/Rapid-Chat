@@ -1,6 +1,5 @@
 "use server";
 
-import { models } from "@/utils/model-list";
 import FlashLite from "./google/gemini-2.5-flash-lite";
 import CompoundBeta from "./groq/compound";
 import LlamaScout from "./groq/llama-scout";
@@ -10,46 +9,54 @@ import Devstral from "./openrouter/devstral";
 import Phi4 from "./openrouter/phi-4-reasoning";
 import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
 import Sarvam from "./openrouter/sarvam";
-import { Messages } from "./types";
+import { incomingData, Messages } from "./types";
 import LlamaInstant81 from "./groq/llama-8.1b-instant";
 
-type ModelFunction = (
-  query: string,
-  chats: Messages[]
-) => AsyncIterable<string>;
+type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
+
+export interface fileUploads {
+  mimeType: string;
+  data: Uint8Array;
+}
+// type ModelFunction = (
+
+// )
 
 const mappings: Record<string, ModelFunction> = {
   llama_instant: LlamaInstant81,
-  compound: CompoundBeta,
   flash: FlashLite,
+  // compound: CompoundBeta,
   qwen: Qwen,
   scout: LlamaScout,
   devstral: Devstral,
-  deepseek: Deepseek,
-  phi4: Phi4,
-  phi4plus: Phi4Plus,
-  sarvam: Sarvam,
+  // deepseek: Deepseek,
+  //   phi4: Phi4,
+  //   phi4plus: Phi4Plus,
+  //   sarvam: Sarvam,
 };
 
 const ModelProvider = ({
   type,
   query,
   chats,
+  imageData,
 }: {
   type: keyof typeof mappings;
   query: string;
   chats: Messages[];
+  imageData?: fileUploads[];
 }): ReadableStream<string> => {
   if (!mappings[type]) {
     throw new Error(`Invalid model type: ${type}`);
   }
-
   const fin = mappings[type];
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of fin(query, chats)) {
+        for await (const chunk of fin({
+          inc: { message: query, chats, imageData },
+        })) {
           if (chunk.length > 0) {
             controller.enqueue(`${chunk}`);
           }

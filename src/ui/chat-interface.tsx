@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -11,7 +11,12 @@ import {
   retrieveChats,
   saveChats,
 } from "@/utils/localStoraage";
-import { FaArrowCircleDown, FaArrowCircleRight, FaCopy } from "react-icons/fa";
+import {
+  FaArrowCircleDown,
+  FaArrowCircleRight,
+  FaCopy,
+  FaUpload,
+} from "react-icons/fa";
 import ModelProvider from "@/models";
 import rehypeKatex from "rehype-katex";
 import { RiDeleteBin2Fill } from "react-icons/ri";
@@ -105,6 +110,11 @@ const ChatInterface = ({ id }: { id: string }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Images
+  const [images, setImages] = useState<
+    { mimeType: string; data: Uint8Array }[]
+  >([]);
+
   const router = useRouter();
 
   const scrollToBottom = () => {
@@ -163,6 +173,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             content: msg.content,
           };
         }),
+        imageData: images,
       });
 
       if (!(response instanceof ReadableStream)) {
@@ -226,6 +237,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       ]);
     } finally {
       setIsLoading(false);
+      setImages([]); // Clear images after processing
     }
   }
 
@@ -245,6 +257,42 @@ const ChatInterface = ({ id }: { id: string }) => {
       // Handle the error as needed, e.g., show a notification
     }
   };
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    if (event.target.files) {
+      const file = event.target.files;
+      const fileArray = Array.from(file);
+
+      if (fileArray.length > 5) {
+        alert("You can only upload a maximum of 5 images at a time.");
+        return;
+      }
+      const validFiles = fileArray.filter((f) => {
+        return f.type.startsWith("image/") && checkFileSize(f);
+      });
+      if (validFiles.length == 0) {
+        alert("No valid image files selected.");
+        return;
+      }
+      const arraizedImages = await Promise.all(
+        validFiles.map(async (f) => {
+          const buffer = await f.arrayBuffer();
+          return {
+            mimeType: f.type,
+            data: new Uint8Array(buffer),
+          };
+        })
+      );
+      setImages(arraizedImages);
+    }
+  }
+
+  function checkFileSize(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      return false;
+    }
+    return true;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-20px)] relative">
@@ -523,8 +571,27 @@ const ChatInterface = ({ id }: { id: string }) => {
               </select>
             </div>
             <div className="flex flex-row items-center gap-2">
+              {model === "flash" && (
+                <label
+                  className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                  title="Upload file"
+                  htmlFor="fileInput"
+                >
+                  <input
+                    name="file"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="fileInput"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                  <FaUpload />
+                </label>
+              )}
+
               <button
-                className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black"
+                className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
                 onClick={() => scrollToBottom()}
                 title="Scroll to bottom"
               >

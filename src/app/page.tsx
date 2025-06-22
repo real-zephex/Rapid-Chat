@@ -8,7 +8,6 @@ import {
   FaLightbulb,
   FaDatabase,
   FaGlobe,
-  FaChevronRight,
 } from "react-icons/fa";
 
 export default function Home() {
