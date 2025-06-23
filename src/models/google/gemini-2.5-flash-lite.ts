@@ -4,8 +4,6 @@ import { incomingData, Messages } from "../types";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function* FlashLite({ inc }: { inc: incomingData }) {
-  console.log(inc.imageData);
-
   const systemPrompt = {
     responseMimeType: "text/plain",
     systemInstruction: [
