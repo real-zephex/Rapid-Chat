@@ -287,7 +287,10 @@ const ChatInterface = ({ id }: { id: string }) => {
             return;
           }
           const validFiles = fileArray.filter((f) => {
-            return f.type.startsWith("image/") && checkFileSize(f);
+            return (
+              f.type.startsWith("image/") ||
+              (f.type.startsWith("application/pdf") && checkFileSize(f))
+            );
           });
           if (validFiles.length == 0) {
             alert("No valid image files selected.");
@@ -353,7 +356,10 @@ const ChatInterface = ({ id }: { id: string }) => {
       {/* Chat Input Form */}
       <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 ">
         <form onSubmit={handleSubmit}>
-          <ImagePreview images={images} onRemove={removeImage} />
+          <ImagePreview
+            images={images}
+            onRemove={removeImage}
+          />
           <textarea
             ref={inputRef}
             className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
@@ -391,7 +397,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                   <input
                     name="file"
                     type="file"
-                    accept="image/*"
+                    accept="image/png, application/pdf, image/jpeg, image/jpg"
                     className="hidden"
                     id="fileInput"
                     onChange={handleFileChange}
