@@ -11,6 +11,8 @@ interface Messages {
   content: string;
   images?: { mimeType: string; data: Uint8Array }[]; // Store images directly with messages
   reasoning?: string;
+  startTime?: number;
+  endTime?: number;
 }
 
 // IndexedDB configuration

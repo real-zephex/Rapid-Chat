@@ -140,7 +140,7 @@ export default function RootLayout({
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased m-1.5 flex flex-row h-full gap-2`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased m-2 flex flex-row h-full gap-3`}
       >
         <Sidebar />
         {children}

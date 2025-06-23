@@ -4,14 +4,9 @@ import {
   useRef,
   useEffect,
   useCallback,
-  useMemo,
   memo,
   ChangeEvent,
 } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeHighlight from "rehype-highlight";
 import { models } from "../utils/model-list";
 import {
   deleteChat,
@@ -26,7 +21,6 @@ import {
   FaUpload,
 } from "react-icons/fa";
 import ModelProvider from "@/models";
-import rehypeKatex from "rehype-katex";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
@@ -51,9 +45,10 @@ type Message = {
   content: string;
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
+  startTime?: number;
+  endTime?: number;
 };
 
-// Messages Container Component - Memoized to prevent unnecessary re-renders
 const MessagesContainer = memo(
   ({
     messages,
@@ -195,6 +190,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         },
       ]);
 
+      const startTime = performance.now();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -226,6 +222,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
       }
 
+      const endTime = performance.now();
       // Final update to ensure we have the complete message
       const { displayContent, reasoning } =
         processMessageContent(assistantMessage);
@@ -235,8 +232,11 @@ const ChatInterface = ({ id }: { id: string }) => {
           role: "assistant",
           content: displayContent,
           reasoning: reasoning || "",
+          startTime: startTime,
+          endTime: endTime,
         };
         saveChats(id, newMessages);
+
         return newMessages;
       });
     } catch (error) {
@@ -351,12 +351,12 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 left-0 bg-[#313131] max-w-full w-full lg:w-1/2 rounded-t-xl p-2 lg:translate-x-1/2 border-b-0 border border-gray-500 z-50">
+      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 ">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-bg/30 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
+            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
             rows={3}
             placeholder="Type your message..."
             onKeyDown={(e) => {
@@ -369,7 +369,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
               <select
-                className="bg-neutral-800 text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full"
+                className=" text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full text-sm"
                 value={model}
                 onChange={handleModelChange}
               >
@@ -384,7 +384,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             <div className="flex flex-row items-center gap-2">
               {model === "flash" && (
                 <label
-                  className="bg-bg px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                  className="px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
                   title="Upload file"
                   htmlFor="fileInput"
                 >
@@ -397,16 +397,16 @@ const ChatInterface = ({ id }: { id: string }) => {
                     onChange={handleFileChange}
                     multiple
                   />
-                  <FaUpload />
+                  <FaUpload size={18} />
                 </label>
               )}
 
               <button
-                className="bg-bg  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
+                className="  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
                 onClick={() => scrollToBottom()}
                 title="Scroll to bottom"
               >
-                <FaArrowCircleDown size={21} />
+                <FaArrowCircleDown size={18} />
               </button>
               <button
                 type="submit"
@@ -414,7 +414,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 className={`${
                   isLoading || isUploadingImages
                     ? "bg-teal-700"
-                    : "bg-bg hover:bg-teal-600"
+                    : " hover:bg-teal-600"
                 } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
                 title={
                   isUploadingImages ? "Waiting for images to upload..." : ""
@@ -425,7 +425,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 ) : isUploadingImages ? (
                   "⏳"
                 ) : (
-                  <FaArrowCircleRight size={21} />
+                  <FaArrowCircleRight size={18} />
                 )}
               </button>
             </div>

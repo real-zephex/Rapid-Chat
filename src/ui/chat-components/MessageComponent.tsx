@@ -10,12 +10,16 @@ import remarkMath from "remark-math";
 
 import CopyButton from "./CopyButton";
 import ImageDisplay from "./ImageDisplay";
+import { GoCpu } from "react-icons/go";
+import { TbAlphabetLatin } from "react-icons/tb";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
+  startTime?: number;
+  endTime?: number;
 };
 
 const MessageComponent = memo(
@@ -33,9 +37,20 @@ const MessageComponent = memo(
     const isUser = message.role === "user";
 
     const tokens = useMemo(
-      () => message.content.split(/\s+/).length,
+      () =>
+        message.content
+          .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
+          .filter(Boolean).length,
       [message.content]
     );
+
+    const tokensPerSecond = useMemo(() => {
+      if (message.endTime && message.startTime) {
+        const duration = (message.endTime - message.startTime) / 1000;
+        return duration > 0 ? Math.round(tokens / duration) : 0;
+      }
+      return 0;
+    }, [message.endTime, message.startTime, tokens]);
 
     if (isUser) {
       return (
@@ -201,7 +216,7 @@ const MessageComponent = memo(
               >
                 {message.content}
               </ReactMarkdown>
-              <div className="flex flex-row items-center gap-2 mt-4">
+              <div className="flex flex-row items-center justify-between gap-2 mt-4">
                 <button
                   className="flex flex-row items-center gap-2 bg-neutral-700/60 hover:bg-neutral-600/80 h-9 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
                   onClick={(e) => {
@@ -212,11 +227,19 @@ const MessageComponent = memo(
                   <FaCopy size={12} />
                   <span>Copy</span>
                 </button>
-                {tokens > 0 && (
-                  <span className="text-xs text-gray-400">
-                    Tokens: {tokens}
-                  </span>
-                )}
+                <div className="flex flex-row items-center gap-2">
+                  {tokens > 0 && (
+                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-white/10 p-1 rounded-lg">
+                      <TbAlphabetLatin /> {tokens} tokens
+                    </span>
+                  )}
+                  {tokensPerSecond > 0 && (
+                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-white/10 p-1 rounded-lg">
+                      <GoCpu />
+                      {tokensPerSecond} tokens/sec
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
