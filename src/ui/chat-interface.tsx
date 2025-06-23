@@ -150,7 +150,6 @@ const ChatInterface = ({ id }: { id: string }) => {
     saveChats(id, [...messages, userMessage]);
     setMessages((prev) => [...prev, userMessage]);
 
-    // Clear the input ref
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -269,7 +268,6 @@ const ChatInterface = ({ id }: { id: string }) => {
       await navigator.clipboard.writeText(content);
     } catch (error) {
       console.error("Error copying response:", error);
-      // Handle the error as needed, e.g., show a notification
     }
   }, []);
 
@@ -283,7 +281,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
           if (fileArray.length > 5) {
             alert("You can only upload a maximum of 5 images at a time.");
-            event.target.value = ""; // Clear the input
+            event.target.value = ""; 
             return;
           }
           const validFiles = fileArray.filter((f) => {
@@ -294,7 +292,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           });
           if (validFiles.length == 0) {
             alert("No valid image files selected.");
-            event.target.value = ""; // Clear the input
+            event.target.value = ""; 
             return;
           }
           const arraizedImages = await Promise.all(
@@ -307,7 +305,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             })
           );
           setImages(arraizedImages);
-          event.target.value = ""; // Clear the input after successful processing
+          event.target.value = ""; 
         } catch (error) {
           console.error("Error uploading images:", error);
           alert("Error uploading images. Please try again.");
@@ -356,10 +354,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       {/* Chat Input Form */}
       <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 ">
         <form onSubmit={handleSubmit}>
-          <ImagePreview
-            images={images}
-            onRemove={removeImage}
-          />
+          <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
             className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"

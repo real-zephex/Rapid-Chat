@@ -2,7 +2,6 @@
 import Image from "next/image";
 import { memo, useMemo, useEffect } from "react";
 
-// Memoized component for image preview while typing
 const ImagePreview = memo(
   ({
     images,
@@ -11,7 +10,6 @@ const ImagePreview = memo(
     images: { mimeType: string; data: Uint8Array }[];
     onRemove: (index: number) => void;
   }) => {
-    // Separate and track indices for documents and images
     const { documents, images: imageFiles } = useMemo(() => {
       return images.reduce(
         (acc, item, originalIndex) => {
@@ -35,7 +33,6 @@ const ImagePreview = memo(
       );
     }, [images]);
 
-    // Memoize blob URL creation for images
     const imageUrls = useMemo(() => {
       return imageFiles.map((image) => ({
         url: URL.createObjectURL(
@@ -47,7 +44,7 @@ const ImagePreview = memo(
       }));
     }, [imageFiles]);
 
-    // Cleanup blob URLs when component unmounts or images change
+    // removes the blobs when the component unmounts or images change
     useEffect(() => {
       return () => {
         imageUrls.forEach(({ url }) => URL.revokeObjectURL(url));

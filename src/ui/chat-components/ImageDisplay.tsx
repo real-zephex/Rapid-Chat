@@ -2,11 +2,9 @@
 import Image from "next/image";
 import { memo, useMemo, useEffect } from "react";
 import { MdOutlineDocumentScanner } from "react-icons/md";
-// Memoized component for displaying images to prevent re-creation of blob URLs
+
 const ImageDisplay = memo(
   ({ images }: { images: { mimeType: string; data: Uint8Array }[] }) => {
-    // Memoize blob URL creation to prevent recreation on every render
-
     const documents = useMemo(() => {
       return images.filter((img) => img.mimeType === "application/pdf");
     }, [images]);
