@@ -31,6 +31,7 @@ import rehypeKatex from "rehype-katex";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
+import CopyButton from "./CopyButton";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate & reliable general knowledge",
@@ -51,65 +52,6 @@ type Message = {
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
 };
-
-// Copy button component for code blocks - Memoized to prevent unnecessary re-renders
-const CopyButton = memo(
-  ({
-    text,
-    hasLanguageLabel,
-  }: {
-    text: string;
-    hasLanguageLabel?: boolean;
-  }) => {
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = useCallback(async () => {
-      try {
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("Failed to copy text: ", err);
-      }
-    }, [text]);
-
-    return (
-      <button
-        onClick={handleCopy}
-        className={`absolute ${
-          hasLanguageLabel ? "top-14" : "top-2"
-        } right-2 p-2 rounded-md bg-gray-700/80 hover:bg-gray-600/90 transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
-        title={copied ? "Copied!" : "Copy code"}
-      >
-        {copied ? (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="20,6 9,17 4,12"></polyline>
-          </svg>
-        ) : (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="m5,15 L5,5 A2,2 0 0,1 7,3 L17,3"></path>
-          </svg>
-        )}
-      </button>
-    );
-  }
-);
-CopyButton.displayName = "CopyButton";
 
 // Utility function to convert Uint8Array to data URL for display
 const arrayBufferToDataUrl = (data: Uint8Array, mimeType: string): string => {
@@ -440,7 +382,7 @@ const MessagesContainer = memo(
     onCopyResponse: (content: string) => void;
   }) => {
     return (
-      <div className="container mx-auto max-w-4xl">
+      <div className="container mx-auto max-w-5xl">
         {messages.map((message, index) => (
           <MessageComponent
             key={index}
@@ -464,6 +406,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [model, setModel] = useState<string>("scout");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use ref for input to prevent re-renders on every keystroke
@@ -519,7 +462,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     e.preventDefault();
 
     const input = inputRef.current?.value.trim() || "";
-    if (!input || isLoading) return;
+    if (!input || isLoading || isUploadingImages) return;
 
     const userMessage: Message = {
       role: "user",
@@ -644,33 +587,41 @@ const ChatInterface = ({ id }: { id: string }) => {
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       if (event.target.files) {
-        const file = event.target.files;
-        const fileArray = Array.from(file);
+        setIsUploadingImages(true);
+        try {
+          const file = event.target.files;
+          const fileArray = Array.from(file);
 
-        if (fileArray.length > 5) {
-          alert("You can only upload a maximum of 5 images at a time.");
-          event.target.value = ""; // Clear the input
-          return;
+          if (fileArray.length > 5) {
+            alert("You can only upload a maximum of 5 images at a time.");
+            event.target.value = ""; // Clear the input
+            return;
+          }
+          const validFiles = fileArray.filter((f) => {
+            return f.type.startsWith("image/") && checkFileSize(f);
+          });
+          if (validFiles.length == 0) {
+            alert("No valid image files selected.");
+            event.target.value = ""; // Clear the input
+            return;
+          }
+          const arraizedImages = await Promise.all(
+            validFiles.map(async (f) => {
+              const buffer = await f.arrayBuffer();
+              return {
+                mimeType: f.type,
+                data: new Uint8Array(buffer),
+              };
+            })
+          );
+          setImages(arraizedImages);
+          event.target.value = ""; // Clear the input after successful processing
+        } catch (error) {
+          console.error("Error uploading images:", error);
+          alert("Error uploading images. Please try again.");
+        } finally {
+          setIsUploadingImages(false);
         }
-        const validFiles = fileArray.filter((f) => {
-          return f.type.startsWith("image/") && checkFileSize(f);
-        });
-        if (validFiles.length == 0) {
-          alert("No valid image files selected.");
-          event.target.value = ""; // Clear the input
-          return;
-        }
-        const arraizedImages = await Promise.all(
-          validFiles.map(async (f) => {
-            const buffer = await f.arrayBuffer();
-            return {
-              mimeType: f.type,
-              data: new Uint8Array(buffer),
-            };
-          })
-        );
-        setImages(arraizedImages);
-        event.target.value = ""; // Clear the input after successful processing
       }
     },
     []
@@ -701,7 +652,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-48">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
         <MessagesContainer
           messages={messages}
           model={model}
@@ -770,12 +721,23 @@ const ChatInterface = ({ id }: { id: string }) => {
               </button>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isUploadingImages}
                 className={`${
-                  isLoading ? "bg-teal-700" : "bg-bg hover:bg-teal-600"
+                  isLoading || isUploadingImages
+                    ? "bg-teal-700"
+                    : "bg-bg hover:bg-teal-600"
                 } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
+                title={
+                  isUploadingImages ? "Waiting for images to upload..." : ""
+                }
               >
-                {isLoading ? "..." : <FaArrowCircleRight size={21} />}
+                {isLoading ? (
+                  "..."
+                ) : isUploadingImages ? (
+                  "⏳"
+                ) : (
+                  <FaArrowCircleRight size={21} />
+                )}
               </button>
             </div>
           </div>
