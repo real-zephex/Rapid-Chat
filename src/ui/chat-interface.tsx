@@ -26,6 +26,9 @@ import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
 import { CiSquareInfo } from "react-icons/ci";
+import { useHotkeys } from "react-hotkeys-hook";
+import AudioRecord from "./chat-components/AudioRecord";
+import Whisper from "@/models/openai/whisper";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate facts, safe and clear answers.",
@@ -33,6 +36,8 @@ const modelInformation: Record<string, string> = {
   flash: "Quick, direct, no-frills replies.",
   qwen: "Strong reasoning, handles complex logic.",
   devstral: "Great for coding help and debugging.",
+  gpt4oMini: "Versatile, good for a wide range of tasks.",
+  // sarvam: "Multilingual model, handles multiple languages.",
 };
 
 type Message = {
@@ -84,6 +89,10 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   // Use ref for input to prevent re-renders on every keystroke
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  useHotkeys("shift+esc", (e) => {
+    e.preventDefault();
+    inputRef.current?.focus();
+  });
 
   // Images
   const [images, setImages] = useState<
@@ -319,6 +328,17 @@ const ChatInterface = ({ id }: { id: string }) => {
     return true;
   }, []);
 
+  const setAudio = async (file: Blob) => {
+    console.log("Audio file set:", file);
+    setIsLoading(true);
+    const transcription = await Whisper(file);
+    setIsLoading(false);
+    if (inputRef.current) {
+      inputRef.current.value += transcription;
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100dvh-10px)] relative">
       {/* Delete Button */}
@@ -347,7 +367,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 ">
+      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 border border-white/20">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
@@ -366,14 +386,13 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
               <select
-                className=" text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full text-sm"
+                className=" text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full text-sm bg-neutral-800"
                 value={model}
                 onChange={handleModelChange}
               >
                 {models.map((model) => (
                   <option value={model} key={model} className="text-md">
                     {model}
-                    {/* {modelInformation[model] || "No description available"} */}
                   </option>
                 ))}
               </select>
@@ -385,9 +404,10 @@ const ChatInterface = ({ id }: { id: string }) => {
               </p>
             </div>
             <div className="flex flex-row items-center gap-2">
+              <AudioRecord setAudio={setAudio} />
               {model === "flash" && (
                 <label
-                  className="px-4 h-full py-2 rounded-lg text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                  className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
                   title="Upload file"
                   htmlFor="fileInput"
                 >
@@ -405,7 +425,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               )}
 
               <button
-                className="  px-4 h-full py-2 rounded-lg text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
+                className="h-full p-2 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
                 onClick={() => scrollToBottom()}
                 title="Scroll to bottom"
               >
@@ -418,7 +438,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                   isLoading || isUploadingImages
                     ? "bg-teal-700"
                     : " hover:bg-teal-600"
-                } text-white rounded-lg px-4 h-full py-2 transition-colors duration-300 `}
+                } text-white rounded-full p-2 h-full transition-colors duration-300 `}
                 title={
                   isUploadingImages ? "Waiting for images to upload..." : ""
                 }

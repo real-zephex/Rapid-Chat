@@ -59,6 +59,14 @@ const Sidebar = () => {
     [expand]
   );
 
+  useHotkeys(
+    "esc",
+    () => {
+      setExpanded(false);
+    },
+    [expand]
+  );
+
   return (
     <div className="fixed top-0 left-0 m-4 z-20">
       <button

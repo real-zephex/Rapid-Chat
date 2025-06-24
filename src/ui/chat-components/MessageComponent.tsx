@@ -55,7 +55,7 @@ const MessageComponent = memo(
     if (isUser) {
       return (
         <div className="flex mb-4 justify-end">
-          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700 text-white rounded-2xl rounded-br-lg">
+          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700 text-white rounded-l-3xl rounded-br-3xl">
             <div className="text-white whitespace-pre-wrap text-lg leading-7">
               {message.images && message.images.length > 0 && (
                 <ImageDisplay images={message.images} />
@@ -69,8 +69,8 @@ const MessageComponent = memo(
 
     return (
       <div className="flex mb-4 justify-start">
-        <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-800 text-white rounded-2xl rounded-bl-lg">
-          <div className="prose prose-invert prose-lg max-w-none leading-7">
+        <div className="max-w-full lg:max-w-[85%] p-4 shadow-sm bg-neutral-800/90 text-white rounded-r-3xl rounded-bl-3xl">
+          <div className="prose prose-invert prose-lg max-w-none leading-8">
             <div className="flex flex-col p-1">
               <div className="flex flex-row items-center mb-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
@@ -206,7 +206,7 @@ const MessageComponent = memo(
                   },
                   li: ({ children, ...props }) => (
                     <li
-                      className="text-lg text-white list-disc pl-4 leading-6.5"
+                      className="text-lg text-white list-disc pl-4 leading-8"
                       {...props}
                     >
                       {children}

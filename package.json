@@ -18,7 +18,7 @@
     "next": "15.3.4",
     "nextjs-google-analytics": "^2.3.7",
     "nextjs-toploader": "^3.8.16",
-    "openai": "^5.5.1",
+    "openai": "^5.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hotkeys-hook": "^5.1.0",

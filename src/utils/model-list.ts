@@ -5,6 +5,7 @@ export const models = [
   "qwen",
   "scout",
   "devstral",
+  "gpt4oMini",
   // "deepseek",
   // "phi4",
   // "phi4plus",
