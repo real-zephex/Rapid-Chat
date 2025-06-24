@@ -39,49 +39,104 @@ const Sidebar = () => {
   );
 
   return (
-    <div className="fixed top-0 left-0 m-4 z-20 ">
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          setExpanded((prev) => !prev);
-        }}
-      >
-        <BsLayoutSidebarInsetReverse
-          size={18}
-          className={`${
-            expand ? "rotate-180" : "rotate-0"
-          } transition-all duration-300 ease-in-out`}
-        />
-      </button>
+    <div className="fixed top-0 left-0 m-4 z-20">
+      <div className="flex flex-row items-center gap-2">
+        <button
+          className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/10"
+          onClick={(e) => {
+            e.preventDefault();
+            setExpanded((prev) => !prev);
+          }}
+          title="Toggle Command Center (Ctrl+K)"
+        >
+          <BsLayoutSidebarInsetReverse
+            size={18}
+            className={`${
+              expand ? "rotate-180" : "rotate-0"
+            } transition-all duration-300 ease-in-out text-gray-300 group-hover:text-white`}
+          />
+        </button>
+      </div>
 
       {expand && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-white/10 bg-bg/10 p-4 rounded-xl shadow-xl backdrop-blur-xl max-w-3xl w-full flex flex-col gap-2">
-          <h2 className="text-lg ">Rapid Chat</h2>
-          <hr />
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-white/20 bg-bg/20 p-6 rounded-2xl shadow-2xl backdrop-blur-2xl max-w-4xl w-full flex flex-col gap-4 animate-in fade-in-0 zoom-in-95 duration-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Rapid Chat
+              </h2>
+            </div>
+            <div className="text-xs text-gray-400 font-mono">Ctrl+K</div>
+          </div>
+
+          <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+
           <button
-            className="p-2 rounded hover:bg-bg/30 transition-colors flex flex-row justify-center items-center cursor-pointer relative border border-white/10"
+            className="group p-4 rounded-xl hover:bg-white/10 transition-all duration-300 flex flex-row justify-center items-center cursor-pointer relative border border-white/10 hover:border-white/20 hover:shadow-lg hover:scale-[1.02] bg-gradient-to-r from-blue-500/10 to-purple-500/10"
             onClick={(e) => handlePress(e, router)}
           >
-            + New Chat
+            <span className="text-sm font-medium group-hover:text-white transition-colors">
+              ✨ New Chat
+            </span>
           </button>
-          <div className="flex flex-col gap-2  p-2 max-h-80  overflow-y-auto">
-            {tabs.map((tab) => (
-              <div
-                key={tab}
-                className="p-2 rounded hover:bg-bg/30 transition-colors flex flex-row justify-between items-center cursor-pointer relative border border-white/10"
-                onClick={() => {
-                  router.push(`/chat/${tab}`);
-                  // setExpanded(false);
-                }}
-              >
-                {pathname === tab && (
-                  <div className="absolute -top-4 -left-2 m-2">
-                    <FaMapPin size={18} className="text-text" />
-                  </div>
-                )}
-                {tab}
+
+          <div className="flex flex-col gap-2 p-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+            {tabs.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <div className="text-2xl mb-2">💬</div>
+                <p className="text-sm">
+                  No chats yet. Start a new conversation!
+                </p>
               </div>
-            ))}
+            ) : (
+              tabs.map((tab, index) => (
+                <div
+                  key={tab}
+                  className={`group p-3 rounded-xl hover:bg-white/10 transition-all duration-300 flex flex-row justify-between items-center cursor-pointer relative border hover:border-white/20 hover:shadow-md hover:scale-[1.01] ${
+                    pathname === tab
+                      ? "border-blue-400/50 bg-blue-500/10 shadow-lg shadow-blue-500/20"
+                      : "border-white/10"
+                  }`}
+                  onClick={() => {
+                    router.push(`/chat/${tab}`);
+                    setExpanded(false);
+                  }}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                  }}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {pathname === tab ? (
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse flex-shrink-0"></div>
+                    ) : (
+                      <div className="w-2 h-2 bg-gray-600 rounded-full group-hover:bg-gray-400 transition-colors flex-shrink-0"></div>
+                    )}
+                    <span
+                      className={`text-sm font-medium truncate ${
+                        pathname === tab
+                          ? "text-blue-200"
+                          : "text-gray-300 group-hover:text-white"
+                      } transition-colors`}
+                    >
+                      {tab}
+                    </span>
+                  </div>
+
+                  {pathname === tab && (
+                    <div className="flex-shrink-0 ml-2">
+                      <FaMapPin size={14} className="text-blue-400" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-white/10">
+            <div className="text-xs text-gray-500">
+              {tabs.length} chat{tabs.length !== 1 ? "s" : ""}
+            </div>
           </div>
         </div>
       )}

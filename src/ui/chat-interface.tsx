@@ -357,7 +357,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50"
+            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50 backdrop-blur-2xl"
             rows={3}
             placeholder="Type your message..."
             onKeyDown={(e) => {
