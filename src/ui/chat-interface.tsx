@@ -328,13 +328,9 @@ const ChatInterface = ({ id }: { id: string }) => {
     return true;
   }, []);
 
-  const setAudio = async (file: Blob) => {
-    console.log("Audio file set:", file);
-    setIsLoading(true);
-    const transcription = await Whisper(file);
-    setIsLoading(false);
+  const setAudio = (file: Blob) => {
     if (inputRef.current) {
-      inputRef.current.value += transcription;
+      inputRef.current.value = "Sorry but this feature is currently disabled.";
       inputRef.current.focus();
     }
   };
