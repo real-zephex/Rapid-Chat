@@ -325,9 +325,9 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-20px)] relative">
+    <div className="flex flex-col h-[calc(100dvh-10px)] relative">
       {/* Delete Button */}
-      <div className="absolute top-0 left-0 m-4 z-20">
+      <div className="absolute top-0 right-0 m-4 z-20">
         <button
           className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
           onClick={() => {
