@@ -1,14 +1,14 @@
 "use server";
 
 import FlashLite from "./google/gemini-2.5-flash-lite";
-import CompoundBeta from "./groq/compound";
+// import CompoundBeta from "./groq/compound";
 import LlamaScout from "./groq/llama-scout";
 import Qwen from "./groq/qwen";
-import Deepseek from "./openrouter/deepseek";
+// import Deepseek from "./openrouter/deepseek";
 import Devstral from "./openrouter/devstral";
-import Phi4 from "./openrouter/phi-4-reasoning";
-import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
-import Sarvam from "./openrouter/sarvam";
+// import Phi4 from "./openrouter/phi-4-reasoning";
+// import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
+// import Sarvam from "./openrouter/sarvam";
 import { incomingData, Messages } from "./types";
 import LlamaInstant81 from "./groq/llama-8.1b-instant";
 

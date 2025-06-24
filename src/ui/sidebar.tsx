@@ -1,8 +1,8 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
-import { useEffect, useState } from "react";
-import { retrieveTabs } from "@/utils/indexedDB";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 import { usePathname, useRouter } from "next/navigation";
 import { FaMapPin } from "react-icons/fa";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -11,14 +11,35 @@ import { handlePress } from "./get-started";
 const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);
   const [tabs, setTabs] = useState<string[]>([]);
+  const [tabTitles, setTabTitles] = useState<Record<string, string>>({});
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
+
+  const getTitle = (id: string) => {
+    return tabTitles[id] || "Loading...";
+  };
 
   useEffect(() => {
     const fetchTabs = async () => {
       const tabs = await retrieveTabs();
       setTabs(tabs);
+
+      const titles: Record<string, string> = {};
+      for (const tab of tabs) {
+        const chats = await retrieveChats(tab);
+        if (chats.length === 0) {
+          titles[tab] = "New Chat";
+        } else {
+          const lastMessage = chats[chats.length - 1];
+          titles[tab] =
+            lastMessage.role === "user"
+              ? lastMessage.content.slice(0, 80) +
+                (lastMessage.content.length > 80 ? "..." : "")
+              : lastMessage.content.slice(0, 80) + "...";
+        }
+      }
+      setTabTitles(titles);
     };
 
     fetchTabs();
@@ -40,23 +61,21 @@ const Sidebar = () => {
 
   return (
     <div className="fixed top-0 left-0 m-4 z-20">
-      <div className="flex flex-row items-center gap-2">
-        <button
-          className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/10"
-          onClick={(e) => {
-            e.preventDefault();
-            setExpanded((prev) => !prev);
-          }}
-          title="Toggle Command Center (Ctrl+K)"
-        >
-          <BsLayoutSidebarInsetReverse
-            size={18}
-            className={`${
-              expand ? "rotate-180" : "rotate-0"
-            } transition-all duration-300 ease-in-out text-gray-300 group-hover:text-white`}
-          />
-        </button>
-      </div>
+      <button
+        className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/10"
+        onClick={(e) => {
+          e.preventDefault();
+          setExpanded((prev) => !prev);
+        }}
+        title="Toggle Command Center (Ctrl+K)"
+      >
+        <BsLayoutSidebarInsetReverse
+          size={18}
+          className={`${
+            expand ? "rotate-180" : "rotate-0"
+          } transition-all duration-300 ease-in-out text-gray-300 group-hover:text-white`}
+        />
+      </button>
 
       {expand && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-white/20 bg-bg/20 p-6 rounded-2xl shadow-2xl backdrop-blur-2xl max-w-4xl w-full flex flex-col gap-4 animate-in fade-in-0 zoom-in-95 duration-200">
@@ -116,10 +135,10 @@ const Sidebar = () => {
                       className={`text-sm font-medium truncate ${
                         pathname === tab
                           ? "text-blue-200"
-                          : "text-gray-300 group-hover:text-white"
+                          : "text-gray-300 group-hover:text-white line-clamp-1"
                       } transition-colors`}
                     >
-                      {tab}
+                      {getTitle(tab) || `Chat ${index + 1}`}
                     </span>
                   </div>
 

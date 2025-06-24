@@ -17,7 +17,6 @@ import {
 import {
   FaArrowCircleDown,
   FaArrowCircleRight,
-  FaCopy,
   FaUpload,
 } from "react-icons/fa";
 import ModelProvider from "@/models";
@@ -26,18 +25,14 @@ import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
+import { CiSquareInfo } from "react-icons/ci";
 
 const modelInformation: Record<string, string> = {
-  scout: "Accurate & reliable general knowledge",
-  // compound: "Fast and reliable model (with internet access)",
-  llama_instant: "Ultra-fast & conversational",
-  flash: "Direct & concise for quick facts",
-  qwen: "Deep reasoning & expert analysis",
-  devstral: "Coding assistant & practical solutions",
-  // deepseek: "Deep learning optimized model",
-  // phi4: "Advanced AI model (overthinks)",
-  // phi4plus: "Enhanced version of Phi4 (overthinks even more)",
-  // sarvam: "Sarvam model (Multilingual)",
+  scout: "Accurate facts, safe and clear answers.",
+  llama_instant: "Ultra-fast, smooth chat flow.",
+  flash: "Quick, direct, no-frills replies.",
+  qwen: "Strong reasoning, handles complex logic.",
+  devstral: "Great for coding help and debugging.",
 };
 
 type Message = {
@@ -179,7 +174,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       let assistantMessage = "";
       let lastDisplayContent = "";
       let updateCounter = 0;
-      const UPDATE_THROTTLE = 3; // Update UI every 3 chunks for smoother performance
+      const UPDATE_THROTTLE = 2; // Update UI every 2 chunks for smoother performance
 
       setMessages((prev) => [
         ...prev,
@@ -281,7 +276,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
           if (fileArray.length > 5) {
             alert("You can only upload a maximum of 5 images at a time.");
-            event.target.value = ""; 
+            event.target.value = "";
             return;
           }
           const validFiles = fileArray.filter((f) => {
@@ -292,7 +287,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           });
           if (validFiles.length == 0) {
             alert("No valid image files selected.");
-            event.target.value = ""; 
+            event.target.value = "";
             return;
           }
           const arraizedImages = await Promise.all(
@@ -305,7 +300,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             })
           );
           setImages(arraizedImages);
-          event.target.value = ""; 
+          event.target.value = "";
         } catch (error) {
           console.error("Error uploading images:", error);
           alert("Error uploading images. Please try again.");
@@ -367,6 +362,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               }
             }}
           ></textarea>
+
           <div className="flex justify-between items-center gap-2 mt-2 ">
             <div className="flex flex-row items-center gap-2">
               <select
@@ -376,11 +372,17 @@ const ChatInterface = ({ id }: { id: string }) => {
               >
                 {models.map((model) => (
                   <option value={model} key={model} className="text-md">
-                    {model} -{" "}
-                    {modelInformation[model] || "No description available"}
+                    {model}
+                    {/* {modelInformation[model] || "No description available"} */}
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">
+              <CiSquareInfo size={22} color="cyan" />
+              <p className="line-clamp-1">
+                {modelInformation[model] || "general tasks"}
+              </p>
             </div>
             <div className="flex flex-row items-center gap-2">
               {model === "flash" && (
@@ -430,6 +432,13 @@ const ChatInterface = ({ id }: { id: string }) => {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
+            <CiSquareInfo size={22} color="cyan" />
+            <p className="line-clamp-1">
+              {modelInformation[model] || "general tasks"}
+            </p>
           </div>
         </form>
       </div>

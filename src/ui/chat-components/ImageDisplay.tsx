@@ -5,6 +5,7 @@ import { MdOutlineDocumentScanner } from "react-icons/md";
 
 const ImageDisplay = memo(
   ({ images }: { images: { mimeType: string; data: Uint8Array }[] }) => {
+    console.log(images);
     const documents = useMemo(() => {
       return images.filter((img) => img.mimeType === "application/pdf");
     }, [images]);
