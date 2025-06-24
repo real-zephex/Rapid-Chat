@@ -332,7 +332,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (inputRef.current) {
       inputRef.current.value = "Sorry but this feature is currently disabled.";
       inputRef.current.focus();
-    }
+    } 
   };
 
   return (
