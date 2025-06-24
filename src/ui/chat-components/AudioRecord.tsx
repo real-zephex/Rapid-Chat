@@ -47,7 +47,7 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       };
 
       newMediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
         setAudio(audioBlob);
         newStream.getTracks().forEach((track) => track.stop());
       };
