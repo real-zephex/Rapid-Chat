@@ -28,7 +28,6 @@ import MessageComponent from "./chat-components/MessageComponent";
 import { CiSquareInfo } from "react-icons/ci";
 import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
-import Whisper from "@/models/openai/whisper";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate facts, safe and clear answers.",
@@ -322,6 +321,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   );
 
   const checkFileSize = useCallback((file: File) => {
+    // wanted size in MB * bytes * kilobytes
     if (file.size > 10 * 1024 * 1024) {
       return false;
     }
@@ -332,7 +332,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (inputRef.current) {
       inputRef.current.value = "Sorry but this feature is currently disabled.";
       inputRef.current.focus();
-    } 
+    }
   };
 
   return (
