@@ -2,11 +2,24 @@
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
+import { addTabs, retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 import { usePathname, useRouter } from "next/navigation";
 import { FaMapPin } from "react-icons/fa";
 import { useHotkeys } from "react-hotkeys-hook";
-import { handlePress } from "./get-started";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { v4 as uuidv4 } from "uuid";
+
+export async function handlePress(
+  event: React.MouseEvent<HTMLButtonElement>,
+  router: AppRouterInstance
+) {
+  event.preventDefault();
+
+  const uuid = uuidv4();
+  await addTabs(uuid);
+  window.dispatchEvent(new Event("new-tab"));
+  router.push("/chat/" + uuid);
+}
 
 const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);
