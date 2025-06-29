@@ -3,7 +3,7 @@ import { useState, useEffect, JSX } from "react";
 import { AiFillAudio } from "react-icons/ai";
 
 interface AudioRecordProps {
-  setAudio: (file: Blob) => void;
+  setAudio: (file: Blob | null) => void;
 }
 
 const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
@@ -47,8 +47,19 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       };
 
       newMediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
-        setAudio(audioBlob);
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+        const audioURL = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioURL);
+
+        audio.onloadeddata = () => {
+          if (audio.duration <= 2 || audio.duration > 300) {
+            setAudio(null);
+          } else {
+            setAudio(audioBlob);
+          }
+        };
+
         newStream.getTracks().forEach((track) => track.stop());
       };
 

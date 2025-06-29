@@ -13,6 +13,7 @@ import { incomingData, Messages } from "./types";
 import LlamaInstant81 from "./groq/llama-8.1b-instant";
 import GPT4oMini from "./openai/gpt-4o-mini";
 import Sarvam from "./openrouter/sarvam";
+import CompoundBeta from "./groq/compound";
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
 
@@ -27,7 +28,7 @@ export interface fileUploads {
 const mappings: Record<string, ModelFunction> = {
   llama_instant: LlamaInstant81,
   flash: FlashLite,
-  // compound: CompoundBeta,
+  compound: CompoundBeta,
   qwen: Qwen,
   scout: LlamaScout,
   devstral: Devstral,

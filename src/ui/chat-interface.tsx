@@ -28,6 +28,8 @@ import MessageComponent from "./chat-components/MessageComponent";
 import { CiSquareInfo } from "react-icons/ci";
 import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
+import Whisper from "@/models/groq/whisper";
+import { ImCloudUpload } from "react-icons/im";
 
 const modelInformation: Record<string, string> = {
   scout: "Accurate facts, safe and clear answers.",
@@ -36,7 +38,7 @@ const modelInformation: Record<string, string> = {
   qwen: "Strong reasoning, handles complex logic.",
   devstral: "Great for coding help and debugging.",
   gpt4oMini: "Versatile, good for a wide range of tasks.",
-  // sarvam: "Multilingual model, handles multiple languages.",
+  compound: "Model with access to internet.",
 };
 
 type Message = {
@@ -328,10 +330,19 @@ const ChatInterface = ({ id }: { id: string }) => {
     return true;
   }, []);
 
-  const setAudio = (file: Blob) => {
-    if (inputRef.current) {
-      inputRef.current.value = "Sorry but this feature is currently disabled.";
-      inputRef.current.focus();
+  const setAudio = async (file: Blob | null) => {
+    const input = inputRef.current!;
+
+    if (file === null) {
+      input.value =
+        "Please make sure that the audio is larger than 2 seconds and less than 5 minutes long. This feature costs siginificantly more so please use it responsibly.";
+    } else {
+      const text = await Whisper(file);
+      input.value = text.toString();
+
+      //   text || "Sorry but this feature is currently disabled.";
+      // inputRef.current.focus();
+      // const url = URL.createObjectURL(file);
     }
   };
 
@@ -440,7 +451,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 }
               >
                 {isLoading ? (
-                  "..."
+                  <ImCloudUpload size={18} />
                 ) : isUploadingImages ? (
                   "⏳"
                 ) : (
