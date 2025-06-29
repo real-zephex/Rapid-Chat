@@ -182,7 +182,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       let assistantMessage = "";
       let lastDisplayContent = "";
       let updateCounter = 0;
-      const UPDATE_THROTTLE = 2; // Update UI every 2 chunks for smoother performance
+      const UPDATE_THROTTLE = 3; // Update UI every 3 chunks for optimal balance
 
       setMessages((prev) => [
         ...prev,
