@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, JSX } from "react";
+import { isMobile } from "react-device-detect";
 import { AiFillAudio } from "react-icons/ai";
 
 interface AudioRecordProps {
@@ -7,6 +8,10 @@ interface AudioRecordProps {
 }
 
 const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
+  if (isMobile) {
+    return <></>;
+  }
+
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
