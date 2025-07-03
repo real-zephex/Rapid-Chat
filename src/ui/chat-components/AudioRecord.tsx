@@ -38,7 +38,11 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       }
 
       const newStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        },
       });
       setStream(newStream);
 
@@ -59,6 +63,7 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
 
         audio.onloadeddata = () => {
           if (audio.duration <= 2 || audio.duration > 300) {
+            console.log(audio.duration);
             setAudio(null);
           } else {
             setAudio(audioBlob);
