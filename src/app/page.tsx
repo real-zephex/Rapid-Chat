@@ -51,13 +51,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-
-        {/* Tech Stack
-        <div className="text-center">
-          <p className="text-gray-500 font-light">
-            Built with Next.js, TypeScript, IndexedDB, Multi-API
-          </p>
-        </div> */}
       </div>
     </div>
   );

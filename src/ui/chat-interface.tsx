@@ -138,6 +138,12 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, []);
 
   useEffect(() => {
+    if (images.length > 0) {
+      setModel("flash")
+    }
+  }, [model, images]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [isLoading]);
 
