@@ -34,9 +34,9 @@ export const models = [
     code: "devstral",
     image: true,
   },
-  {
-    name: "GPT 4.0 Mini",
-    code: "gpt4oMini",
-    image: false,
-  },
+  // {
+  //   name: "GPT 4.0 Mini",
+  //   code: "gpt4oMini",
+  //   image: false,
+  // },
 ];
