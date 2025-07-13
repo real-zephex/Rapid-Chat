@@ -209,7 +209,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           typeof value === "string" ? value : new TextDecoder().decode(value);
         assistantMessage += text;
         updateCounter++;
-        
+
         const { displayContent, reasoning } =
           processMessageContent(assistantMessage);
 
@@ -404,8 +404,12 @@ const ChatInterface = ({ id }: { id: string }) => {
                 onChange={handleModelChange}
               >
                 {models.map((model) => (
-                  <option value={model} key={model} className="text-md">
-                    {model}
+                  <option
+                    value={model.code}
+                    key={model.code}
+                    className="text-md"
+                  >
+                    {model.name}
                   </option>
                 ))}
               </select>
@@ -418,25 +422,26 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
             <div className="flex flex-row items-center gap-2">
               <AudioRecord setAudio={setAudio} />
-              {model === "flash" ||
-                (model === "scout" && (
-                  <label
-                    className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                    title="Upload file"
-                    htmlFor="fileInput"
-                  >
-                    <input
-                      name="file"
-                      type="file"
-                      accept="image/png, application/pdf, image/jpeg, image/jpg"
-                      className="hidden"
-                      id="fileInput"
-                      onChange={handleFileChange}
-                      multiple
-                    />
-                    <FaUpload size={18} />
-                  </label>
-                ))}
+              {model == "scout" || model === "flash" ? (
+                <label
+                  className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                  title="Upload file"
+                  htmlFor="fileInput"
+                >
+                  <input
+                    name="file"
+                    type="file"
+                    accept="image/png, application/pdf, image/jpeg, image/jpg"
+                    className="hidden"
+                    id="fileInput"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                  <FaUpload size={18} />
+                </label>
+              ) : (
+                <></>
+              )}
 
               <button
                 className="h-full p-2 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
