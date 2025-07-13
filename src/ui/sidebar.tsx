@@ -61,7 +61,7 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener("new-tab", fetchTabs);
     };
-  }, [tabs]);
+  }, []);
 
   useHotkeys(
     "ctrl+k",
