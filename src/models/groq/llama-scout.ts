@@ -47,7 +47,26 @@ async function* LlamaScout({ inc }: { inc: incomingData }) {
       ...inc.chats,
       {
         role: "user",
-        content: inc.message,
+        content: [
+          { type: "text", text: inc.message },
+          ...(inc.imageData
+            ? inc.imageData
+                .filter(
+                  (img) =>
+                    img.mimeType === "image/png" ||
+                    img.mimeType === "image/jpeg" ||
+                    img.mimeType === "image/jpg"
+                )
+                .map((img) => ({
+                  type: "image_url" as "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${Buffer.from(
+                      img.data
+                    ).toString("base64")}`,
+                  },
+                }))
+            : []),
+        ],
       },
     ],
     model: "meta-llama/llama-4-scout-17b-16e-instruct",

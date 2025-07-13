@@ -1,6 +1,6 @@
 export const models = [
   // "compound",
-  "llama_instant",
+  // "llama_instant",
   "flash",
   "qwen",
   "scout",
