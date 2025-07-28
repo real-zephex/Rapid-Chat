@@ -71,7 +71,7 @@ const ModelProvider = ({
       } catch (error) {
         console.error("Stream error:", error);
         controller.enqueue(
-          `event: error\ndata: ${JSON.stringify({ error })}\n\n`
+          `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`
         );
         controller.close();
       }
