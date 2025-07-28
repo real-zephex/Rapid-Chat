@@ -1,18 +1,3 @@
-// const models = [
-//   // "compound",
-//   // "llama_instant",
-//   "flash",
-//   "qwen",
-//   "scout",
-//   "devstral",
-//   "gpt4oMini",
-//   // "compound",
-//   // "deepseek",
-//   // "phi4",
-//   // "phi4plus",
-//   // "sarvam",
-// ];
-
 export const models = [
   {
     name: "Gemini Flash 2.5 Lite",

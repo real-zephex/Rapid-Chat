@@ -61,14 +61,34 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
         const audioURL = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioURL);
 
-        audio.onloadeddata = () => {
-          if (audio.duration <= 2 || audio.duration > 300) {
-            console.log(audio.duration);
-            setAudio(null);
+        // Workaround for Chromium browsers where audio.duration is Infinity
+        const checkDuration = () => {
+          if (audio.duration === Infinity) {
+            audio.currentTime = Number.MAX_SAFE_INTEGER;
+            audio.ontimeupdate = () => {
+              audio.ontimeupdate = null;
+              audio.currentTime = 0;
+              if (audio.duration <= 2 || audio.duration > 300) {
+                console.log(`Audio duration: ${audio.duration}`);
+                setAudio(null);
+              } else {
+                setAudio(audioBlob);
+              }
+            };
           } else {
-            setAudio(audioBlob);
+            if (audio.duration <= 2 || audio.duration > 300) {
+              console.log(`Audio duration: ${audio.duration}`);
+              setAudio(null);
+            } else {
+              setAudio(audioBlob);
+            }
           }
         };
+        audio.onloadedmetadata = checkDuration;
+        // In some browsers, loadedmetadata may have already fired
+        if (audio.readyState >= 1) {
+          checkDuration();
+        }
 
         newStream.getTracks().forEach((track) => track.stop());
       };
