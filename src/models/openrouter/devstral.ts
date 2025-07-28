@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 async function* Devstral({ inc }: { inc: incomingData }) {
   const completion = await openai.chat.completions.create({
-    model: "mistralai/devstral-small:free",
+    model: "mistralai/devstral-small-2505:free",
     messages: [
       {
         role: "system",
