@@ -12,7 +12,8 @@ import Devstral from "./openrouter/devstral";
 import { incomingData, Messages } from "./types";
 import LlamaInstant81 from "./groq/llama-8.1b-instant";
 import GPT4oMini from "./openai/gpt-4o-mini";
-import Sarvam from "./openrouter/sarvam";
+// import Sarvam from "./openrouter/sarvam";
+import VeniceUncensored from "./openrouter/venice_uncensored";
 import CompoundBeta from "./groq/compound";
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
@@ -33,6 +34,7 @@ const mappings: Record<string, ModelFunction> = {
   scout: LlamaScout,
   devstral: Devstral,
   gpt4oMini: GPT4oMini,
+  venice_uncensored: VeniceUncensored,
   // deepseek: Deepseek,
   //   phi4: Phi4,
   //   phi4plus: Phi4Plus,
@@ -78,7 +80,5 @@ const ModelProvider = ({
 
   return stream;
 };
-
-
 
 export default ModelProvider;

@@ -39,6 +39,7 @@ const modelInformation: Record<string, string> = {
   devstral: "Great for coding help and debugging.",
   gpt4oMini: "Versatile, good for a wide range of tasks.",
   compound: "Model with access to internet.",
+  venice_uncensored: "Unfiltered, unbiased information.",
 };
 
 type Message = {
