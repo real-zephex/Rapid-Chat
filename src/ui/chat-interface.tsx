@@ -31,16 +31,9 @@ import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
 
-const modelInformation: Record<string, string> = {
-  scout: "Accurate facts, safe and clear answers.",
-  llama_instant: "Ultra-fast, smooth chat flow.",
-  flash: "Quick, direct, no-frills replies.",
-  qwen: "Strong reasoning, handles complex logic.",
-  devstral: "Great for coding help and debugging.",
-  gpt4oMini: "Versatile, good for a wide range of tasks.",
-  compound: "Model with access to internet.",
-  venice_uncensored: "Unfiltered, unbiased information.",
-};
+const modelInformation: Record<string, string> = Object.fromEntries(
+  models.map((model) => [model.code, model.description])
+);
 
 type Message = {
   role: "user" | "assistant";
@@ -144,13 +137,12 @@ const ChatInterface = ({ id }: { id: string }) => {
   //   }
   // }, [model, images]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [isLoading]);
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const input = inputRef.current?.value.trim() || "";
     if (!input || isLoading || isUploadingImages) return;
 
@@ -181,7 +173,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }),
         imageData: images,
       });
-
+      setImages([]);
       if (!(response instanceof ReadableStream)) {
         throw new Error("Expected a ReadableStream response");
       }
@@ -261,7 +253,6 @@ const ChatInterface = ({ id }: { id: string }) => {
       ]);
     } finally {
       setIsLoading(false);
-      setImages([]); // Clear images after processing
     }
   };
 
@@ -292,14 +283,14 @@ const ChatInterface = ({ id }: { id: string }) => {
           const fileArray = Array.from(file);
 
           if (fileArray.length > 5) {
-            alert("You can only upload a maximum of 5 images at a time.");
+            alert("You can only upload a maximum of 5 files at a time.");
             event.target.value = "";
             return;
           }
           const validFiles = fileArray.filter((f) => {
             return (
-              f.type.startsWith("image/") ||
-              (f.type.startsWith("application/pdf") && checkFileSize(f))
+              (f.type.startsWith("image/") || f.type === "application/pdf") &&
+              checkFileSize(f)
             );
           });
           if (validFiles.length == 0) {
@@ -423,7 +414,9 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
             <div className="flex flex-row items-center gap-2">
               <AudioRecord setAudio={setAudio} />
-              {model == "scout" || model === "flash" ? (
+              {models.find(
+                (item) => item.image === true && item.code === model
+              ) ? (
                 <label
                   className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
                   title="Upload file"
@@ -432,7 +425,9 @@ const ChatInterface = ({ id }: { id: string }) => {
                   <input
                     name="file"
                     type="file"
-                    accept="image/png, application/pdf, image/jpeg, image/jpg"
+                    accept={`image/png, image/jpeg, image/jpg, ${
+                      model !== "scout" ? "application/pdf" : ""
+                    }`}
                     className="hidden"
                     id="fileInput"
                     onChange={handleFileChange}

@@ -15,6 +15,8 @@ import GPT4oMini from "./openai/gpt-4o-mini";
 // import Sarvam from "./openrouter/sarvam";
 import VeniceUncensored from "./openrouter/venice_uncensored";
 import CompoundBeta from "./groq/compound";
+import Deepseek from "./openrouter/deepseek";
+import Gemma3 from "./google/gemma3";
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
 
@@ -35,8 +37,9 @@ const mappings: Record<string, ModelFunction> = {
   devstral: Devstral,
   gpt4oMini: GPT4oMini,
   venice_uncensored: VeniceUncensored,
-  // deepseek: Deepseek,
-  //   phi4: Phi4,
+  deepseek: Deepseek,
+  gemma3: Gemma3,
+  // phi4: Phi4,
   //   phi4plus: Phi4Plus,
   // sarvam: Sarvam,
 };

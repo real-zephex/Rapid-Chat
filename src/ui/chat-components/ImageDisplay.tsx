@@ -34,45 +34,42 @@ const ImageDisplay = memo(
     }, [imageUrls]);
 
     return (
-      <div className="flex flex-col gap-2 mt-2 mb-2">
+      <div className="flex flex-row overflow-x-auto items-center gap-2 mt-2 mb-2 w-full">
         {imageUrls &&
           imageUrls.map((dataUrl, index) => (
             <div key={index} className="relative">
               <Image
                 src={dataUrl}
                 alt={`Uploaded image ${index + 1}`}
-                width={300}
+                width={100}
                 height={200}
                 className="max-w-xs max-h-48 object-cover rounded-lg border border-gray-600"
-                style={{
-                  width: "auto",
-                  height: "auto",
-                  maxWidth: "300px",
-                  maxHeight: "192px",
-                }}
+                // style={{
+                //   width: "auto",
+                //   height: "auto",
+                //   maxWidth: "300px",
+                //   maxHeight: "192px",
+                // }}
                 unoptimized={true}
               />
             </div>
           ))}
-        {documents.length > 0 && (
-          <div className="flex flex-row gap-2 mt-2 mb-2 overflow-x-auto">
-            {documents.map((doc, index) => (
-              <a
-                key={index}
-                href={URL.createObjectURL(
-                  new Blob([new Uint8Array(doc.data)], {
-                    type: doc.mimeType,
-                  })
-                )}
-                download={`document-${index + 1}.pdf`}
-                className="text-sm bg-neutral-800 p-1 rounded-lg px-2 flex flex-row items-center gap-1 hover:bg-neutral-600 transition-colors duration-200 "
-              >
-                <MdOutlineDocumentScanner />
-                Document {index + 1}
-              </a>
-            ))}
-          </div>
-        )}
+        {documents.length > 0 &&
+          documents.map((doc, index) => (
+            <a
+              key={index}
+              href={URL.createObjectURL(
+                new Blob([new Uint8Array(doc.data)], {
+                  type: doc.mimeType,
+                })
+              )}
+              download={`document-${index + 1}.pdf`}
+              className="text-xs bg-neutral-800 p-1 rounded-lg px-2 flex flex-row items-center gap-1 hover:bg-neutral-600 transition-colors duration-200"
+            >
+              <MdOutlineDocumentScanner />
+              Document {index + 1}
+            </a>
+          ))}
       </div>
     );
   }

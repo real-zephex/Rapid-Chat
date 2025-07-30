@@ -1,12 +1,12 @@
 import OpenAI from "openai";
-import { Messages } from "../types";
+import { incomingData } from "../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function* Deepseek(message: string, chats: Messages[]) {
+async function* Deepseek({ inc }: { inc: incomingData }) {
   const completion = await openai.chat.completions.create({
     model: "deepseek/deepseek-r1-0528:free",
     messages: [
@@ -49,15 +49,16 @@ async function* Deepseek(message: string, chats: Messages[]) {
           Your goal is to make learning and problem-solving more effective — and more enjoyable — for everyone who interacts with you.
           `,
       },
-      ...chats,
+      ...inc.chats,
       {
         role: "user",
-        content: message,
+        content: inc.message,
       },
     ],
     stream: true,
-    max_completion_tokens: 8192,
+    max_completion_tokens: 40000,
     temperature: 0.8,
+    top_p: 0.95,
   });
 
   for await (const chunk of completion) {

@@ -71,7 +71,7 @@ async function* FlashLite({ inc }: { inc: incomingData }) {
       ];
 
   const stream = await ai.models.generateContentStream({
-    model: "gemini-2.5-flash-lite-preview-06-17",
+    model: "gemini-2.5-flash-lite",
     config: systemPrompt,
     contents,
   });
