@@ -34,8 +34,8 @@ async function* VeniceUncensored({ inc }: { inc: incomingData }) {
       },
     ],
     stream: true,
-    max_completion_tokens: 16000,
-    temperature: 0.8,
+    max_completion_tokens: 8192,
+    temperature: 1,
   });
 
   for await (const chunk of completion) {
