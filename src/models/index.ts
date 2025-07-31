@@ -10,7 +10,7 @@ import Devstral from "./openrouter/devstral";
 // import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
 // import Sarvam from "./openrouter/sarvam";
 import { incomingData, Messages } from "./types";
-import LlamaInstant81 from "./groq/llama-8.1b-instant";
+import LlamaInstant from "./groq/llama-8.1b-instant";
 import GPT4oMini from "./openai/gpt-4o-mini";
 // import Sarvam from "./openrouter/sarvam";
 import VeniceUncensored from "./openrouter/venice_uncensored";
@@ -29,7 +29,7 @@ export interface fileUploads {
 // )
 
 const mappings: Record<string, ModelFunction> = {
-  llama_instant: LlamaInstant81,
+  llama_instant: LlamaInstant,
   flash: FlashLite,
   compound: CompoundBeta,
   qwen: Qwen,

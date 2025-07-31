@@ -1,4 +1,6 @@
 import GetStarted from "@/ui/get-started";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   const features = [
@@ -20,7 +22,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-[calc(100dvh-20px)]  text-white flex items-center justify-center">
+    <div className="min-h-[calc(100dvh-20px)]  text-white flex flex-col items-center justify-center">
       <div className="max-w-4xl mx-auto px-6 text-center">
         {/* Hero Section */}
         <div className="mb-20">
@@ -52,6 +54,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Link href="https://groq.com" target="_blank" rel="noopener noreferrer">
+        <Image
+          src="https://console.groq.com/powered-by-groq.svg"
+          alt="Powered by Groq for fast inference."
+          width={500}
+          height={200}
+        />
+      </Link>
     </div>
   );
 }

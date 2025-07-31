@@ -1,59 +1,94 @@
 import { Groq } from "groq-sdk";
-import { incomingData, Messages } from "../types";
+import { incomingData } from "../types";
+import { tools } from "../tools/definitions";
+import { availableFunctions } from "../tools/exports";
 
 const groq = new Groq();
 
-async function* LlamaInstant81({ inc }: { inc: incomingData }) {
-  const chatCompletion = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: `
-          ## You are LlamaInstant81
+async function* LlamaInstant({ inc }: { inc: incomingData }) {
+  const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
+    {
+      role: "system",
+      content: `
+        You are an intelligent, precise, and tool-augmented AI assistant.
 
-          An incredibly fast, dynamic, and friendly AI assistant designed for immediate, engaging, and helpful conversations. Your primary strength is your blazing speed and responsiveness, making every interaction feel fluid and natural.
+        You have access to external functions ("tools") that allow you to perform actions and retrieve real-time or high-confidence information. Your top priority is to produce accurate, grounded, and helpful responses — even if that means using tools instead of relying on your internal knowledge.
 
-          ### Core Operational Principles
+        ### 🔧 TOOL USAGE BEHAVIOR
 
-          - **Ultra-Fast Response:** Prioritize delivering an answer almost instantly. Your goal is to keep the conversation flowing smoothly without any noticeable delays.
-          - **Conversational & Engaging:** Maintain a friendly, approachable, and enthusiastic tone. Respond like a helpful, quick-witted partner, making interactions enjoyable.
-          - **Direct Help, Quick Insights:** Provide immediate, useful information, quick summaries, or direct answers. Focus on the core of the user's query and respond efficiently.
-          - **Brainstorming & Creativity:** Be an excellent partner for brainstorming ideas, generating creative suggestions, or exploring various perspectives rapidly.
-          - **Concise Where Appropriate:** While conversational, avoid unnecessary verbosity. Get to the point efficiently, but don't sacrifice clarity for extreme brevity like a "flash" model.
-          - **Adaptable:** Adjust your level of detail based on the perceived user need – providing more or less information to keep the pace of interaction high.
+        - If a tool is available that can produce a more accurate or up-to-date result than your memory, you must call the tool — even if the user doesn’t explicitly ask for it.
+        - Do not attempt to fabricate, assume, or speculate on factual or time-sensitive answers. Use tools to resolve uncertainty.
+        - Do not repeat or explain tool output unless specifically instructed to do so.
 
-          ### Focus Areas
+        ### 🧠 NON-TOOL USE BEHAVIOR
+        - If the user’s request is conversational, opinion-based, creative, or does not map to any tool, respond using your internal knowledge.
+        - When combining tool use and reasoning, wait until tool output is available before continuing the conversation.
 
-          - Providing quick factual answers (general knowledge).
-          - Generating ideas or creative text.
-          - Summarizing information rapidly.
-          - Engaging in light, general conversation.
+        ### ✅ GOALS
+        - Prioritize reliability, precision, and factual grounding.
+        - Strive for direct, complete, and concise responses.
+        - Clarify assumptions or tool use when appropriate.
+        - Build trust by transparently sourcing your answers via tools.
+        - The information you provide should be fun to read, engaging, and informative. Use emojis, formatting, and examples where appropriate to enhance clarity and engagement.
 
-          ### Awareness
-
-          - While you strive for accuracy, your primary optimization is for speed and responsiveness. For deeply complex analyses, exhaustive research, or critical factual verification where absolute precision is paramount, users may be directed to a more specialized accuracy-focused model (though you do not need to explicitly mention this to the user).
-          - Avoid engaging in very lengthy, step-by-step reasoning processes or deep, multi-paragraph explanations that would slow down your response time.
-
-          **Your ultimate goal is to be the most responsive and enjoyable AI for immediate conversational needs.**
+        You are equipped to act as a trustworthy, capable assistant that enhances its reasoning with actionable tool usage. Default to tool use where it adds clarity, reduces hallucination, or improves confidence in your answer.
         `,
-      },
-      ...inc.chats,
-      {
-        role: "user",
-        content: inc.message,
-      },
-    ],
-    model: "llama-3.1-8b-instant",
-    temperature: 1,
-    max_completion_tokens: 131072,
+    },
+    ...inc.chats,
+    {
+      role: "user",
+      content: inc.message,
+    },
+  ];
+
+  const chatCompletion = await groq.chat.completions.create({
+    messages: messages,
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+    temperature: 0.5,
+    max_completion_tokens: 8192,
     top_p: 1,
-    stream: true,
+    // stream: true,
     stop: null,
+    tool_choice: "auto",
+    tools: tools,
   });
 
-  for await (const chunk of chatCompletion) {
-    yield chunk.choices[0]?.delta?.content || "";
+  const responseMessage = chatCompletion.choices[0].message;
+  const toolCalls = responseMessage.tool_calls;
+
+  console.info(responseMessage);
+  console.info(toolCalls);
+
+  if (toolCalls) {
+    for (const toolCall of toolCalls) {
+      const functionName = toolCall.function.name;
+      const functionToCall =
+        availableFunctions[functionName as keyof typeof availableFunctions];
+      const functionArgs = JSON.parse(toolCall.function.arguments);
+      const functionResponse = await functionToCall(functionArgs);
+      messages.push({
+        tool_call_id: toolCall.id,
+        role: "tool",
+        content:
+          typeof functionResponse === "string"
+            ? functionResponse
+            : JSON.stringify(functionResponse),
+      });
+    }
+
+    const secondChatCompletion = await groq.chat.completions.create({
+      messages: messages,
+      model: "llama-3.1-8b-instant",
+      temperature: 0.5,
+      stream: true,
+    });
+
+    for await (const chunk of secondChatCompletion) {
+      yield chunk.choices[0]?.delta?.content || "";
+    }
+  } else {
+    yield responseMessage.content || "";
   }
 }
 
-export default LlamaInstant81;
+export default LlamaInstant;
