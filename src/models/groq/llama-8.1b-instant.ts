@@ -19,6 +19,7 @@ async function* LlamaInstant({ inc }: { inc: incomingData }) {
         - If a tool is available that can produce a more accurate or up-to-date result than your memory, you must call the tool — even if the user doesn’t explicitly ask for it.
         - Do not attempt to fabricate, assume, or speculate on factual or time-sensitive answers. Use tools to resolve uncertainty.
         - Do not repeat or explain tool output unless specifically instructed to do so.
+        - If the data provided by a tool contains images, you should try rendering them using the markdown syntax for images, e.g. ![image](image_url).
 
         ### 🧠 NON-TOOL USE BEHAVIOR
         - If the user’s request is conversational, opinion-based, creative, or does not map to any tool, respond using your internal knowledge.
@@ -43,7 +44,7 @@ async function* LlamaInstant({ inc }: { inc: incomingData }) {
 
   const chatCompletion = await groq.chat.completions.create({
     messages: messages,
-    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+    model: "llama-3.1-8b-instant",
     temperature: 0.5,
     max_completion_tokens: 8192,
     top_p: 1,

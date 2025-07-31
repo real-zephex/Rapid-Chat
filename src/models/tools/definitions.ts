@@ -51,7 +51,7 @@ export const tools: Groq.Chat.Completions.ChatCompletionTool[] = [
           query: {
             type: "string",
             description:
-              "The topic to search on Wikipedia (e.g., 'Neural networks', 'Black Holes', 'Ada Lovelace').",
+              "The topic to search on Wikipedia (e.g., 'Neural networks', 'Black Holes', 'Ada Lovelace'). Use the most general term possible to get the best results.",
           },
         },
         required: ["query"],
