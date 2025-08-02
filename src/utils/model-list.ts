@@ -47,12 +47,12 @@ export const models = [
     image: false,
     description: "Highly knowledgeable, excels at explaining complex topics.",
   },
-  {
-    name: "GPT 4.0 Mini",
-    code: "gpt4oMini",
-    image: false,
-    description: "Versatile, good for a wide range of tasks.",
-  },
+  // {
+  //   name: "GPT 4.0 Mini",
+  //   code: "gpt4oMini",
+  //   image: false,
+  //   description: "Versatile, good for a wide range of tasks.",
+  // },
   {
     name: "Gemma 3",
     code: "gemma3",
