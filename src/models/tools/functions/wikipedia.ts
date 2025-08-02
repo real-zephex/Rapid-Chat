@@ -6,21 +6,34 @@ const WikipediaSummary = async ({
   query: string;
 }): Promise<string> => {
   try {
-    const apiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${query}&format=json`;
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error("Failed to fetch Wikipedia page");
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+      query
+    )}&format=json`;
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
+
+    const bestMatchTitle = searchData.query.search[0]?.title;
+    console.log("Best match title:", bestMatchTitle);
+    if (!bestMatchTitle) {
+      return "No matching Wikipedia article found.";
     }
-    const data = await response.json();
-    const $ = cheerio.load(data.parse.text["*"]);
+
+    const pageUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(
+      bestMatchTitle
+    )}&format=json`;
+    const pageResponse = await fetch(pageUrl);
+    const pageData = await pageResponse.json();
+
+    const $ = cheerio.load(pageData.parse.text["*"]);
     const paragraphs = $("p")
       .toArray()
       .map((p) => $(p).text().trim())
       .join("\n");
-
+    console.log(paragraphs);
     return paragraphs || "No summary found for the given query.";
   } catch (error) {
-    return "An error occured while fetching the Wikipedia summary";
+    console.error("Wikipedia fetch error for query:", query, error);
+    return "An error occurred while fetching the Wikipedia summary.";
   }
 };
 

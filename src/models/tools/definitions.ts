@@ -41,8 +41,7 @@ export const tools: Groq.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "wikipediaSummary",
-      description: `Use this tool to retrieve a short, accurate, and up-to-date explanation of a topic using real-time data from Wikipedia. 
-      You should use this tool when the user asks for factual information, definitions, summaries, historical figures, scientific concepts, or explanations of any kind — especially when the topic might be too recent, nuanced, or specific for your internal knowledge to be fully accurate.
+      description: `Get a summary from Wikipedia. Input must be a valid Wikipedia page title, not a general query or sentence. For example, use 'Python (programming language)' instead of 'History of Python programming'.
       
       This tool helps overcome your training cutoff and access live knowledge instead of relying solely on memory.`,
       parameters: {
@@ -51,7 +50,7 @@ export const tools: Groq.Chat.Completions.ChatCompletionTool[] = [
           query: {
             type: "string",
             description:
-              "The topic to search on Wikipedia (e.g., 'Neural networks', 'Black Holes', 'Ada Lovelace'). Use the most general term possible to get the best results.",
+              "A **Wikipedia article title**, not a full query. E.g., 'Black hole', 'World War II', 'Python (programming language)'.",
           },
         },
         required: ["query"],
