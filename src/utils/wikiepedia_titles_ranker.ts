@@ -11,7 +11,7 @@ async function GetTitle(data: Search[], query: string) {
     apiKey: process.env.GEMINI_API_KEY,
   });
   const config = {};
-  const model = "gemma-3-27b-it";
+  const model = "gemma-3-1b-it";
   const contents = [
     {
       role: "user",

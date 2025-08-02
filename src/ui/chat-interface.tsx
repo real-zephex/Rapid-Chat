@@ -76,7 +76,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     return;
   }
 
-  const [model, setModel] = useState<string>("scout");
+  const [model, setModel] = useState<string>("flash_2");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -344,18 +344,26 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   };
 
+  // Delete chat hotkey
+  useHotkeys("ctrl+shift+backspace", (e) => {
+    e.preventDefault();
+    deleteChatFunc();
+  });
+
+  function deleteChatFunc() {
+    deleteChat(id);
+    deleteTab(id);
+    window.dispatchEvent(new Event("new-tab"));
+    router.push("/");
+  }
+
   return (
     <div className="flex flex-col h-[calc(100dvh-10px)] relative">
       {/* Delete Button */}
       <div className="absolute top-0 right-0 m-4 z-20">
         <button
           className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
-          onClick={() => {
-            deleteChat(id);
-            deleteTab(id);
-            window.dispatchEvent(new Event("new-tab"));
-            router.push("/");
-          }}
+          onClick={() => deleteChatFunc()}
         >
           <RiDeleteBin2Fill size={20} color="red" />
         </button>
@@ -365,7 +373,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
         <MessagesContainer
           messages={messages}
-          model={model}
+          model={models.find((m) => m.code === model)?.name || "Unknown Model"}
           onCopyResponse={handleCopyResponse}
         />
         <div ref={messagesEndRef} />

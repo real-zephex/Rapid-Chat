@@ -10,7 +10,7 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import { v4 as uuidv4 } from "uuid";
 
 export async function handlePress(
-  event: React.MouseEvent<HTMLButtonElement>,
+  event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
   router: AppRouterInstance
 ) {
   event.preventDefault();
@@ -32,6 +32,11 @@ const Sidebar = () => {
   const getTitle = (id: string) => {
     return tabTitles[id] || "Loading...";
   };
+
+  useHotkeys("ctrl+shift+o", (e) => {
+    e.preventDefault();
+    handlePress(e, router);
+  });
 
   useEffect(() => {
     const fetchTabs = async () => {

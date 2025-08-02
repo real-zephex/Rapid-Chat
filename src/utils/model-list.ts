@@ -6,6 +6,18 @@ export const models = [
     description: "Quick, direct, no-frills replies.",
   },
   {
+    name: "Gemini Flash 2.0",
+    code: "flash_2",
+    image: true,
+    description: "Fast, concise, and to the point.",
+  },
+  {
+    name: "Compound Beta",
+    code: "compound",
+    image: true,
+    description: "Good for complex tasks, handles multiple steps.",
+  },
+  {
     name: "Qwen 32B",
     code: "qwen",
     image: false,
@@ -53,6 +65,7 @@ export const models = [
     image: false,
     description: "Wikipedia, Weather updates, and more.",
   },
+
   // {
   //   name: "Phi 4 Reasoning",
   //   code: "phi4",
