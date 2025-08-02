@@ -11,12 +11,12 @@ export const models = [
     image: true,
     description: "Fast, concise, and to the point.",
   },
-  {
-    name: "Compound Beta",
-    code: "compound",
-    image: true,
-    description: "Good for complex tasks, handles multiple steps.",
-  },
+  // {
+  //   name: "Compound Beta",
+  //   code: "compound",
+  //   image: true,
+  //   description: "Good for complex tasks, handles multiple steps.",
+  // },
   {
     name: "Qwen 32B",
     code: "qwen",
