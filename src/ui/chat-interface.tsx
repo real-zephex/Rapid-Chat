@@ -131,6 +131,14 @@ const ChatInterface = ({ id }: { id: string }) => {
     };
   }, []);
 
+  useEffect(() => {
+    window.addEventListener("paste", handlePaste);
+
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, []);
+
   // useEffect(() => {
   //   if (images.length > 0) {
   //     setModel("scout");
@@ -145,6 +153,12 @@ const ChatInterface = ({ id }: { id: string }) => {
     e.preventDefault();
     const input = inputRef.current?.value.trim() || "";
     if (!input || isLoading || isUploadingImages) return;
+
+    if (images.length > 5) {
+      alert("You can only upload a maximum of 5 files at a time.");
+      setImages([]);
+      return;
+    }
 
     const userMessage: Message = {
       role: "user",
@@ -274,6 +288,14 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   }, []);
 
+  const checkFileSize = useCallback((file: File) => {
+    // wanted size in MB * bytes * kilobytes
+    if (file.size > 10 * 1024 * 1024) {
+      return false;
+    }
+    return true;
+  }, []);
+
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       if (event.target.files) {
@@ -320,13 +342,109 @@ const ChatInterface = ({ id }: { id: string }) => {
     []
   );
 
-  const checkFileSize = useCallback((file: File) => {
-    // wanted size in MB * bytes * kilobytes
-    if (file.size > 10 * 1024 * 1024) {
-      return false;
-    }
-    return true;
-  }, []);
+  // Function to handle paste
+  const handlePaste = useCallback(
+    async (e: ClipboardEvent) => {
+      // Allow native paste behavior in textarea
+      try {
+        if (e.target === inputRef.current) {
+          return;
+        }
+
+        console.info("Pasting content from clipboard...");
+
+        e.preventDefault();
+
+        if (!e.clipboardData) {
+          console.warn("No clipboard data available.");
+          return;
+        }
+
+        const files: File[] = [];
+        const items = e.clipboardData.items;
+        if (!items) {
+          console.warn("No items in clipboard data.");
+          return;
+        }
+        console.info(`${items.length} items found in clipboard`);
+        for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file && checkFileSize(file)) {
+              files.push(file);
+            }
+          }
+        }
+
+        if (files.length === 0) {
+          console.warn("No valid image files found in clipboard.");
+          return;
+        }
+
+        console.info(`Processing ${files.length} valid images...`);
+        const arraizedImages = await Promise.all(
+          files.map(async (file) => {
+            const buffer = await file.arrayBuffer();
+            return {
+              mimeType: file.type,
+              data: new Uint8Array(buffer),
+            };
+          })
+        );
+
+        setImages(arraizedImages);
+      } catch (error) {
+        console.error("Error handling paste:", error);
+        alert("Error handling paste. Please try again.");
+      }
+    },
+    [checkFileSize]
+  );
+
+  // Function to handle Drag and Drop
+  const handleDragAndDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      try {
+        console.info("Drag and Drop deteched.");
+        e.preventDefault();
+
+        const files = e.dataTransfer.files;
+        if (!files || files.length === 0) {
+          console.warn("No files dropped.");
+          return;
+        }
+
+        const uploads: File[] = [];
+        for (const file of files) {
+          if (
+            (file.type.startsWith("image/") ||
+              file.type === "application/pdf") &&
+            checkFileSize(file)
+          ) {
+            if (checkFileSize(file)) {
+              uploads.push(file);
+            }
+          }
+        }
+
+        const arraizedImages = await Promise.all(
+          uploads.map(async (file) => {
+            const buffer = await file.arrayBuffer();
+            return {
+              mimeType: file.type,
+              data: new Uint8Array(buffer),
+            };
+          })
+        );
+
+        setImages((prev) => [...prev, ...arraizedImages]);
+      } catch (error) {
+        console.error("Error handling drag and drop:", error);
+        alert("Error handling drag and drop. Please try again.");
+      }
+    },
+    [checkFileSize]
+  );
 
   const setAudio = async (file: Blob | null) => {
     const input = inputRef.current!;
@@ -358,7 +476,11 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-10px)] relative">
+    <div
+      className="flex flex-col h-[calc(100dvh-10px)] relative"
+      onDrop={handleDragAndDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
       {/* Delete Button */}
       <div className="absolute top-0 right-0 m-4 z-20">
         <button

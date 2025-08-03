@@ -53,12 +53,12 @@ export const models = [
   //   image: false,
   //   description: "Versatile, good for a wide range of tasks.",
   // },
-  {
-    name: "Gemma 3",
-    code: "gemma3",
-    image: true,
-    description: "Summarizes and explains text well.",
-  },
+  // {
+  //   name: "Gemma 3",
+  //   code: "gemma3",
+  //   image: true,
+  //   description: "Summarizes and explains text well.",
+  // },
   {
     name: "Tools",
     code: "llama_instant",

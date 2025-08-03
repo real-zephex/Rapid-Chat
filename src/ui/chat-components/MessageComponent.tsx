@@ -47,7 +47,7 @@ const MessageComponent = memo(
     const tokensPerSecond = useMemo(() => {
       if (message.endTime && message.startTime) {
         const duration = (message.endTime - message.startTime) / 1000;
-        return duration > 0 ? Math.round(tokens / duration) : 0;
+        return duration > 0 ? (tokens / duration).toFixed(2) : 0;
       }
       return 0;
     }, [message.endTime, message.startTime, tokens]);
@@ -132,6 +132,9 @@ const MessageComponent = memo(
                         {children}
                       </code>
                     ) : (
+                      // <SyntaxHighlighter style={dark} language={language}>
+                      //   {String(children).replace(/\n$/, "")}
+                      // </SyntaxHighlighter>
                       <code
                         className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
                         {...props}
@@ -206,12 +209,108 @@ const MessageComponent = memo(
                   },
                   li: ({ children, ...props }) => (
                     <li
-                      className="text-lg text-white list-disc pl-4 leading-8"
+                      className="text-lg text-white pl-2 leading-8 "
                       {...props}
                     >
                       {children}
                     </li>
                   ),
+                  strong: ({ children, ...props }) => (
+                    <strong className="font-bold text-white" {...props}>
+                      {children}
+                    </strong>
+                  ),
+                  em: ({ children, ...props }) => (
+                    <em className="italic text-gray-200" {...props}>
+                      {children}
+                    </em>
+                  ),
+                  h1: ({ children, ...props }) => (
+                    <h1
+                      className="text-3xl font-bold text-white mb-4 mt-6 border-b border-gray-600 pb-2"
+                      {...props}
+                    >
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children, ...props }) => (
+                    <h2
+                      className="text-2xl font-bold text-white mb-3 mt-5 border-b border-gray-700 pb-1"
+                      {...props}
+                    >
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children, ...props }) => (
+                    <h3
+                      className="text-xl font-semibold text-white mb-3 mt-4"
+                      {...props}
+                    >
+                      {children}
+                    </h3>
+                  ),
+                  h4: ({ children, ...props }) => (
+                    <h4
+                      className="text-lg font-semibold text-white mb-2 mt-3"
+                      {...props}
+                    >
+                      {children}
+                    </h4>
+                  ),
+                  h5: ({ children, ...props }) => (
+                    <h5
+                      className="text-base font-semibold text-white mb-2 mt-3"
+                      {...props}
+                    >
+                      {children}
+                    </h5>
+                  ),
+                  h6: ({ children, ...props }) => (
+                    <h6
+                      className="text-sm font-semibold text-gray-200 mb-2 mt-2"
+                      {...props}
+                    >
+                      {children}
+                    </h6>
+                  ),
+                  a: ({ children, href, ...props }) => (
+                    <a
+                      href={href}
+                      className="text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  ),
+                  blockquote: ({ children, ...props }) => (
+                    <blockquote
+                      className="border-l-4 border-gray-500 pl-4 my-4 italic text-gray-300 bg-gray-800/30 py-2 rounded-r"
+                      {...props}
+                    >
+                      {children}
+                    </blockquote>
+                  ),
+
+                  // Handle block math
+                  div: ({ children, className, ...props }) => {
+                    // Hide elements that are marked as aria-hidden (raw LaTeX)
+                    if (props["aria-hidden"] === "true") {
+                      return null;
+                    }
+
+                    return <div {...props}>{children}</div>;
+                  },
+
+                  p: ({ children, ...props }) => {
+                    return (
+                      <p {...props} className="mb-1 mt-1 ">
+                        {" "}
+                        {children}
+                      </p>
+                    );
+                  },
                 }}
               >
                 {message.content}
@@ -233,7 +332,7 @@ const MessageComponent = memo(
                       <TbAlphabetLatin /> {tokens} tokens
                     </span>
                   )}
-                  {tokensPerSecond > 0 && (
+                  {Number(tokensPerSecond) > 0 && (
                     <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-white/10 p-1 rounded-lg">
                       <GoCpu />
                       {tokensPerSecond} tokens/sec
