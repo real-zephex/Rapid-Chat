@@ -59,12 +59,12 @@ export const models = [
   //   image: true,
   //   description: "Summarizes and explains text well.",
   // },
-  {
-    name: "Tools",
-    code: "llama_instant",
-    image: false,
-    description: "Wikipedia, Weather updates, and more.",
-  },
+  // {
+  //   name: "Tools",
+  //   code: "llama_instant",
+  //   image: false,
+  //   description: "Wikipedia, Weather updates, and more.",
+  // },
 
   // {
   //   name: "Phi 4 Reasoning",
