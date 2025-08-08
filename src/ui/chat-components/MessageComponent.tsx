@@ -36,11 +36,18 @@ const MessageComponent = memo(
   }) => {
     const isUser = message.role === "user";
 
+    const reasoningTokens = useMemo(() => {
+      if (!message.reasoning) return 0;
+      return message.reasoning
+        .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
+        .filter(Boolean).length;
+    }, [message.reasoning]);
+
     const tokens = useMemo(
       () =>
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
-          .filter(Boolean).length,
+          .filter(Boolean).length + reasoningTokens,
       [message.content]
     );
 

@@ -197,13 +197,13 @@ const ChatInterface = ({ id }: { id: string }) => {
       let assistantMessage = "";
       let lastDisplayContent = "";
       let updateCounter = 0;
-      const UPDATE_THROTTLE = 3; // Update UI every 3 chunks for optimal balance
+      const UPDATE_THROTTLE = 1; // Update UI every 3 chunks for optimal balance
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sending response, please wait!",
+          content: "Waiting for first tokens, please wait!",
         },
       ]);
 

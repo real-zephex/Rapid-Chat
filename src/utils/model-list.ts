@@ -47,6 +47,12 @@ export const models = [
     image: false,
     description: "Highly knowledgeable, excels at explaining complex topics.",
   },
+  {
+    name: "GPT OSS",
+    code: "gptOss",
+    image: false,
+    description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
+  },
   // {
   //   name: "GPT 4.0 Mini",
   //   code: "gpt4oMini",
