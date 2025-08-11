@@ -19,6 +19,7 @@ import Deepseek from "./openrouter/deepseek";
 // import Gemma3 from "./google/gemma3";
 import Flash2 from "./google/gemini-2.0-flash";
 import gptOSS from "./groq/gpt-oss";
+import gptOSSfree from "./openrouter/gpt-oss-20b";
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
 
@@ -42,6 +43,7 @@ const mappings: Record<string, ModelFunction> = {
   venice_uncensored: VeniceUncensored,
   deepseek: Deepseek,
   gptOss: gptOSS,
+  gptOssFree: gptOSSfree
   // gemma3: Gemma3,
 
   // phi4: Phi4,

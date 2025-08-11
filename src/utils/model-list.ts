@@ -53,6 +53,24 @@ export const models = [
     image: false,
     description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
   },
+  {
+    name: "GPT OSS Free",
+    code: "gptOssFree",
+    image: false,
+    description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
+  },
+  {
+    name: "Llama Instant",
+    code: "llama_instant",
+    image: true,
+    description: "Fast, accurate, and reliable.",
+  },
+  {
+    name: "GPT 4.0 Mini",
+    code: "gpt4oMini",
+    image: false,
+    description: "Versatile, good for a wide range of tasks.",
+  },
   // {
   //   name: "GPT 4.0 Mini",
   //   code: "gpt4oMini",
