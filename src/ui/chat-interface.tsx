@@ -76,7 +76,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     return;
   }
 
-  const [model, setModel] = useState<string>("gptOssFree");
+  const [model, setModel] = useState<string>("flash_2");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -145,9 +145,9 @@ const ChatInterface = ({ id }: { id: string }) => {
   //   }
   // }, [model, images]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, []);
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
