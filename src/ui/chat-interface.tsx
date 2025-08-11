@@ -145,9 +145,9 @@ const ChatInterface = ({ id }: { id: string }) => {
   //   }
   // }, [model, images]);
 
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [isLoading]);
+  useEffect(() => {
+    scrollToBottom();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
