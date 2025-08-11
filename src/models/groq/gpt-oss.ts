@@ -54,12 +54,13 @@ async function* gptOSS({ inc }: { inc: incomingData }) {
       },
     ],
     model: "openai/gpt-oss-20b",
-    temperature: 1,
+    temperature: 0.8,
     max_completion_tokens: 8192,
     top_p: 1,
     stream: true,
     stop: null,
-    // reasoning_effort: "medium",
+    reasoning_effort: "medium",
+    
   });
 
   for await (const chunk of chatCompletion) {

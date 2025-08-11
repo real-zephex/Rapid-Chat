@@ -61,7 +61,7 @@ const MessageComponent = memo(
 
     if (isUser) {
       return (
-        <div className="flex mb-4 justify-end">
+        <div className="flex mb-4 justify-end animate-[userMessageFadeIn_1s]">
           <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700 text-white rounded-l-3xl rounded-br-3xl">
             <div className="text-white whitespace-pre-wrap text-lg leading-7">
               {message.images && message.images.length > 0 && (
@@ -75,9 +75,9 @@ const MessageComponent = memo(
     }
 
     return (
-      <div className="flex mb-4 justify-start">
+      <div className="flex mb-4 justify-start animate-[assistantMessageFadeIn_1s]">
         <div className="max-w-full lg:max-w-[85%] p-4 shadow-sm bg-neutral-800/90 text-white rounded-r-3xl rounded-bl-3xl">
-          <div className="prose prose-invert prose-lg max-w-none leading-8">
+          <div className="prose prose-invert prose-lg max-w-full w-full leading-8">
             <div className="flex flex-col p-1">
               <div className="flex flex-row items-center mb-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
@@ -189,18 +189,14 @@ const MessageComponent = memo(
                     return (
                       <div className="relative group">
                         {language && (
-                          <div className="flex justify-between items-center bg-gray-800/90 px-4 py-2 rounded-t-lg border border-gray-700/50 border-b-0">
-                            <span className="text-xs text-gray-300 font-medium uppercase tracking-wide">
-                              {language}
-                            </span>
+                          <div className="flex justify-between items-center bg-neutral-900/30 px-4 py-2 text-xs text-gray-300 font-medium uppercase tracking-wide border border-gray-700/50 border-b-0 rounded-t-lg -mb-2">
+                            <span>{language}</span>
                           </div>
                         )}
+
                         <pre
-                          className={`bg-gray-900 p-4 overflow-x-auto border border-gray-700 ${
-                            language
-                              ? "rounded-t-none rounded-b-lg"
-                              : "rounded-lg"
-                          }`}
+                          className={`bg-gray-900 p-2 overflow-x-auto  mt-2 rounded-t-none "
+                          `}
                           {...props}
                         >
                           {children}
@@ -309,6 +305,16 @@ const MessageComponent = memo(
 
                     return <div {...props}>{children}</div>;
                   },
+
+                  // Handle inline math - hide raw LaTeX spans
+                  // span: ({ children, className, ...props }) => {
+                  //   // Hide elements that are marked as aria-hidden (raw LaTeX)
+                  //   if (props["aria-hidden"] === "true") {
+                  //     return null;
+                  //   }
+
+                  //   return <span {...props}>{children}</span>;
+                  // },
 
                   p: ({ children, ...props }) => {
                     return (

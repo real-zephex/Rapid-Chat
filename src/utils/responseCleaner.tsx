@@ -13,6 +13,8 @@ function processMessageContent(rawContent: string): {
 
   // remove <think> tags from the raw content
   let displayContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  // displayContent = displayContent.replace(/\[\s*|\s*\]/g, "$$"); // remove square brackets and surrounding spaces
+  // displayContent = displayContent.replace(/[\s]+/g, "$$"); // normalize whitespace
 
   // handles improper think tags
   const openThinkIndex = displayContent.lastIndexOf("<think>");
