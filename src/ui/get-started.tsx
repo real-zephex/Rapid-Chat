@@ -27,14 +27,16 @@ function GetStarted() {
   return (
     <button
       disabled={loading}
-      className="inline-flex items-center justify-center gap-3 px-8 py-4 
+      className="inline-flex items-center justify-center gap-2 px-4 py-2 
         bg-white text-black font-light text-lg rounded-full
         hover:bg-gray-100 hover:scale-105
         transition-all duration-200 ease-out
         disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
       onClick={(e) => handlePress(e, router, setLoading)}
     >
-      <span>{loading ? "Loading..." : "Get Started"}</span>
+      <span className="hidden lg:block">
+        {loading ? "Loading..." : "Get Started"}
+      </span>
       <span className="text-xl">→</span>
     </button>
   );

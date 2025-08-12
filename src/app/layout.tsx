@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Noto_Sans } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import Sidebar from "@/ui/sidebar";
@@ -12,18 +12,11 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const geistSans = Geist({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist-sans",
+const notoSans = Noto_Sans({
   weight: ["400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
   subsets: ["latin"],
+  variable: "--font-noto-sans",
   display: "swap",
-  variable: "--font-geist-mono",
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -56,10 +49,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "Rapid AI - Rapid AI Chat Interface",
+    title: "Rapid Chat",
     description:
       "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with GPT, Claude, Gemini, and more.",
-    siteName: "Rapid AI",
+    siteName: "Rapid Chat",
     images: [
       {
         url: "https://fafb.vercel.app/logo.png",
@@ -123,7 +116,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  manifest: "https://fafb.vercel.app/manifest.json", // You might want to create this
+  manifest: "https://fafb.vercel.app/manifest.json",
   category: "technology",
   classification: "AI Chat Application",
   applicationName: "Rapid AI",
@@ -141,7 +134,7 @@ export default function RootLayout({
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased m-1 h-full`}
+        className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
       >
         <Sidebar />
         {children}

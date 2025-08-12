@@ -28,6 +28,9 @@ const Sidebar = () => {
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
+  const pathname_2 = usePathname().split("/")[1];
+
+  console.log(pathname_2)
 
   const getTitle = (id: string) => {
     return tabTitles[id] || "Loading...";
@@ -84,6 +87,10 @@ const Sidebar = () => {
     },
     [expand]
   );
+
+  if (pathname_2 == "home") {
+    return;
+  }
 
   return (
     <div className="fixed top-0 left-0 m-4 z-20">

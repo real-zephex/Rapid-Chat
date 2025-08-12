@@ -13,6 +13,14 @@ import ImageDisplay from "./ImageDisplay";
 import { GoCpu } from "react-icons/go";
 import { TbAlphabetLatin } from "react-icons/tb";
 
+import { Cascadia_Code } from "next/font/google";
+
+const cascadiaCode = Cascadia_Code({
+  weight: ["400", "600"],
+  subsets: ["latin"],
+  variable: "--font-cascadia-code",
+});
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -78,7 +86,7 @@ const MessageComponent = memo(
       <div className="flex mb-4 justify-start animate-[assistantMessageFadeIn_1s]">
         <div className="max-w-full lg:max-w-[85%] p-4 shadow-sm bg-neutral-800/90 text-white rounded-r-3xl rounded-bl-3xl">
           <div className="prose prose-invert prose-md max-w-full w-full leading-8 overflow-x-auto">
-            <div className="flex flex-col p-1">
+            <div className={`flex flex-col p-1`}>
               <div className="flex flex-row items-center mb-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
                   AI
@@ -135,7 +143,10 @@ const MessageComponent = memo(
                     const match = /language-(\w+)/.exec(className || "");
                     const language = match ? match[1] : "";
                     return match ? (
-                      <code className={`${className} hljs`} {...props}>
+                      <code
+                        className={`${className} ${cascadiaCode.className}  hljs`}
+                        {...props}
+                      >
                         {children}
                       </code>
                     ) : (
@@ -143,7 +154,7 @@ const MessageComponent = memo(
                       //   {String(children).replace(/\n$/, "")}
                       // </SyntaxHighlighter>
                       <code
-                        className="bg-gradient-to-r from-neutral-700/80 to-neutral-600/80 px-2.5 py-1.5 rounded-md text-sm font-mono text-blue-200 border border-neutral-600/30 shadow-sm"
+                        className=" p-1 rounded-md text-md text-blue-200 shadow-sm"
                         {...props}
                       >
                         {children}
@@ -230,7 +241,7 @@ const MessageComponent = memo(
 
                   li: ({ children, ...props }) => (
                     <li
-                      className="text-md text-gray-100 leading-8 relative before:content-['▸'] before:text-blue-400 before:font-bold before:absolute before:-left-4 before:top-0"
+                      className="text-md text-gray-100 relative before:content-['▸'] before:text-blue-400 before:font-bold before:absolute before:-left-4 before:-top-1"
                       {...props}
                     >
                       {children}
@@ -238,7 +249,7 @@ const MessageComponent = memo(
                   ),
                   strong: ({ children, ...props }) => (
                     <strong
-                      className="font-bold text-white text-md bg-gradient-to-r from-blue-200/20 to-purple-200/20 px-1 rounded"
+                      className="font-bold text-white text-md  rounded"
                       {...props}
                     >
                       {children}
