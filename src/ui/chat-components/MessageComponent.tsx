@@ -241,7 +241,7 @@ const MessageComponent = memo(
 
                   li: ({ children, ...props }) => (
                     <li
-                      className="text-md text-gray-100 relative before:content-['▸'] before:text-blue-400 before:font-bold before:absolute before:-left-4 before:-top-1"
+                      className="text-md text-gray-100 relative before:content-['▸'] before:text-blue-400 before:font-bold before:absolute before:-left-4 before:-top-0.5"
                       {...props}
                     >
                       {children}
