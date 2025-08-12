@@ -94,7 +94,6 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       setIsRecording(true);
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      // You might want to add proper error handling UI here
     }
   };
 
