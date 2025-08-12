@@ -77,7 +77,7 @@ const MessageComponent = memo(
     return (
       <div className="flex mb-4 justify-start animate-[assistantMessageFadeIn_1s]">
         <div className="max-w-full lg:max-w-[85%] p-4 shadow-sm bg-neutral-800/90 text-white rounded-r-3xl rounded-bl-3xl">
-          <div className="prose prose-invert prose-lg max-w-full w-full leading-8">
+          <div className="prose prose-invert prose-md max-w-full w-full leading-8 overflow-x-auto">
             <div className="flex flex-col p-1">
               <div className="flex flex-row items-center mb-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
@@ -322,6 +322,15 @@ const MessageComponent = memo(
                         {" "}
                         {children}
                       </p>
+                    );
+                  },
+
+                  table: ({ children, ...props }) => {
+                    console.log(props);
+                    return (
+                      <div className="overflow-x-auto w-full">
+                        <table className={`${props}`}>{children}</table>
+                      </div>
                     );
                   },
                 }}
