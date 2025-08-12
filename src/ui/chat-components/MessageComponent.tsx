@@ -62,8 +62,8 @@ const MessageComponent = memo(
     if (isUser) {
       return (
         <div className="flex mb-4 justify-end animate-[userMessageFadeIn_1s]">
-          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700 text-white rounded-l-3xl rounded-br-3xl">
-            <div className="text-white whitespace-pre-wrap text-lg leading-7">
+          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700/60 text-white rounded-l-3xl rounded-br-3xl">
+            <div className="text-white whitespace-pre-wrap break-all text-md leading-7">
               {message.images && message.images.length > 0 && (
                 <ImageDisplay images={message.images} />
               )}
@@ -143,7 +143,7 @@ const MessageComponent = memo(
                       //   {String(children).replace(/\n$/, "")}
                       // </SyntaxHighlighter>
                       <code
-                        className="bg-neutral-700 px-2 py-1 rounded text-sm font-mono"
+                        className="bg-gradient-to-r from-neutral-700/80 to-neutral-600/80 px-2.5 py-1.5 rounded-md text-sm font-mono text-blue-200 border border-neutral-600/30 shadow-sm"
                         {...props}
                       >
                         {children}
@@ -189,19 +189,25 @@ const MessageComponent = memo(
                     return (
                       <div className="relative group">
                         {language && (
-                          <div className="flex justify-between items-center bg-neutral-900/30 px-4 py-2 text-xs text-gray-300 font-medium uppercase tracking-wide border border-gray-700/50 border-b-0 rounded-t-lg -mb-2">
-                            <span>{language}</span>
+                          <div className="flex justify-between items-center bg-gradient-to-r from-neutral-900/80 to-neutral-800/80 px-4 py-2.5 text-xs text-gray-300 font-semibold uppercase tracking-wider border border-gray-600/40 border-b-0 rounded-t-xl backdrop-blur-sm">
+                            <span className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                              {language}
+                            </span>
                           </div>
                         )}
 
                         <pre
-                          className={`bg-gray-900 p-2 overflow-x-auto  mt-2 rounded-t-none "
-                          `}
+                          className={`bg-neutral-800/90 border border-neutral-700/50 p-4 overflow-x-auto mt-0 ${
+                            language
+                              ? "rounded-t-none rounded-b-lg"
+                              : "rounded-lg"
+                          } text-gray-100`}
                           {...props}
                         >
                           {children}
                         </pre>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <CopyButton
                             text={codeText}
                             hasLanguageLabel={!!language}
@@ -210,27 +216,45 @@ const MessageComponent = memo(
                       </div>
                     );
                   },
+                  ul: ({ children, ...props }) => (
+                    <ul className="my-4 space-y-2 list-none" {...props}>
+                      {children}
+                    </ul>
+                  ),
+
+                  ol: ({ children, ...props }) => (
+                    <ol className="my-4 space-y-2 list-none" {...props}>
+                      {children}
+                    </ol>
+                  ),
+
                   li: ({ children, ...props }) => (
                     <li
-                      className="text-lg text-white pl-2 leading-8 "
+                      className="text-md text-gray-100 leading-8 relative before:content-['▸'] before:text-blue-400 before:font-bold before:absolute before:-left-4 before:top-0"
                       {...props}
                     >
                       {children}
                     </li>
                   ),
                   strong: ({ children, ...props }) => (
-                    <strong className="font-bold text-white" {...props}>
+                    <strong
+                      className="font-bold text-white text-md bg-gradient-to-r from-blue-200/20 to-purple-200/20 px-1 rounded"
+                      {...props}
+                    >
                       {children}
                     </strong>
                   ),
                   em: ({ children, ...props }) => (
-                    <em className="italic text-gray-200" {...props}>
+                    <em
+                      className="italic text-blue-200 text-md font-medium"
+                      {...props}
+                    >
                       {children}
                     </em>
                   ),
                   h1: ({ children, ...props }) => (
                     <h1
-                      className="text-3xl font-bold text-white mb-4 mt-6 border-b border-gray-600 pb-2"
+                      className="text-3xl font-bold text-white mb-6 mt-8 border-b-2 border-gradient-to-r from-blue-400 to-purple-400 pb-3 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-purple-400 after:rounded-full"
                       {...props}
                     >
                       {children}
@@ -238,7 +262,7 @@ const MessageComponent = memo(
                   ),
                   h2: ({ children, ...props }) => (
                     <h2
-                      className="text-2xl font-bold text-white mb-3 mt-5 border-b border-gray-700 pb-1"
+                      className="text-2xl font-bold text-white mb-4 mt-6 border-b border-gray-600/60 pb-2 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-1/3 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-transparent after:rounded-full"
                       {...props}
                     >
                       {children}
@@ -246,7 +270,7 @@ const MessageComponent = memo(
                   ),
                   h3: ({ children, ...props }) => (
                     <h3
-                      className="text-xl font-semibold text-white mb-3 mt-4"
+                      className="text-xl font-semibold text-white mb-3 mt-5 pl-3 border-l-4 border-blue-400/60 bg-blue-400/5 py-2 rounded-r"
                       {...props}
                     >
                       {children}
@@ -254,7 +278,7 @@ const MessageComponent = memo(
                   ),
                   h4: ({ children, ...props }) => (
                     <h4
-                      className="text-lg font-semibold text-white mb-2 mt-3"
+                      className="text-lg font-semibold text-gray-100 mb-2 mt-4 pl-2 border-l-2 border-purple-400/60"
                       {...props}
                     >
                       {children}
@@ -262,7 +286,7 @@ const MessageComponent = memo(
                   ),
                   h5: ({ children, ...props }) => (
                     <h5
-                      className="text-base font-semibold text-white mb-2 mt-3"
+                      className="text-base font-semibold text-gray-200 mb-2 mt-3 uppercase tracking-wide"
                       {...props}
                     >
                       {children}
@@ -270,7 +294,7 @@ const MessageComponent = memo(
                   ),
                   h6: ({ children, ...props }) => (
                     <h6
-                      className="text-sm font-semibold text-gray-200 mb-2 mt-2"
+                      className="text-sm font-semibold text-gray-300 mb-2 mt-2 opacity-80"
                       {...props}
                     >
                       {children}
@@ -279,7 +303,7 @@ const MessageComponent = memo(
                   a: ({ children, href, ...props }) => (
                     <a
                       href={href}
-                      className="text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
+                      className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/50 hover:decoration-blue-300 underline-offset-2 transition-all duration-200 text-md font-medium hover:bg-blue-400/10 px-1 rounded"
                       target="_blank"
                       rel="noopener noreferrer"
                       {...props}
@@ -289,10 +313,15 @@ const MessageComponent = memo(
                   ),
                   blockquote: ({ children, ...props }) => (
                     <blockquote
-                      className="border-l-4 border-gray-500 pl-4 my-4 italic text-gray-300 bg-gray-800/30 py-2 rounded-r"
+                      className="border-l-4 border-blue-400 pl-6 pr-4 py-4 my-6 italic text-gray-200 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-r-lg shadow-lg backdrop-blur-sm text-md relative"
                       {...props}
                     >
-                      {children}
+                      <div className="relative">
+                        <span className="absolute -top-4 -left-4 text-4xl text-blue-400/60 font-serif">
+                          &ldquo;
+                        </span>
+                        {children}
+                      </div>
                     </blockquote>
                   ),
 
@@ -318,19 +347,70 @@ const MessageComponent = memo(
 
                   p: ({ children, ...props }) => {
                     return (
-                      <p {...props} className="mb-1 mt-1 ">
-                        {" "}
+                      <p
+                        {...props}
+                        className="mb-3 mt-2 text-md leading-relaxed text-gray-100"
+                      >
                         {children}
                       </p>
                     );
                   },
 
                   table: ({ children, ...props }) => {
-                    console.log(props);
                     return (
-                      <div className="overflow-x-auto w-full">
-                        <table className={`${props}`}>{children}</table>
+                      <div className="overflow-x-auto w-full my-6 rounded-lg border border-neutral-700/50">
+                        <table
+                          className="w-full border-collapse bg-neutral-800/40"
+                          {...props}
+                        >
+                          {children}
+                        </table>
                       </div>
+                    );
+                  },
+
+                  thead: ({ children, ...props }) => (
+                    <thead
+                      className="bg-neutral-700/50 border-b border-neutral-600/50 "
+                      {...props}
+                    >
+                      {children}
+                    </thead>
+                  ),
+
+                  th: ({ children, ...props }) => (
+                    <th
+                      className="px-4 py-3 text-left font-medium text-gray-200 text-sm"
+                      {...props}
+                    >
+                      {children}
+                    </th>
+                  ),
+
+                  td: ({ children, ...props }) => (
+                    <td
+                      className="px-4 py-3 text-gray-300 border-b border-neutral-700/30 hover:bg-neutral-700/30 transition-colors duration-150"
+                      {...props}
+                    >
+                      {children}
+                    </td>
+                  ),
+
+                  tr: ({ children, ...props }) => (
+                    <tr
+                      className="hover:bg-neutral-700/20 transition-colors duration-150"
+                      {...props}
+                    >
+                      {children}
+                    </tr>
+                  ),
+
+                  hr: ({ children, ...props }) => {
+                    return (
+                      <hr
+                        className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-400/60 to-transparent"
+                        {...props}
+                      />
                     );
                   },
                 }}
