@@ -2,7 +2,7 @@
 
 A lightning-fast, privacy-first AI chat interface that brings together multiple specialized language models in one unified platform. Built with Next.js 15 and featuring unlimited local storage through IndexedDB.
 
-![License](https://img.shields.io/badge/license-Pubic-green)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
 ![Next.js](https://img.shields.io/badge/Next.js-15.3-black)
 ![React](https://img.shields.io/badge/React-19.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
@@ -101,8 +101,8 @@ A lightning-fast, privacy-first AI chat interface that brings together multiple 
 1. **Clone the repository**
 
 ```bash
-git clone <repository-url>
-cd fast_ai
+git clone https://github.com/real-zephex/Rapid-Chat.git
+cd Rapid-Chat
 ```
 
 2. **Install dependencies**
