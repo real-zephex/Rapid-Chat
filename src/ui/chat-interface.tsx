@@ -80,6 +80,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use ref for input to prevent re-renders on every keystroke
@@ -106,8 +107,15 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   useEffect(() => {
     const loadChats = async () => {
-      const chats = await retrieveChats(id);
-      setMessages(chats);
+      setIsLoadingChats(true);
+      try {
+        const chats = await retrieveChats(id);
+        setMessages(chats);
+      } catch (error) {
+        console.error("Error loading chats:", error);
+      } finally {
+        setIsLoadingChats(false);
+      }
     };
     loadChats();
   }, [id]);
@@ -451,7 +459,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
     if (file === null) {
       input.value =
-        "Please make sure that the audio is larger than 2 seconds and less than 5 minutes long. This feature costs siginificantly more so please use it responsibly.";
+        "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
     } else {
       const text = await Whisper(file);
       input.value = text.toString();
@@ -493,11 +501,85 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
-        <MessagesContainer
-          messages={messages}
-          model={models.find((m) => m.code === model)?.name || "Unknown Model"}
-          onCopyResponse={handleCopyResponse}
-        />
+        {isLoadingChats ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <p className="text-gray-300">Loading your conversation...</p>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex items-center justify-center ">
+            <div className="text-center max-w-2xl mx-auto px-4">
+              <div className="mb-8"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    💡 Ask Questions
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Get help with coding, explanations, or any topic you're
+                    curious about
+                  </p>
+                </div>
+
+                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    🖼️ Share Images
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Upload images or paste them directly for visual analysis and
+                    questions
+                  </p>
+                </div>
+
+                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    🎤 Voice Input
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Use the microphone button to speak your questions instead of
+                    typing
+                  </p>
+                </div>
+
+                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    ⚡ Multiple Models
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Choose from various AI models optimized for different tasks
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-gray-400 text-sm">
+                <p className="mb-2">
+                  <strong>Pro tip:</strong> Use{" "}
+                  <kbd className="px-2 py-1 bg-neutral-700 rounded text-xs">
+                    Shift + Esc
+                  </kbd>{" "}
+                  to quickly focus the input field
+                </p>
+                <p>
+                  <strong>Quick delete:</strong> Use{" "}
+                  <kbd className="px-2 py-1 bg-neutral-700 rounded text-xs">
+                    Ctrl + Shift + Backspace
+                  </kbd>{" "}
+                  to delete this chat
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <MessagesContainer
+            messages={messages}
+            model={
+              models.find((m) => m.code === model)?.name || "Unknown Model"
+            }
+            onCopyResponse={handleCopyResponse}
+          />
+        )}
         <div ref={messagesEndRef} />
       </div>
 

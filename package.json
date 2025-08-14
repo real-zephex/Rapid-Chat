@@ -26,6 +26,7 @@
     "react-hotkeys-hook": "^5.1.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
+    "react-timer-hook": "^4.0.5",
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",

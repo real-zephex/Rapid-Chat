@@ -1,7 +1,7 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addTabs, retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 import { usePathname, useRouter } from "next/navigation";
 import { FaMapPin } from "react-icons/fa";
@@ -25,12 +25,12 @@ const Sidebar = () => {
   const [expand, setExpanded] = useState<boolean>(false);
   const [tabs, setTabs] = useState<string[]>([]);
   const [tabTitles, setTabTitles] = useState<Record<string, string>>({});
+  const [count, setCount] = useState<number>(0);
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
-  const pathname_2 = usePathname().split("/")[1];
 
-  console.log(pathname_2)
+  const sidebarRef = useRef(null);
 
   const getTitle = (id: string) => {
     return tabTitles[id] || "Loading...";
@@ -80,6 +80,86 @@ const Sidebar = () => {
     [expand]
   );
 
+  useHotkeys("down", (e) => {
+    e.preventDefault();
+    if (!expand) {
+      return;
+    }
+    handleArrowKeys({ action: "down" });
+  });
+
+  useHotkeys("up", (e) => {
+    e.preventDefault();
+    if (!expand) {
+      return;
+    }
+    handleArrowKeys({ action: "up" });
+  });
+
+  function handleArrowKeys({ action }: { action: "up" | "down" }) {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) {
+      return;
+    }
+
+    console.log("Found ", count, " tabs.");
+
+    const el = getTabElementById(tabs[count]);
+    if (el) {
+      el.style.border = "none";
+    }
+
+    if (action === "up") {
+      if (count === 0) return;
+      const element = getTabElementById(tabs[count - 1]);
+      if (element) {
+        element.style.border = "1px solid blue";
+        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        element.setAttribute("tabindex", "0"); // Make element focusable
+        element.focus();
+
+        // Add Enter key listener
+        element.onkeydown = (e) => {
+          if (e.key === "Enter") {
+            element.click();
+          }
+        };
+
+        setCount(count - 1);
+      }
+    } else if (action === "down") {
+      if (count === tabs.length - 1) return;
+      const element = getTabElementById(tabs[count + 1]);
+      if (element) {
+        element.style.border = "1px solid blue";
+        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        element.setAttribute("tabindex", "0"); // Make element focusable
+        element.focus();
+
+        // Add Enter key listener
+        element.onkeydown = (e) => {
+          if (e.key === "Enter") {
+            element.click();
+          }
+        };
+
+        setCount(count + 1);
+      }
+    }
+  }
+
+  function getTabElementById(id: string): HTMLElement | null {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) {
+      return null;
+    }
+    const element = document.getElementById(id);
+    if (!element) {
+      return null;
+    }
+    return element;
+  }
+
   useHotkeys(
     "esc",
     () => {
@@ -88,12 +168,8 @@ const Sidebar = () => {
     [expand]
   );
 
-  if (pathname_2 == "home") {
-    return;
-  }
-
   return (
-    <div className="fixed top-0 left-0 m-4 z-20">
+    <div className="fixed top-0 left-0 m-4 z-20" ref={sidebarRef}>
       <button
         className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/10"
         onClick={(e) => {
@@ -145,6 +221,7 @@ const Sidebar = () => {
               tabs.map((tab, index) => (
                 <div
                   key={tab}
+                  id={tab}
                   className={`group p-3 rounded-xl hover:bg-white/10 transition-all duration-300 flex flex-row justify-between items-center cursor-pointer relative border hover:border-white/20 hover:shadow-md hover:scale-[1.01] ${
                     pathname === tab
                       ? "border-blue-400/50 bg-blue-500/10 shadow-lg shadow-blue-500/20"
