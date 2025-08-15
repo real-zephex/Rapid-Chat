@@ -35,10 +35,6 @@ function GetStarted() {
         disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed text-center"
       onClick={(e) => handlePress(e, router, setLoading)}
     >
-      {/* <span className="hidden lg:block">
-        {loading ? "Loading..." : "Get Started"}
-      </span> */}
-      {/* <span className="text-xl">→</span> */}
       <FaArrowRight size={14} />
     </button>
   );
