@@ -31,7 +31,7 @@ const Homepage = () => {
     <main className="relative isolate min-h-screen ">
       {/* Background gradients (Tailwind v4) */}
       <div
-        aria-hidden
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
         {/* Top-left radial glow */}
