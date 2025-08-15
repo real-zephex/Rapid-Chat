@@ -59,6 +59,24 @@ export const models = [
     image: false,
     description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
   },
+  {
+    name: "Qwen3 4B",
+    code: "qwen3_4b",
+    image: false,
+    description: "Versatile reasoning and dialogue language model",
+  },
+  // {
+  //   name: "Llama Instant",
+  //   code: "llama_instant",
+  //   image: true,
+  //   description: "Fast, accurate, and reliable.",
+  // },
+  // {
+  //   name: "GPT 4.0 Mini",
+  //   code: "gpt4oMini",
+  //   image: false,
+  //   description: "Versatile, good for a wide range of tasks.",
+  // }
   // {
   //   name: "Llama Instant",
   //   code: "llama_instant",

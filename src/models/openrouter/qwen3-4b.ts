@@ -1,9 +1,9 @@
 import { incomingData } from "../types";
 import openai from "./instance";
 
-async function* gptOSSfree({ inc }: { inc: incomingData }) {
+async function* qwen3_4B({ inc }: { inc: incomingData }) {
   const completion = await openai.chat.completions.create({
-    model: "openai/gpt-oss-20b:free",
+    model: "qwen/qwen3-4b:free",
     messages: [
       {
         role: "system",
@@ -48,14 +48,15 @@ async function* gptOSSfree({ inc }: { inc: incomingData }) {
       },
     ],
     stream: true,
-    max_completion_tokens: 8192,
+    max_completion_tokens: 16284,
     temperature: 0.9,
     reasoning_effort: "medium",
   });
 
   for await (const chunk of completion) {
+    console.log(chunk.choices[0]?.delta?.content);
     yield chunk.choices[0]?.delta?.content || "";
   }
 }
 
-export default gptOSSfree;
+export default qwen3_4B;

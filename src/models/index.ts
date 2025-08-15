@@ -10,7 +10,7 @@ import Devstral from "./openrouter/devstral";
 // import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
 // import Sarvam from "./openrouter/sarvam";
 import { incomingData, Messages } from "./types";
-import LlamaInstant from "./groq/llama-8.1b-instant";
+import LlamaInstant from "./groq/archive/llama-8.1b-instant";
 import GPT4oMini from "./openai/gpt-4o-mini";
 // import Sarvam from "./openrouter/sarvam";
 import VeniceUncensored from "./openrouter/venice_uncensored";
@@ -20,6 +20,7 @@ import Deepseek from "./openrouter/deepseek";
 import Flash2 from "./google/gemini-2.0-flash";
 import gptOSS from "./groq/gpt-oss";
 import gptOSSfree from "./openrouter/gpt-oss-20b";
+import qwen3_4B from "./openrouter/qwen3-4b";
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
 
@@ -43,7 +44,8 @@ const mappings: Record<string, ModelFunction> = {
   venice_uncensored: VeniceUncensored,
   deepseek: Deepseek,
   gptOss: gptOSS,
-  gptOssFree: gptOSSfree
+  gptOssFree: gptOSSfree,
+  qwen3_4b: qwen3_4B
   // gemma3: Gemma3,
 
   // phi4: Phi4,
