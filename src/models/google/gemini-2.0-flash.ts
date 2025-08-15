@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { incomingData } from "../types";
+import tools_definitons from "./tools/definitions";
+import gemini_tools_mappings from "./tools/exports";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -33,6 +35,7 @@ async function* Flash2({ inc }: { inc: incomingData }) {
           - Avoid providing data or code without any context or explanation. Always frame your answer to be helpful.`,
       },
     ],
+    tools: [{ functionDeclarations: [...tools_definitons] }],
   };
   const contents = inc.chats
     ? [
@@ -70,10 +73,49 @@ async function* Flash2({ inc }: { inc: incomingData }) {
         },
       ];
 
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash-lite",
+    config: systemPrompt,
+    contents,
+  });
+
+  let functionMessageResponseArray = [];
+  if (response.functionCalls) {
+    const functionCalls = response.functionCalls;
+    for (const call of functionCalls) {
+      const functionName = call.name;
+      const functionArgs = JSON.parse(JSON.stringify(call.args));
+
+      const functionToCall =
+        gemini_tools_mappings[
+          functionName as keyof typeof gemini_tools_mappings
+        ];
+      const functionResponse = JSON.stringify(
+        await functionToCall(functionArgs)
+      );
+      const functionResponsePart = {
+        name: call.name,
+        response: { functionResponse },
+      };
+      const functionResponseCandidate = response.candidates![0].content;
+      const functionMessageResponse = {
+        role: "user",
+        parts: [
+          {
+            functionResponse: functionResponsePart,
+          },
+        ],
+      };
+      functionMessageResponseArray.push(functionMessageResponse);
+      functionMessageResponseArray.push(functionResponseCandidate);
+    }
+  }
+  const updatedContents = [...contents, ...functionMessageResponseArray];
+
   const stream = await ai.models.generateContentStream({
     model: "gemini-2.0-flash",
     config: systemPrompt,
-    contents,
+    contents: updatedContents,
   });
 
   for await (const chunk of stream) {
