@@ -119,6 +119,7 @@ async function* Deepseek({ inc }: { inc: incomingData }) {
     ],
     stream: true,
     max_completion_tokens: 40000,
+    max_tokens: 16284,
     temperature: 0.8,
     top_p: 0.95,
   });

@@ -65,15 +65,17 @@ async function* FlashLite({ inc }: { inc: incomingData }) {
     : [
         {
           role: "user",
-          parts: [{ text: inc.message }],
-          ...(inc.imageData
-            ? inc.imageData.map((img) => ({
-                inlineData: {
-                  data: Buffer.from(img.data).toString("base64"),
-                  mimeType: img.mimeType,
-                },
-              }))
-            : []),
+          parts: [
+            { text: inc.message },
+            ...(inc.imageData
+              ? inc.imageData.map((img) => ({
+                  inlineData: {
+                    data: Buffer.from(img.data).toString("base64"),
+                    mimeType: img.mimeType,
+                  },
+                }))
+              : []),
+          ],
         },
       ];
 

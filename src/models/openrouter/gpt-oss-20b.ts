@@ -50,7 +50,6 @@ async function* gptOSSfree({ inc }: { inc: incomingData }) {
     stream: true,
     max_completion_tokens: 8192,
     temperature: 0.9,
-    reasoning_effort: "medium",
   });
 
   for await (const chunk of completion) {

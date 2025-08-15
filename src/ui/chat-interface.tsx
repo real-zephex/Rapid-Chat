@@ -121,21 +121,13 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, [id]);
 
   useEffect(() => {
-    window.addEventListener("offline", () => {
-      setIsLoading(true);
-    });
-
-    window.addEventListener("online", () => {
-      setIsLoading(false);
-    });
-
+    const handleOffline = () => setIsLoading(true);
+    const handleOnline = () => setIsLoading(false);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
     return () => {
-      window.removeEventListener("offline", () => {
-        setIsLoading(true);
-      });
-      window.removeEventListener("online", () => {
-        setIsLoading(false);
-      });
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
     };
   }, []);
 
