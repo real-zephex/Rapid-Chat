@@ -59,6 +59,7 @@ export const models = [
     image: false,
     description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
   },
+
   // {
   //   name: "Llama Instant",
   //   code: "llama_instant",

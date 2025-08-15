@@ -1,10 +1,5 @@
-import OpenAI from "openai";
 import { incomingData } from "../types";
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import openai from "./instance";
 
 async function* gptOSSfree({ inc }: { inc: incomingData }) {
   const completion = await openai.chat.completions.create({

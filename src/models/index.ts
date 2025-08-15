@@ -43,7 +43,7 @@ const mappings: Record<string, ModelFunction> = {
   venice_uncensored: VeniceUncensored,
   deepseek: Deepseek,
   gptOss: gptOSS,
-  gptOssFree: gptOSSfree
+  gptOssFree: gptOSSfree,
   // gemma3: Gemma3,
 
   // phi4: Phi4,

@@ -518,7 +518,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                     💡 Ask Questions
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    Get help with coding, explanations, or any topic you're
+                    Get help with coding, explanations, or any topic you&apos;re
                     curious about
                   </p>
                 </div>
