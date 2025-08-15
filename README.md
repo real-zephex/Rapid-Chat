@@ -1,100 +1,103 @@
-# 🚀 Rapid AI Chat Interface
+# Rapid Chat — Developer-first, multi-model AI chat
 
-A lightning-fast, privacy-first AI chat interface that brings together multiple specialized language models in one unified platform. Built with Next.js 15 and featuring unlimited local storage through IndexedDB.
+Privacy-first, streaming chat UI that switches between multiple providers and models. Built with Next.js 15 and React 19. Local-first persistence via IndexedDB (with migration from localStorage).
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
-![Next.js](https://img.shields.io/badge/Next.js-15.3-black)
-![React](https://img.shields.io/badge/React-19.0-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Next.js](https://img.shields.io/badge/Next.js-15.4.6-black)
+![React](https://img.shields.io/badge/React-19.1-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 
-## ✨ Key Features
+## Key features
 
-### 🔒 **Privacy First**
+### Privacy-first
 
 - **Zero Cloud Storage**: All conversations stay on your device
 - **Unlimited Local Storage**: Uses IndexedDB for persistent chat history
 - **No Data Tracking**: Your conversations never leave your browser
 
-### ⚡ **Lightning Performance**
+### Fast, streaming UX
 
-- **Streaming Responses**: Real-time AI responses with token streaming
-- **Instant Model Switching**: Switch between AI models without delay
-- **Optimized UI**: Built with Next.js 15 and React 19 for maximum speed
-- **Response Processing**: Advanced content cleaning with `<think>` tag handling
+- **Streaming responses**: Real-time token streaming across providers
+- **Instant model switching**: Swap models without page reloads
+- **Optimized UI**: Next.js 15 + React 19, Tailwind 4
+- **Response processing**: Cleans content and extracts `<think>` reasoning
 
-### 🖼️ **Multi-Modal Support**
+### Images and PDFs
 
-- **Image Upload**: Send images to compatible AI models (Gemini Flash)
-- **PDF Support**: Upload and analyze PDF documents (Flash model)
-- **Image Preview**: Real-time preview with drag-and-drop support
-- **Persistent Images**: Images stored locally with conversations
+- **Images**: PNG/JPEG/JPG upload, paste, and drag-drop (stored locally)
+- **PDFs**: Up to 10MB; supported with Gemini Flash models; downloadable chips in UI
+- **Previews**: Inline image previews with cleanup of object URLs
+- **Persistence**: Media stored alongside chats in IndexedDB
 
-### 🎤 **Audio Features**
+### Audio (desktop)
 
-- **Voice Recording**: Record audio messages (desktop only)
-- **Speech-to-Text**: Automatic transcription via Whisper
-- **Audio Validation**: 2-second minimum, 5-minute maximum duration
+- **Voice recording**: Built-in Web Audio capture
+- **STT**: Transcription via Groq Distil-Whisper (server action)
+- **Limits**: 2s minimum, 3 minutes maximum
 
-### 🤖 **6 Specialized AI Models**
+### Models available today
 
-| Model           | Provider   | Specialty            | Features                                    |
-| --------------- | ---------- | -------------------- | ------------------------------------------- |
-| **Scout**       | Groq/Llama | Accurate & Reliable  | Fact-checked responses, general knowledge   |
-| **Flash**       | Google AI  | Vision + Quick Facts | Image/PDF analysis, direct responses        |
-| **Qwen**        | Groq       | Deep Reasoning       | Complex analysis, structured thinking       |
-| **Devstral**    | OpenRouter | Code Development     | Programming help, debugging, best practices |
-| **GPT-4o Mini** | OpenAI     | Versatile Assistant  | General-purpose, balanced responses         |
-| **Compound**    | Groq       | Web-Connected AI     | Internet access, real-time information      |
+These are exposed in the UI (see `src/utils/model-list.ts`) and wired via streaming generators (`src/models/**`).
 
-### 🎨 **Advanced UI Features**
+| Code           | Name                         | Provider     | Images | Notes |
+| -------------- | ---------------------------- | ------------ | ------ | ----- |
+| `flash`        | Gemini Flash 2.5 Lite        | Google AI    | Yes    | Fast, concise multimodal |
+| `flash_2`      | Gemini Flash 2.0             | Google AI    | Yes    | Multimodal; PDFs supported |
+| `qwen`         | Qwen 32B                     | Groq         | No     | Strong reasoning |
+| `scout`        | Llama Scout                  | Groq         | Yes    | Reliable general-purpose |
+| `devstral`     | Devstral Small (free)        | OpenRouter   | No     | Code-focused assistant |
+| `venice_uncensored` | Dolphin Mistral (Venice) | OpenRouter   | No     | Broad coverage |
+| `deepseek`     | Deepseek R1 (free)           | OpenRouter   | No     | Reasoning-first |
+| `gptOss`       | GPT-OSS 20B                  | Groq         | No     | Conversational |
+| `gptOssFree`   | GPT-OSS 20B (free)           | OpenRouter   | No     | Conversational |
 
-- **Reasoning Disclosure**: Expandable thinking process for supported models
-- **Token Metrics**: Real-time token count and processing speed
-- **Syntax Highlighting**: Code blocks with language detection and copy buttons
-- **Math Rendering**: LaTeX/KaTeX support for mathematical expressions
-- **Markdown Support**: Rich text formatting with GFM support
-- **Responsive Design**: Optimized for desktop and mobile
-- **Keyboard Shortcuts**: `Ctrl+K` for command center, `Shift+Esc` for input focus
+Notes:
+- Additional mappings exist in `src/models/index.ts` (e.g., Llama Instant, GPT-4o Mini) but are not exposed in the selector by default.
 
-## 🛠️ Tech Stack
+### Developer-minded UI
+
+- Reasoning disclosure (toggle), token count, tokens/sec
+- Markdown + code highlight + copy, KaTeX/LaTeX, GFM
+- Keyboard shortcuts: Shift+Esc focuses input; Ctrl+Shift+Backspace deletes chat
+- Drag-drop, paste-to-upload, file count limit 5, max size 10MB/file
+
+## Tech stack
 
 ### Frontend
 
-- **Next.js 15.3** - React framework with App Router
-- **React 19** - Latest React with concurrent features
-- **TypeScript 5** - Type-safe development
-- **Tailwind CSS 4** - Utility-first styling
-- **Tailwind Typography** - Beautiful prose styling
+- **Next.js 15.4.6** — App Router, Server Actions
+- **React 19.1** — Concurrent features
+- **TypeScript 5.9** — Strict typing
+- **Tailwind CSS 4** — Utility-first styling
+- **@tailwindcss/typography** — Prose styling
 
-### AI Integration
+### AI integration
 
-- **@google/genai** - Google AI Gemini models
-- **groq-sdk** - Groq AI models (Llama, Qwen, Compound)
-- **OpenAI SDK** - GPT models via OpenAI API
-- **OpenRouter** - Multiple model providers
+- **@google/genai** — Gemini models
+- **groq-sdk** — Groq models (Llama, Qwen, Whisper, OSS)
+- **openai** — OpenAI SDK with OpenRouter base URL where applicable
+- **OpenRouter** — Multiple providers through a unified interface
 
-### Storage & Performance
+### Storage & performance
 
-- **IndexedDB** - Client-side database for chat persistence
-- **Server Actions** - Next.js server actions for AI streaming
-- **Response Streaming** - Real-time token streaming
-- **Migration System** - Automatic localStorage to IndexedDB migration
+- **IndexedDB** — Chats and tabs stores; auto-migration from localStorage
+- **Server Actions** — Model calls and streaming
+- **Response streaming** — Token-by-token UI updates
 
-### UI Enhancements
+### UI enhancements
 
-- **React Markdown** - Markdown rendering with extensions
-- **Rehype/Remark** - Syntax highlighting and math support
-- **React Icons** - Comprehensive icon library
-- **KaTeX** - Mathematical notation rendering
-- **React Hotkeys Hook** - Keyboard shortcut management
+- **react-markdown**, **remark**/**rehype** for GFM, math, highlighting
+- **KaTeX**, **react-icons**, **react-hotkeys-hook**
+
+## Getting started
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
-- API keys for the AI providers you want to use
+- npm or Bun
+- API keys for providers you plan to use
 
 ### Installation
 
@@ -108,7 +111,11 @@ cd Rapid-Chat
 2. **Install dependencies**
 
 ```bash
+# with npm
 npm install
+
+# or with Bun
+bun install
 ```
 
 3. **Set up environment variables**
@@ -124,93 +131,102 @@ OPENAI_API_KEY=your_openai_api_key
 4. **Start the development server**
 
 ```bash
+# with npm
 npm run dev
+
+# or with Bun
+bun run dev
 ```
 
 5. **Open your browser**
    Navigate to `http://localhost:3000`
 
-### Production Build
+### Production build
 
 ```bash
+# with npm
 npm run build
 npm start
+
+# or with Bun
+bun run build
+bun run start
 ```
 
-## 📖 Usage
+## Usage
 
-### Starting a Conversation
+### Start a conversation
 
 1. Click "Get Started" on the homepage or use the sidebar
 2. Select your preferred AI model from the dropdown
 3. Type your message and press Enter or click Send
 4. Watch as the AI streams its response in real-time
 
-### Multi-Modal Support
+### Images and PDFs
 
-1. **Images**: Select the "Flash" model and click the upload button
-2. **PDFs**: Upload PDF documents (up to 10MB) for analysis
+1. **Images**: Select a model with image support (Flash/Flash 2.0/Scout) and upload or paste
+2. **PDFs**: Upload PDF documents (≤10MB). Currently supported with Gemini Flash models
 3. **Preview**: See your uploads before sending
 4. **Storage**: All media is stored locally with conversations
 
-### Audio Recording
+### Audio transcription
 
 1. Click the microphone icon (desktop only)
 2. Record your message (2 seconds - 5 minutes)
-3. Audio is automatically transcribed using Whisper
+3. Audio is transcribed using Groq Distil-Whisper
 4. Edit the transcription before sending
 
-### Advanced Features
+### Advanced features
 
-- **Reasoning View**: Click the reasoning dropdown to see AI thinking process
-- **Token Metrics**: View processing speed and token counts
-- **Code Copying**: One-click copy for code blocks
-- **Chat Management**: Delete, organize, and navigate between conversations
+- Reasoning view toggle (for models that emit <think> blocks)
+- Token metrics (count and tokens/sec)
+- One-click copy for code blocks
+- Chat management (delete, organize, switch)
 
-## 🔧 Architecture
+## Architecture
 
-### Project Structure
+### Project structure
 
 ```
 src/
-├── app/                    # Next.js App Router
+├── app/                    # App Router (routes, layout, metadata)
 │   ├── chat/[id]/         # Dynamic chat routes
 │   └── layout.tsx         # Root layout with analytics
 ├── models/                # AI model integrations
-│   ├── google/            # Google AI (Gemini Flash)
-│   ├── groq/             # Groq models (Scout, Qwen, Compound, Whisper)
-│   ├── openai/           # OpenAI GPT models
-│   ├── openrouter/       # OpenRouter providers
-│   └── index.ts          # Model provider with streaming
+│   ├── google/            # Google AI (Gemini Flash models)
+│   ├── groq/              # Groq models (Scout, Qwen, Whisper, OSS)
+│   ├── openai/            # OpenAI models (optional)
+│   ├── openrouter/        # OpenRouter providers
+│   └── index.ts           # Model provider with streaming
 ├── ui/                   # React components
 │   ├── chat-interface.tsx # Main chat with audio/image support
-│   ├── sidebar.tsx       # Command center with hotkeys
+│   ├── sidebar.tsx        # Command center with hotkeys
 │   ├── chat-components/  # Specialized chat components
 │   └── get-started.tsx   # Landing page
-└── utils/               # Utilities
-    ├── indexedDB.ts     # Storage with migration
-    ├── model-list.ts    # Available models configuration
-    └── responseCleaner.tsx # AI response processing
+└── utils/                # Utilities
+  ├── indexedDB.ts      # Storage with migration
+  ├── model-list.ts     # Available models configuration
+  └── responseCleaner.tsx # AI response processing
 ```
 
-### Data Flow
+### Data flow
 
 1. **User Input** → Chat Interface (text/audio/images)
-2. **Model Selection** → Model Provider with streaming
+2. **Model Selection** → Model provider with streaming
 3. **Server Action** → Specific AI Model Integration
-4. **Response Processing** → Content cleaning and reasoning extraction
+4. **Response processing** → Content cleaning and reasoning extraction
 5. **Real-time Updates** → Streaming UI with token metrics
-6. **Local Persistence** → IndexedDB with image storage
+6. **Local persistence** → IndexedDB with image/file storage
 
-### Storage Architecture
+### Storage architecture
 
-- **IndexedDB Stores**:
+- **IndexedDB stores**:
 
   - `chats`: Conversation data with embedded images/files
   - `tabs`: Active chat sessions for navigation
   - **Migration**: Automatic upgrade from localStorage
 
-- **Message Structure**:
+- **Message structure**:
   ```typescript
   interface Messages {
     role: "user" | "assistant";
@@ -222,109 +238,84 @@ src/
   }
   ```
 
-## 🎛️ Model Configuration
+## Model configuration
 
-### Model Specializations
+### Model specializations
 
-Each model is optimized with custom system prompts:
+Each model is optimized with model-specific prompts:
 
-- **Scout**: Fact-checking and verification focus
-- **Flash**: Conversational with vision capabilities
-- **Qwen**: Deep reasoning and structured analysis
-- **Devstral**: Code-first approach with best practices
-- **GPT-4o Mini**: Balanced general-purpose assistant
-- **Compound**: Web-connected for real-time information
+- **Scout**: Reliability and fact-checking
+- **Flash / Flash 2.0**: Multimodal (images/PDFs)
+- **Qwen**: Deep reasoning
+- **Devstral**: Code-first assistant
+- **Deepseek / GPT-OSS**: Conversational + reasoning
 
-### Response Processing
+### Response processing
 
-- **Think Tags**: Extract and display reasoning process
-- **Content Cleaning**: Remove processing artifacts
-- **Token Metrics**: Calculate speed and efficiency
-- **Streaming**: Real-time response updates
+- **Think tags**: Extract and display reasoning text
+- **Content cleaning**: Remove artifacts
+- **Token metrics**: Count and throughput
+- **Streaming**: Real-time updates
 
-## 🔐 Privacy & Security
+## Privacy & security
 
-### Data Protection
+### Data protection
 
-- **No Server Storage**: Conversations never reach our servers
-- **Local-Only Processing**: All chat history stays in your browser
-- **Image Privacy**: Media processed locally and stored in IndexedDB
-- **API Direct**: Your keys connect directly to AI providers
+- **No server storage**: Chats are stored locally (IndexedDB)
+- **Local-only chat history**: Your history stays in the browser
+- **Media privacy**: Images/files stored locally with chats
+- **BYOK**: Your API keys call providers directly from server actions
 
-### Browser Compatibility
+### Browser compatibility
 
-- **IndexedDB Support**: All modern browsers
-- **WebStreams**: Real-time response streaming
-- **Media API**: Audio recording support
-- **File API**: Drag-and-drop file handling
+- **IndexedDB**: Modern browsers
+- **Web Streams**: Real-time streaming
+- **Media API**: Audio recording
+- **File API**: Drag-and-drop and paste
 
-## 🚀 Performance Optimizations
+## Performance notes
 
-### Response Streaming
+### Response streaming
 
-- **Token-by-Token**: Real-time response display
-- **Throttled Updates**: Optimized UI refresh rate
-- **Memory Management**: Efficient blob URL cleanup
-- **Error Recovery**: Graceful fallback handling
+- Token-by-token rendering with throttle
+- Object URL cleanup for previews
+- Graceful error handling
 
-### Storage Efficiency
+### Storage efficiency
 
-- **Automatic Migration**: Seamless localStorage upgrade
-- **Blob Management**: Efficient image storage
-- **Indexing**: Fast chat retrieval
-- **Cleanup**: Automatic resource management
+- LocalStorage → IndexedDB migration
+- Blob management and cleanup
+- Fast retrieval via simple stores
 
-## 🧪 Development
+## Development
 
-### Available Scripts
+### Scripts
 
-- `npm run dev` - Development with Turbopack
-- `npm run build` - Production build
-- `npm run start` - Production server
-- `npm run lint` - Code quality checks
+- `npm run dev` / `bun run dev` — Dev with Turbopack
+- `npm run build` / `bun run build` — Production build
+- `npm run start` / `bun run start` — Production server
+- `npm run lint` — Lint
 
-### Adding New Models
+### Add a new model
 
-1. Create model file in appropriate provider directory
-2. Implement async generator with proper typing
-3. Add to model mappings in `src/models/index.ts`
-4. Update model list in `src/utils/model-list.ts`
-5. Add model information to chat interface
+1. Create a generator in `src/models/<provider>/<model>.ts`
+2. Implement as `async function* ({ inc }: { inc: incomingData })`
+3. Register it in `src/models/index.ts` mappings
+4. Expose in `src/utils/model-list.ts` (name, code, image flag, description)
+5. Optionally tune prompts and UI hints
 
-### Development Guidelines
+### Guidelines
 
-- TypeScript strict mode required
-- Tailwind CSS for all styling
-- Proper error boundaries
-- JSDoc for complex functions
-- Test across multiple models
+- Prefer strict typing and small server actions
+- Keep model prompts co-located with generators
+- Reuse streaming patterns and response cleaner
+- Test across providers and edge cases
 
-## 📊 Analytics & Monitoring
+## License
 
-### Built-in Tracking
+Apache License 2.0 — see `LICENSE`.
 
-- **Vercel Analytics**: Performance monitoring
-- **Google Analytics**: User behavior (privacy-compliant)
-- **Next.js Telemetry**: Build-time optimization
-
-### Performance Metrics
-
-- Token processing speed
-- Response time tracking
-- Error rate monitoring
-- User interaction patterns
-
-
-## 🤝 Support
+## Support
 
 For issues, questions, or feature requests, please open an issue in the repository.
 
----
-
-<div align="center">
-
-**Built using Next.js 15, React 19, and TypeScript**
-
-_Privacy-first • Lightning-fast • Multi-modal AI chat interface_
-
-</div>
