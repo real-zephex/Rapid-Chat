@@ -5,4 +5,4 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-export default openai
+export default openai;
