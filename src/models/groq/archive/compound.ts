@@ -1,5 +1,5 @@
 import { Groq } from "groq-sdk";
-import { incomingData } from "../types";
+import { incomingData } from "../../types";
 
 const groq = new Groq();
 

@@ -14,7 +14,7 @@ const FeatureConstructor = (
           {icon}
         </div>
         <div>
-          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-300 mb-1 group-hover:text-white transition-colors duration-300">
+          <h3 className="text-md sm:text-lg lg:text-xl font-bold text-gray-300 mb-1 group-hover:text-white transition-colors duration-300">
             {mainText}
           </h3>
           <p className="text-sm sm:text-md lg:text-lg text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
@@ -28,16 +28,37 @@ const FeatureConstructor = (
 
 const Homepage = () => {
   return (
-    <main>
+    <main className="relative isolate min-h-screen ">
+      {/* Background gradients (Tailwind v4) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        {/* Top-left radial glow */}
+        {/* <div className="absolute -top-28 -left-24 h-[28rem] w-[28rem] bg-radial from-sky-500/20 to-transparent blur-3xl" /> */}
+
+        {/* Bottom-right radial glow */}
+        {/* <div className="absolute -bottom-28 -right-24 h-[28rem] w-[28rem] bg-radial from-fuchsia-500/20 to-transparent blur-3xl" /> */}
+
+        {/* Soft vertical linear wash */}
+        {/* <div className="absolute inset-0 bg-linear-to-b from-indigo-500/10 via-purple-500/5 to-transparent" /> */}
+
+        {/* Organic HTML blobs */}
+        <div className="absolute -top-16 left-[8%] h-72 w-72 bg-linear-45 from-fuchsia-500/25 to-violet-500/15 blur-3xl [clip-path:polygon(55%_0,100%_38%,82%_100%,12%_86%,0_28%)]" />
+
+        <div className="absolute top-1/2 -translate-y-1/2 -left-24 h-80 w-80 bg-linear-65 from-sky-400/20 to-teal-400/10 blur-3xl [clip-path:polygon(70%_0,100%_55%,64%_100%,10%_90%,0_30%)]" />
+
+        <div className="absolute -bottom-24 right-0 h-96 w-[28rem] bg-linear-to-l from-amber-400/20 to-rose-400/10 blur-3xl [clip-path:polygon(60%_0,100%_40%,84%_100%,24%_100%,0_30%)]" />
+      </div>
       <NavigationBar />
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Features Section */}
-          <div className="space-y-4 lg:space-y-6 order-2 lg:order-1">
+          <div className="space-y-4 lg:space-y-6 order-2 lg:order-1 bg-neutral-900/50 p-6 rounded-xl border border-gray-700/50 backdrop-blur-lg">
             <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
                 Key Features
               </h2>
               <p className="text-gray-400 text-sm sm:text-base lg:text-lg">
@@ -138,7 +159,7 @@ const Homepage = () => {
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-300">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-300">
                   Powered By
                 </h3>
               </div>

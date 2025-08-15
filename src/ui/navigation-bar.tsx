@@ -4,13 +4,13 @@ import GetStarted from "./get-started";
 
 const NavigationBar = () => {
   return (
-    <nav className="border-b border-gray-800 backdrop-blur-sm sticky top-0 z-10">
+    <nav className="border-b border-gray-800 backdrop-blur-xl sticky top-0 z-10 bg-neutral-900/50">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex flex-row justify-between items-center">
           {/* Left side of the navigation bar */}
           <div className="flex flex-row items-center gap-3">
             <div className="flex items-center gap-3">
-              <h1 className="font-bold text-xl lg:text-2xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="font-bold text-xl lg:text-2xl bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
                 Rapid Chat
               </h1>
               <div className="hidden sm:flex items-center gap-3">

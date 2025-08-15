@@ -121,21 +121,13 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, [id]);
 
   useEffect(() => {
-    window.addEventListener("offline", () => {
-      setIsLoading(true);
-    });
-
-    window.addEventListener("online", () => {
-      setIsLoading(false);
-    });
-
+    const handleOffline = () => setIsLoading(true);
+    const handleOnline = () => setIsLoading(false);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
     return () => {
-      window.removeEventListener("offline", () => {
-        setIsLoading(true);
-      });
-      window.removeEventListener("online", () => {
-        setIsLoading(false);
-      });
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
     };
   }, []);
 
@@ -518,7 +510,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                     💡 Ask Questions
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    Get help with coding, explanations, or any topic you're
+                    Get help with coding, explanations, or any topic you&apos;re
                     curious about
                   </p>
                 </div>

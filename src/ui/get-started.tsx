@@ -5,6 +5,7 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { useState } from "react";
+import { FaArrowRight } from "react-icons/fa";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement>,
@@ -27,17 +28,18 @@ function GetStarted() {
   return (
     <button
       disabled={loading}
-      className="inline-flex items-center justify-center gap-2 px-4 py-2 
-        bg-white text-black font-light text-lg rounded-full
-        hover:bg-gray-100 hover:scale-105
+      className="px-4 py-2 lg:py-2
+        bg-white text-black rounded-full
+        hover:bg-gray-100 
         transition-all duration-200 ease-out
-        disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+        disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed text-center"
       onClick={(e) => handlePress(e, router, setLoading)}
     >
-      <span className="hidden lg:block">
+      {/* <span className="hidden lg:block">
         {loading ? "Loading..." : "Get Started"}
-      </span>
-      <span className="text-xl">→</span>
+      </span> */}
+      {/* <span className="text-xl">→</span> */}
+      <FaArrowRight size={14} />
     </button>
   );
 }

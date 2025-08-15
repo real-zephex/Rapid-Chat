@@ -1,7 +1,7 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addTabs, retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 import { usePathname, useRouter } from "next/navigation";
 import { FaMapPin } from "react-icons/fa";
@@ -29,6 +29,9 @@ const Sidebar = () => {
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
+  const pathname_2 = usePathname();
+
+  console.log(pathname_2);
 
   const sidebarRef = useRef(null);
 
@@ -169,9 +172,14 @@ const Sidebar = () => {
   );
 
   return (
-    <div className="fixed top-0 left-0 m-4 z-20" ref={sidebarRef}>
+    <div
+      className={`fixed ${
+        pathname_2 === "/" ? "bottom-0" : "top-0"
+      } left-0 m-4 z-20`}
+      ref={sidebarRef}
+    >
       <button
-        className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/10"
+        className="group p-3 rounded-xl bg-bg/20 hover:bg-bg/50 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 hover:shadow-lg hover:shadow-white/10"
         onClick={(e) => {
           e.preventDefault();
           setExpanded((prev) => !prev);

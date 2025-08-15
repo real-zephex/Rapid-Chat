@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { Messages } from "../types";
+import { Messages } from "../../types";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
