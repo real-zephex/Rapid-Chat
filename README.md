@@ -39,19 +39,20 @@ Privacy-first, streaming chat UI that switches between multiple providers and mo
 
 These are exposed in the UI (see `src/utils/model-list.ts`) and wired via streaming generators (`src/models/**`).
 
-| Code           | Name                         | Provider     | Images | Notes |
-| -------------- | ---------------------------- | ------------ | ------ | ----- |
-| `flash`        | Gemini Flash 2.5 Lite        | Google AI    | Yes    | Fast, concise multimodal |
-| `flash_2`      | Gemini Flash 2.0             | Google AI    | Yes    | Multimodal; PDFs supported |
-| `qwen`         | Qwen 32B                     | Groq         | No     | Strong reasoning |
-| `scout`        | Llama Scout                  | Groq         | Yes    | Reliable general-purpose |
-| `devstral`     | Devstral Small (free)        | OpenRouter   | No     | Code-focused assistant |
-| `venice_uncensored` | Dolphin Mistral (Venice) | OpenRouter   | No     | Broad coverage |
-| `deepseek`     | Deepseek R1 (free)           | OpenRouter   | No     | Reasoning-first |
-| `gptOss`       | GPT-OSS 20B                  | Groq         | No     | Conversational |
-| `gptOssFree`   | GPT-OSS 20B (free)           | OpenRouter   | No     | Conversational |
+| Code                | Name                     | Provider   | Images | Notes                      |
+| ------------------- | ------------------------ | ---------- | ------ | -------------------------- |
+| `flash`             | Gemini Flash 2.5 Lite    | Google AI  | Yes    | Fast, concise multimodal   |
+| `flash_2`           | Gemini Flash 2.0         | Google AI  | Yes    | Multimodal; PDFs supported |
+| `qwen`              | Qwen 32B                 | Groq       | No     | Strong reasoning           |
+| `scout`             | Llama Scout              | Groq       | Yes    | Reliable general-purpose   |
+| `devstral`          | Devstral Small (free)    | OpenRouter | No     | Code-focused assistant     |
+| `venice_uncensored` | Dolphin Mistral (Venice) | OpenRouter | No     | Broad coverage             |
+| `deepseek`          | Deepseek R1 (free)       | OpenRouter | No     | Reasoning-first            |
+| `gptOss`            | GPT-OSS 20B              | Groq       | No     | Conversational             |
+| `gptOssFree`        | GPT-OSS 20B (free)       | OpenRouter | No     | Conversational             |
 
 Notes:
+
 - Additional mappings exist in `src/models/index.ts` (e.g., Llama Instant, GPT-4o Mini) but are not exposed in the selector by default.
 
 ### Developer-minded UI
@@ -318,4 +319,3 @@ Apache License 2.0 — see `LICENSE`.
 ## Support
 
 For issues, questions, or feature requests, please open an issue in the repository.
-
