@@ -1,7 +1,7 @@
 import { Groq } from "groq-sdk";
-import { incomingData } from "../types";
-import { tools } from "../tools/definitions";
-import { availableFunctions } from "../tools/exports";
+import { incomingData } from "../../types";
+import { tools } from "../../tools/definitions";
+import { availableFunctions } from "../../tools/exports";
 
 const groq = new Groq();
 
