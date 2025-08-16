@@ -1,6 +1,6 @@
 "use server";
 
-import supabase from "./instance";
+import supabaseInstance from "./instance";
 
 const fallbackModel = {
   model_code: "scout",
@@ -19,7 +19,7 @@ const fallbackModel = {
 };
 
 export async function fetchActiveModels() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseInstance()
     .from("models")
     .select("*")
     .eq("active", true);

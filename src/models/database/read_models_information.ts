@@ -1,9 +1,9 @@
 "use server";
 
-import supabase from "./instance";
+import supabaseInstance from "./instance";
 
 export async function get_model_information() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseInstance()
     .from("models_information")
     .select("*")
     .eq("active", true);
