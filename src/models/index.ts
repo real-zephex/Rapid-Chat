@@ -75,6 +75,13 @@ const ModelProvider = async ({
   const model = await fetchActiveModels();
   const model_data = model.find((m) => m.model_code === type);
 
+  console.info("Model Selection:", {
+    modelCode: model_data?.model_code || "fallback",
+    provider: model_data?.provider || fallbackModel.provider,
+    imageSupport: model_data?.image_support || fallbackModel.image_support,
+    hasImages: !!imageData?.length
+  });
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
