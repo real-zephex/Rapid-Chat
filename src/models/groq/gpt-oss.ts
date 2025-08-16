@@ -59,8 +59,6 @@ async function* gptOSS({ inc }: { inc: incomingData }) {
     top_p: 1,
     stream: true,
     stop: null,
-    reasoning_effort: "medium",
-    
   });
 
   for await (const chunk of chatCompletion) {
