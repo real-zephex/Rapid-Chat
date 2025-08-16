@@ -20,6 +20,25 @@ import Deepseek from "./openrouter/deepseek";
 import Flash2 from "./google/gemini-2.0-flash";
 import gptOSS from "./groq/gpt-oss";
 import gptOSSfree from "./openrouter/gpt-oss-20b";
+import ModelHandler from "./handler/generator";
+import { fetchActiveModels } from "./database/read_models";
+import { ModelData } from "./handler/types";
+
+const fallbackModel = {
+  model_code: "scout",
+  provider_code: "meta-llama/llama-4-scout-17b-16e-instruct",
+  max_completion_tokens: 8192,
+  temperature: 1,
+  top_p: 1,
+  stream: true,
+  stop: null,
+  image_support: true,
+  pdf_support: false,
+  system_prompt:
+    "You are Scout. You are a helpful, knowledgeable, and friendly AI assistant designed to provide clear, natural, and supportive conversations. Your primary goal is to assist users by providing accurate, easy-to-understand, and genuinely useful information. You are also capable of reasoning and problem-solving.",
+  provider: "groq" as "groq" | "openrouter",
+  active: true,
+};
 
 type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
 
@@ -51,7 +70,7 @@ const mappings: Record<string, ModelFunction> = {
   // sarvam: Sarvam,
 };
 
-const ModelProvider = ({
+const ModelProvider = async ({
   type,
   query,
   chats,
@@ -61,17 +80,18 @@ const ModelProvider = ({
   query: string;
   chats: Messages[];
   imageData?: fileUploads[];
-}): ReadableStream<string> => {
-  if (!mappings[type]) {
-    throw new Error(`Invalid model type: ${type}`);
-  }
-  const fin = mappings[type];
+}): Promise<ReadableStream<string>> => {
+  // const fin = ModelHandler();
+
+  const model = await fetchActiveModels();
+  const model_data = model.find((m) => m.model_code === type);
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of fin({
+        for await (const chunk of ModelHandler({
           inc: { message: query, chats, imageData },
+          model_data: model_data ?? fallbackModel,
         })) {
           if (chunk.length > 0) {
             controller.enqueue(`${chunk}`);

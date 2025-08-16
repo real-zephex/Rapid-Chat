@@ -7,7 +7,6 @@ import {
   memo,
   ChangeEvent,
 } from "react";
-import { models } from "../utils/model-list";
 import {
   deleteChat,
   deleteTab,
@@ -30,10 +29,11 @@ import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
+import modelDescriptionMaker from "@/utils/model-list";
 
-const modelInformation: Record<string, string> = Object.fromEntries(
-  models.map((model) => [model.code, model.description])
-);
+// const modelInformation: Record<string, string> = Object.fromEntries(
+//   models.map((model) => [model.code, model.description])
+// );
 
 type Message = {
   role: "user" | "assistant";
@@ -76,11 +76,33 @@ const ChatInterface = ({ id }: { id: string }) => {
     return;
   }
 
-  const [model, setModel] = useState<string>("flash_2");
+  const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
+  const [modelsLoading, setModelsLoading] = useState<boolean>(false);
+  const [models, setModels] = useState<
+    {
+      name: string;
+      code: string;
+      image: boolean;
+      pdf: boolean;
+      description: string;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    async function getModels() {
+      setModelsLoading(true);
+      const models = await modelDescriptionMaker();
+      setModels(models);
+      setModelsLoading(false);
+    }
+
+    getModels();
+  }, []);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use ref for input to prevent re-renders on every keystroke
@@ -105,6 +127,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Fetching models here 
   useEffect(() => {
     const loadChats = async () => {
       setIsLoadingChats(true);
@@ -581,8 +604,9 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50 backdrop-blur-2xl"
+            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50 backdrop-blur-2xl placeholder:text-sm disabled:bg-neutral-900"
             rows={3}
+            disabled={modelsLoading || isLoadingChats}
             placeholder="Type your message..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -592,7 +616,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             }}
           ></textarea>
 
-          <div className="flex justify-between items-center gap-2 mt-2 ">
+          <div className="flex justify-between items-center gap-2 mt-1">
             <div className="flex flex-row items-center gap-2">
               <select
                 className=" text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full text-sm bg-neutral-800"
@@ -613,7 +637,8 @@ const ChatInterface = ({ id }: { id: string }) => {
             <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">
               <CiSquareInfo size={22} color="cyan" />
               <p className="line-clamp-1">
-                {modelInformation[model] || "general tasks"}
+                {models.find((i) => i.code === model)?.description ||
+                  "Loading models..."}
               </p>
             </div>
             <div className="flex flex-row items-center gap-2">
@@ -630,7 +655,9 @@ const ChatInterface = ({ id }: { id: string }) => {
                     name="file"
                     type="file"
                     accept={`image/png, image/jpeg, image/jpg, ${
-                      model !== "scout" ? "application/pdf" : ""
+                      models.find((i) => i.code === model)?.pdf
+                        ? "application/pdf"
+                        : ""
                     }`}
                     className="hidden"
                     id="fileInput"
@@ -652,7 +679,12 @@ const ChatInterface = ({ id }: { id: string }) => {
               </button>
               <button
                 type="submit"
-                disabled={isLoading || isUploadingImages}
+                disabled={
+                  isLoading ||
+                  isUploadingImages ||
+                  modelsLoading ||
+                  isLoadingChats
+                }
                 className={`${
                   isLoading || isUploadingImages
                     ? "bg-teal-700"
@@ -676,7 +708,8 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
             <CiSquareInfo size={22} color="cyan" />
             <p className="line-clamp-1">
-              {modelInformation[model] || "general tasks"}
+              {models.find((i) => i.code === model)?.description ||
+                "general tasks"}
             </p>
           </div>
         </form>
