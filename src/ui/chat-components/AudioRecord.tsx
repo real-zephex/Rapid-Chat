@@ -106,6 +106,7 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       <AiFillAudio
         color={isRecording ? "red" : "currentColor"}
         title="Click to record audio. Click again to stop."
+        size={14}
       />
 
       {isRecording && (

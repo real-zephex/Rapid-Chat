@@ -89,6 +89,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       image: boolean;
       pdf: boolean;
       description: string;
+      type: "reasoning" | "conversational" | "general";
     }[]
   >([]);
 
@@ -127,7 +128,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Fetching models here 
+  // Fetching models here
   useEffect(() => {
     const loadChats = async () => {
       setIsLoadingChats(true);
@@ -599,15 +600,15 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-2 lg:translate-x-1/2  z-50 border border-white/20">
+      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-0 lg:translate-x-1/2 z-50">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-900/50 rounded-t-xl text-white outline-none resize-none p-3 text-base placeholder-gray-300 placeholder:opacity-50 backdrop-blur-2xl placeholder:text-sm disabled:bg-neutral-900"
+            className="w-full bg-neutral-900/90 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
             rows={3}
             disabled={modelsLoading || isLoadingChats}
-            placeholder="Type your message..."
+            placeholder="Ask anything..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -616,26 +617,50 @@ const ChatInterface = ({ id }: { id: string }) => {
             }}
           ></textarea>
 
-          <div className="flex justify-between items-center gap-2 mt-1">
-            <div className="flex flex-row items-center gap-2">
-              <select
-                className=" text-white rounded-lg px-4 h-full py-2 outline-none max-w-md w-full text-sm bg-neutral-800"
-                value={model}
-                onChange={handleModelChange}
-              >
-                {models.map((model) => (
-                  <option
-                    value={model.code}
-                    key={model.code}
-                    className="text-md"
-                  >
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex justify-between items-center gap-2">
+            {models.length > 0 && (
+              <div className="flex flex-row items-center gap-2">
+                <select
+                  className=" text-white rounded-lg px-2 h-full py-2 outline-none max-w-md w-full text-xs bg-neutral-800"
+                  value={model}
+                  onChange={handleModelChange}
+                >
+                  <optgroup label="Conversational">
+                    {models
+                      .filter((m) => m.type === "conversational")
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((m) => (
+                        <option key={m.code} value={m.code}>
+                          {m.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="General">
+                    {models
+                      .filter((m) => m.type === "general")
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((m) => (
+                        <option key={m.code} value={m.code}>
+                          {m.name}
+                        </option>
+                      ))}
+                  </optgroup>
+
+                  <optgroup label="Reasoning">
+                    {models
+                      .filter((m) => m.type === "reasoning")
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((m) => (
+                        <option key={m.code} value={m.code}>
+                          {m.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </div>
+            )}
             <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">
-              <CiSquareInfo size={22} color="cyan" />
+              <CiSquareInfo size={20} color="cyan" />
               <p className="line-clamp-1">
                 {models.find((i) => i.code === model)?.description ||
                   "Loading models..."}
@@ -664,7 +689,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                     onChange={handleFileChange}
                     multiple
                   />
-                  <FaUpload size={18} />
+                  <FaUpload size={14} />
                 </label>
               ) : (
                 <></>
@@ -675,7 +700,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 onClick={() => scrollToBottom()}
                 title="Scroll to bottom"
               >
-                <FaArrowCircleDown size={18} />
+                <FaArrowCircleDown size={14} />
               </button>
               <button
                 type="submit"
@@ -695,18 +720,18 @@ const ChatInterface = ({ id }: { id: string }) => {
                 }
               >
                 {isLoading ? (
-                  <ImCloudUpload size={18} />
+                  <ImCloudUpload size={14} />
                 ) : isUploadingImages ? (
                   "⏳"
                 ) : (
-                  <FaArrowCircleRight size={18} />
+                  <FaArrowCircleRight size={14} />
                 )}
               </button>
             </div>
           </div>
 
           <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
-            <CiSquareInfo size={22} color="cyan" />
+            <CiSquareInfo size={20} color="cyan" />
             <p className="line-clamp-1">
               {models.find((i) => i.code === model)?.description ||
                 "general tasks"}

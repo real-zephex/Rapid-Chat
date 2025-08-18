@@ -5,6 +5,8 @@ import "katex/dist/katex.min.css";
 import Sidebar from "@/ui/sidebar";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { SidebarProvider } from "@/context/SidebarContext";
+import MainContent from "@/ui/main-content";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -136,8 +138,12 @@ export default function RootLayout({
       <body
         className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
       >
-        <Sidebar />
-        {children}
+        <SidebarProvider>
+          <Sidebar />
+          <MainContent>
+            {children}
+          </MainContent>
+        </SidebarProvider>
       </body>
     </html>
   );

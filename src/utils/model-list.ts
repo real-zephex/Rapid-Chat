@@ -107,6 +107,7 @@ interface modelDescription {
   description: string;
   image_support: boolean;
   pdf_support: boolean;
+  type: "reasoning" | "conversational" | "general";
   active: boolean;
 }
 
@@ -118,6 +119,7 @@ const modelDescriptionMaker = async () => {
     image: model.image_support,
     pdf: model.pdf_support,
     description: model.description || "No description available.",
+    type: model.type,
   }));
 };
 
