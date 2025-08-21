@@ -605,7 +605,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-900/90 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
+            className="w-full bg-neutral-700 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
             rows={3}
             disabled={modelsLoading || isLoadingChats}
             placeholder="Ask anything..."

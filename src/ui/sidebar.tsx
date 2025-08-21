@@ -147,7 +147,7 @@ const Sidebar = () => {
     <>
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-[#1a1a1a] border-r border-white/10 transition-all duration-300 ease-in-out z-30 ${
+        className={`fixed top-0 left-0 h-full bg-neutral-900 rounded-r-lg transition-all duration-300 ease-in-out z-30 ${
           isOpen ? "w-64" : "w-0"
         } overflow-hidden`}
         ref={sidebarRef}
