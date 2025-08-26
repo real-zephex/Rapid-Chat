@@ -7,7 +7,7 @@ const Whisper = async (file: Blob) => {
   try {
     const transcription = await client.audio.transcriptions.create({
       file: new File([file], "audio.webm"),
-      model: "distil-whisper-large-v3-en",
+      model: "whisper-large-v3-turbo",
       response_format: "text",
     });
     return transcription;
