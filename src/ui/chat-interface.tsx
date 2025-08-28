@@ -605,7 +605,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-700 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
+            className="w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
             rows={3}
             disabled={modelsLoading || isLoadingChats}
             placeholder="Ask anything..."
@@ -621,7 +621,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             {models.length > 0 && (
               <div className="flex flex-row items-center gap-2">
                 <select
-                  className=" text-white rounded-lg px-2 h-full py-2 outline-none max-w-md w-full text-xs bg-neutral-800"
+                  className=" text-white rounded-lg px-2 h-full py-2 outline-none max-w-sm w-full text-xs bg-neutral-800"
                   value={model}
                   onChange={handleModelChange}
                 >
