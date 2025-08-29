@@ -1,5 +1,32 @@
 "use client";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Chat | Rapid AI",
+  description:
+    "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
+  keywords: [
+    "AI chat",
+    "new conversation",
+    "artificial intelligence",
+    "chatbot",
+    "AI assistant",
+  ],
+  openGraph: {
+    title: "Chat | Rapid AI",
+    description:
+      "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Chat | Rapid AI",
+    description:
+      "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
+  },
+};
+
 export default function ChatPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 p-4">

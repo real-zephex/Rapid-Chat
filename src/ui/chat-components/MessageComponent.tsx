@@ -440,12 +440,12 @@ const MessageComponent = memo(
                 </button>
                 <div className="flex flex-row items-center gap-2">
                   {tokens > 0 && (
-                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-white/10 p-1 rounded-lg">
+                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-neutral-800/20 p-1 rounded-lg">
                       <TbAlphabetLatin /> {tokens} tokens
                     </span>
                   )}
                   {Number(tokensPerSecond) > 0 && (
-                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-white/10 p-1 rounded-lg">
+                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-neutral-800/20 p-1 rounded-lg">
                       <GoCpu />
                       {tokensPerSecond} tokens/sec
                     </span>

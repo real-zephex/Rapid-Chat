@@ -543,7 +543,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </button>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
+      <div className="flex-1 overflow-y-auto p-2 space-y-6 ">
         {isLoadingChats ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -552,7 +552,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="container mx-auto max-w-2xl p-6 md:p-8 ">
+          <div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
             {/* <div className="text-center max-w-2xl mx-auto px-4">
               <div className="mb-8"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
