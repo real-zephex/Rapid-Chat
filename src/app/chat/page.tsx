@@ -1,5 +1,3 @@
-"use client";
-
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -27,7 +25,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ChatPage() {
+export default async function ChatPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 p-4">
       <div className="text-center max-w-md">
