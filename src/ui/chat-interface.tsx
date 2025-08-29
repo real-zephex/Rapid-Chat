@@ -6,8 +6,10 @@ import {
   useCallback,
   memo,
   ChangeEvent,
+  useContext,
 } from "react";
 import {
+  addTabs,
   deleteChat,
   deleteTab,
   retrieveChats,
@@ -30,6 +32,8 @@ import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
 import modelDescriptionMaker from "@/utils/model-list";
+import { useSidebar } from "@/context/SidebarContext";
+import ExamplePromptsConstructors from "./example-prompts";
 
 // const modelInformation: Record<string, string> = Object.fromEntries(
 //   models.map((model) => [model.code, model.description])
@@ -75,6 +79,8 @@ const ChatInterface = ({ id }: { id: string }) => {
   if (!id) {
     return;
   }
+
+  const { refreshTitles } = useSidebar();
 
   const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -189,6 +195,10 @@ const ChatInterface = ({ id }: { id: string }) => {
       content: input,
       ...(images.length > 0 && { images: [...images] }), // Include images if any
     };
+    if (messages.length === 0) {
+      await addTabs(id);
+      refreshTitles();
+    }
     saveChats(id, [...messages, userMessage]);
     setMessages((prev) => [...prev, userMessage]);
 
@@ -416,7 +426,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           })
         );
 
-        setImages(arraizedImages);
+        setImages((prev) => [...prev, ...arraizedImages]);
       } catch (error) {
         console.error("Error handling paste:", error);
         alert("Error handling paste. Please try again.");
@@ -495,8 +505,17 @@ const ChatInterface = ({ id }: { id: string }) => {
   function deleteChatFunc() {
     deleteChat(id);
     deleteTab(id);
-    window.dispatchEvent(new Event("new-tab"));
-    router.push("/");
+    refreshTitles();
+    router.push("/chat");
+  }
+
+  function onClickExample(text: string) {
+    console.log(text);
+    const input = inputRef.current;
+    if (input) {
+      input.value = text;
+      input.focus();
+    }
   }
 
   return (
@@ -515,6 +534,14 @@ const ChatInterface = ({ id }: { id: string }) => {
         </button>
       </div>
 
+      <button
+        className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
+        onClick={() => scrollToBottom()}
+        title="Scroll to bottom"
+      >
+        <FaArrowCircleDown size={16} />
+      </button>
+
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
         {isLoadingChats ? (
@@ -525,8 +552,8 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center ">
-            <div className="text-center max-w-2xl mx-auto px-4">
+          <div className="container mx-auto max-w-2xl p-6 md:p-8 ">
+            {/* <div className="text-center max-w-2xl mx-auto px-4">
               <div className="mb-8"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
@@ -585,6 +612,28 @@ const ChatInterface = ({ id }: { id: string }) => {
                   to delete this chat
                 </p>
               </div>
+            </div> */}
+            <h2 className="font-semibold text-2xl">
+              How can I help you today?
+            </h2>
+            <div className="bborder-0 h-px bg-gradient-to-r from-gray-400/60 to-transparent my-4" />
+            <div className="flex flex-col gap-2 items-center">
+              <ExamplePromptsConstructors
+                text="Write a short story about a robot discovering emotions."
+                onClick={onClickExample}
+              />
+              <ExamplePromptsConstructors
+                text="Help me outline a sci-fi novel set in a post-apocalyptic world."
+                onClick={onClickExample}
+              />{" "}
+              <ExamplePromptsConstructors
+                text="Create a character profile for a complex villain with sympathetic motives."
+                onClick={onClickExample}
+              />{" "}
+              <ExamplePromptsConstructors
+                text="Give me 5 creative writing prompts for flash fiction."
+                onClick={onClickExample}
+              />
             </div>
           </div>
         ) : (
@@ -600,7 +649,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full lg:w-1/2 rounded-t-xl lg:rounded-xl p-0 lg:translate-x-1/2 z-50">
+      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full md:w-1/2  rounded-t-xl lg:rounded-xl p-1 md:translate-x-1/2 z-50 ">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
@@ -621,7 +670,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             {models.length > 0 && (
               <div className="flex flex-row items-center gap-2">
                 <select
-                  className=" text-white rounded-lg px-2 h-full py-2 outline-none max-w-sm w-full text-xs bg-neutral-800"
+                  className="text-white rounded-lg px-3 py-1 outline-none max-w-sm w-full text-xs bg-neutral-800/90 border border-neutral-700 hover:bg-neutral-700 focus:ring-2 focus:ring-cyan-500 transition-all duration-200 shadow-md"
                   value={model}
                   onChange={handleModelChange}
                 >
@@ -695,13 +744,6 @@ const ChatInterface = ({ id }: { id: string }) => {
                 <></>
               )}
 
-              <button
-                className="h-full p-2 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
-                onClick={() => scrollToBottom()}
-                title="Scroll to bottom"
-              >
-                <FaArrowCircleDown size={14} />
-              </button>
               <button
                 type="submit"
                 disabled={

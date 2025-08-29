@@ -2,8 +2,7 @@
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 import { HiPlus, HiChatBubbleLeft } from "react-icons/hi2";
 
-import { useEffect, useRef, useState } from "react";
-import { addTabs, retrieveChats, retrieveTabs } from "@/utils/indexedDB";
+import { useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useHotkeys } from "react-hotkeys-hook";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
@@ -17,25 +16,15 @@ export async function handlePress(
   event.preventDefault();
 
   const uuid = uuidv4();
-  await addTabs(uuid);
-  window.dispatchEvent(new Event("new-tab"));
   router.push("/chat/" + uuid);
 }
 
 const Sidebar = () => {
-  const { isOpen, setIsOpen } = useSidebar();
-  const [tabs, setTabs] = useState<string[]>([]);
-  const [tabTitles, setTabTitles] = useState<Record<string, string>>({});
-  const [count, setCount] = useState<number>(0);
+  const { isOpen, titles, setIsOpen } = useSidebar();
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
-
   const sidebarRef = useRef(null);
-
-  const getTitle = (id: string) => {
-    return tabTitles[id] || "New Chat";
-  };
 
   useHotkeys("ctrl+shift+o", (e) => {
     e.preventDefault();
@@ -47,101 +36,63 @@ const Sidebar = () => {
     setIsOpen(!isOpen);
   });
 
-  useEffect(() => {
-    const fetchTabs = async () => {
-      const tabs = await retrieveTabs();
-      setTabs(tabs);
+  // useHotkeys("down", (e) => {
+  //   e.preventDefault();
+  //   if (!isOpen) return;
+  //   handleArrowKeys({ action: "down" });
+  // });
 
-      const titles: Record<string, string> = {};
-      for (const tab of tabs) {
-        const chats = await retrieveChats(tab);
-        if (chats.length === 0) {
-          titles[tab] = "New Chat";
-        } else {
-          const lastMessage = chats[chats.length - 1];
-          titles[tab] =
-            lastMessage.role === "user"
-              ? lastMessage.content.slice(0, 50) +
-                (lastMessage.content.length > 50 ? "..." : "")
-              : lastMessage.content.slice(0, 50) + "...";
-        }
-      }
-      setTabTitles(titles);
-    };
+  // useHotkeys("up", (e) => {
+  //   e.preventDefault();
+  //   if (!isOpen) return;
+  //   handleArrowKeys({ action: "up" });
+  // });
 
-    fetchTabs();
-    window.addEventListener("new-tab", fetchTabs);
+  // function handleArrowKeys({ action }: { action: "up" | "down" }) {
+  //   const sidebar = sidebarRef.current;
+  //   if (!sidebar) return;
 
-    return () => {
-      window.removeEventListener("new-tab", fetchTabs);
-    };
-  }, []);
+  //   const el = getTabElementById(tabs[count]);
+  //   if (el) {
+  //     el.style.border = "none";
+  //   }
 
-  useHotkeys("down", (e) => {
-    e.preventDefault();
-    if (!isOpen) return;
-    handleArrowKeys({ action: "down" });
-  });
+  //   if (action === "up") {
+  //     if (count === 0) return;
+  //     const element = getTabElementById(tabs[count - 1]);
+  //     if (element) {
+  //       element.style.border = "1px solid #3b82f6";
+  //       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  //       element.setAttribute("tabindex", "0");
+  //       element.focus();
 
-  useHotkeys("up", (e) => {
-    e.preventDefault();
-    if (!isOpen) return;
-    handleArrowKeys({ action: "up" });
-  });
+  //       element.onkeydown = (e) => {
+  //         if (e.key === "Enter") {
+  //           element.click();
+  //         }
+  //       };
 
-  function handleArrowKeys({ action }: { action: "up" | "down" }) {
-    const sidebar = sidebarRef.current;
-    if (!sidebar) return;
+  //       setCount(count - 1);
+  //     }
+  //   } else if (action === "down") {
+  //     if (count === tabs.length - 1) return;
+  //     const element = getTabElementById(tabs[count + 1]);
+  //     if (element) {
+  //       element.style.border = "1px solid #3b82f6";
+  //       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  //       element.setAttribute("tabindex", "0");
+  //       element.focus();
 
-    const el = getTabElementById(tabs[count]);
-    if (el) {
-      el.style.border = "none";
-    }
+  //       element.onkeydown = (e) => {
+  //         if (e.key === "Enter") {
+  //           element.click();
+  //         }
+  //       };
 
-    if (action === "up") {
-      if (count === 0) return;
-      const element = getTabElementById(tabs[count - 1]);
-      if (element) {
-        element.style.border = "1px solid #3b82f6";
-        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        element.setAttribute("tabindex", "0");
-        element.focus();
-
-        element.onkeydown = (e) => {
-          if (e.key === "Enter") {
-            element.click();
-          }
-        };
-
-        setCount(count - 1);
-      }
-    } else if (action === "down") {
-      if (count === tabs.length - 1) return;
-      const element = getTabElementById(tabs[count + 1]);
-      if (element) {
-        element.style.border = "1px solid #3b82f6";
-        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        element.setAttribute("tabindex", "0");
-        element.focus();
-
-        element.onkeydown = (e) => {
-          if (e.key === "Enter") {
-            element.click();
-          }
-        };
-
-        setCount(count + 1);
-      }
-    }
-  }
-
-  function getTabElementById(id: string): HTMLElement | null {
-    const sidebar = sidebarRef.current;
-    if (!sidebar) return null;
-    const element = document.getElementById(id);
-    if (!element) return null;
-    return element;
-  }
+  //       setCount(count + 1);
+  //     }
+  //   }
+  // }
 
   return (
     <>
@@ -185,7 +136,7 @@ const Sidebar = () => {
 
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto p-2">
-            {tabs.length === 0 ? (
+            {Object.entries(titles).length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <HiChatBubbleLeft
                   size={32}
@@ -195,35 +146,35 @@ const Sidebar = () => {
               </div>
             ) : (
               <div className="space-y-1">
-                {tabs.map((tab) => (
+                {Object.entries(titles).map(([id, title]) => (
                   <div
-                    key={tab}
-                    id={tab}
+                    key={id}
+                    id={id}
                     className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/5 ${
-                      pathname === tab
+                      pathname === id
                         ? "bg-white/10 border border-white/20"
                         : "border border-transparent hover:border-white/10"
                     }`}
                     onClick={() => {
-                      router.push(`/chat/${tab}`);
+                      router.push(`/chat/${id}`);
                     }}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          pathname === tab
+                          pathname === id
                             ? "bg-blue-400"
                             : "bg-gray-600 group-hover:bg-gray-500"
                         }`}
                       />
                       <span
                         className={`text-xs truncate flex-1 ${
-                          pathname === tab
+                          pathname === id
                             ? "text-white text-xs"
                             : "text-gray-300 group-hover:text-gray-200"
                         }`}
                       >
-                        {getTitle(tab)}
+                        {title}
                       </span>
                     </div>
                   </div>
@@ -235,7 +186,9 @@ const Sidebar = () => {
           {/* Footer */}
           <div className="p-4 border-t border-white/10">
             <div className="text-xs text-gray-500 text-center">
-              {tabs.length} chat{tabs.length !== 1 ? "s" : ""}
+              {/* {tabs.length} chat{tabs.length !== 1 ? "s" : ""} */}
+              {titles && Object.keys(titles).length} chat
+              {titles && Object.keys(titles).length !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
