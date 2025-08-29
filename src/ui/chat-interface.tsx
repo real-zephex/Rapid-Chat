@@ -59,7 +59,7 @@ const MessagesContainer = memo(
     onCopyResponse: (content: string) => void;
   }) => {
     return (
-      <div className="container mx-auto max-w-5xl">
+      <div className="container mx-auto max-w-full lg:max-w-[60%]">
         {messages.map((message, index) => (
           <MessageComponent
             key={index}
@@ -535,7 +535,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       <button
-        className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black"
+        className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
         onClick={() => scrollToBottom()}
         title="Scroll to bottom"
       >
@@ -649,7 +649,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="absolute bottom-0 lg:bottom-2 left-0 bg-neutral-900/20 backdrop-blur-2xl max-w-full w-full md:w-1/2  rounded-t-xl lg:rounded-xl p-1 md:translate-x-1/2 z-50 ">
+      <div className="w-full md:max-w-[60%] mx-auto p-2 z-50">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea

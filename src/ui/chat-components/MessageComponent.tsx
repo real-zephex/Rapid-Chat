@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { FaCopy } from "react-icons/fa";
+import { FaRegCopy, FaCheck } from "react-icons/fa6";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -70,7 +70,7 @@ const MessageComponent = memo(
     if (isUser) {
       return (
         <div className="flex mb-4 justify-end animate-[userMessageFadeIn_1s]">
-          <div className="max-w-full lg:max-w-[70%] p-4 shadow-sm bg-neutral-700/60 text-white rounded-l-3xl rounded-br-3xl">
+          <div className="max-w-full lg:max-w-[60%] p-3 shadow-sm bg-neutral-800/50 text-white rounded-l-xl rounded-br-xl">
             <div className="text-white whitespace-pre-wrap break-all text-md leading-7">
               {message.images && message.images.length > 0 && (
                 <ImageDisplay images={message.images} />
@@ -84,17 +84,17 @@ const MessageComponent = memo(
 
     return (
       <div className="flex mb-4 justify-start animate-[assistantMessageFadeIn_1s]">
-        <div className="max-w-full lg:max-w-[85%] p-4 shadow-sm bg-neutral-800/90 text-white rounded-r-3xl rounded-bl-3xl">
+        <div className="max-w-full py-4 bg-transparent text-white ">
           <div className="prose prose-invert prose-md max-w-full w-full leading-8 overflow-x-auto">
             <div className={`flex flex-col p-1`}>
-              <div className="flex flex-row items-center mb-3">
+              {/* <div className="flex flex-row items-center mb-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
                   AI
                 </div>
                 <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
                   {model}
                 </span>
-              </div>
+              </div> */}
               {message.reasoning && (
                 <div className="mt-2 mb-4">
                   <button
@@ -428,16 +428,15 @@ const MessageComponent = memo(
               >
                 {message.content}
               </ReactMarkdown>
-              <div className="flex flex-row items-center justify-between gap-2 mt-4">
+              <div className="flex flex-row items-center justify-between gap-2 mt-2">
                 <button
-                  className="flex flex-row items-center gap-2 bg-neutral-700/60 hover:bg-neutral-600/80 h-9 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
+                  className="hover:bg-neutral-800 p-2 rounded-lg transition-colors duration-300 "
+                  title="Copy to clipboard"
                   onClick={(e) => {
                     onCopyResponse(message.content);
-                    e.currentTarget.innerHTML = "Copied";
                   }}
                 >
-                  <FaCopy size={12} />
-                  <span>Copy</span>
+                  <FaRegCopy size={14} />
                 </button>
                 <div className="flex flex-row items-center gap-2">
                   {tokens > 0 && (
