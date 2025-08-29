@@ -5,6 +5,8 @@ import "katex/dist/katex.min.css";
 import Sidebar from "@/ui/sidebar";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { SidebarProvider } from "@/context/SidebarContext";
+import MainContent from "@/ui/main-content";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -68,7 +70,6 @@ export const metadata: Metadata = {
     description:
       "Experience lightning-fast conversations with multiple AI models in one unified interface.",
     images: ["https://fafb.vercel.app/logo.png"],
-    creator: "@fastai", // Replace with your Twitter handle
   },
   robots: {
     index: true,
@@ -122,6 +123,9 @@ export const metadata: Metadata = {
   applicationName: "Rapid AI",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
+  // other: {
+  //   "google-site-verification": "your-verification-code", // Replace with actual verification code
+  // },
 };
 
 export default function RootLayout({
@@ -129,15 +133,57 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Rapid AI",
+    description:
+      "A fast, modern AI chat interface supporting multiple AI models. Experience lightning-fast conversations with cutting-edge AI technology.",
+    url: "https://fafb.vercel.app",
+    applicationCategory: "CommunicationApplication",
+    operatingSystem: "Web Browser",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    featureList: [
+      "Multi-model AI chat support",
+      "Real-time streaming responses",
+      "Privacy-first local storage",
+      "Image and PDF processing",
+      "Audio transcription",
+      "Multiple AI providers (Google, Groq, OpenAI, OpenRouter)",
+    ],
+    author: {
+      "@type": "Organization",
+      name: "Rapid AI Team",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Rapid AI",
+    },
+  };
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+      </head>
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
         className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
       >
-        <Sidebar />
-        {children}
+        <SidebarProvider>
+          <Sidebar />
+          <MainContent>{children}</MainContent>
+        </SidebarProvider>
       </body>
     </html>
   );
