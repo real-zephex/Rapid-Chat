@@ -8,6 +8,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { v4 as uuidv4 } from "uuid";
 import { useSidebar } from "@/context/SidebarContext";
+import Link from "next/link";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
@@ -147,37 +148,41 @@ const Sidebar = () => {
             ) : (
               <div className="space-y-1">
                 {Object.entries(titles).map(([id, title]) => (
-                  <div
+                  <Link
+                    href={`/chat/${id}`}
+                    prefetch={true}
                     key={id}
-                    id={id}
-                    className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/5 ${
-                      pathname === id
-                        ? "bg-white/10 border border-white/20"
-                        : "border border-transparent hover:border-white/10"
-                    }`}
-                    onClick={() => {
-                      router.push(`/chat/${id}`);
-                    }}
+                    className="flex flex-col gap-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          pathname === id
-                            ? "bg-blue-400"
-                            : "bg-gray-600 group-hover:bg-gray-500"
-                        }`}
-                      />
-                      <span
-                        className={`text-xs truncate flex-1 ${
-                          pathname === id
-                            ? "text-white text-xs"
-                            : "text-gray-300 group-hover:text-gray-200"
-                        }`}
-                      >
-                        {title}
-                      </span>
+                    <div
+                      key={id}
+                      id={id}
+                      className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/5 ${
+                        pathname === id
+                          ? "bg-white/10 border border-white/20"
+                          : "border border-transparent hover:border-white/10"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            pathname === id
+                              ? "bg-blue-400"
+                              : "bg-gray-600 group-hover:bg-gray-500"
+                          }`}
+                        />
+                        <span
+                          className={`text-xs truncate flex-1 ${
+                            pathname === id
+                              ? "text-white text-xs"
+                              : "text-gray-300 group-hover:text-gray-200"
+                          }`}
+                        >
+                          {title}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
