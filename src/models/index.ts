@@ -79,7 +79,8 @@ const ModelProvider = async ({
     modelCode: model_data?.model_code || "fallback",
     provider: model_data?.provider || fallbackModel.provider,
     imageSupport: model_data?.image_support || fallbackModel.image_support,
-    hasImages: !!imageData?.length
+    hasImages: !!imageData?.length,
+    reasoning: model_data?.reasoning,
   });
 
   const stream = new ReadableStream({

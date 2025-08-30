@@ -10,4 +10,5 @@ export interface ModelData {
   provider: "groq" | "openrouter" | "google";
   image_support: boolean;
   pdf_support: boolean;
+  reasoning: boolean;
 }

@@ -46,6 +46,7 @@ async function* ModelHandler({
     temperature,
     image_support,
     pdf_support,
+    reasoning,
   } = model_data;
 
   // Compose user content (text + optional images/pdfs)
@@ -78,7 +79,9 @@ async function* ModelHandler({
       const chatStream = await provider.chat.completions.create(params as any);
       for await (const chunk of chatStream as any) {
         const token = chunk?.choices?.[0]?.delta?.content ?? "";
-        if (token) yield token;
+        if (token) {
+          yield token;
+        }
       }
       return;
     }
