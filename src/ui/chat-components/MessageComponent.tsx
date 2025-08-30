@@ -70,8 +70,8 @@ const MessageComponent = memo(
     if (isUser) {
       return (
         <div className="flex mb-4 justify-end animate-[userMessageFadeIn_1s]">
-          <div className="max-w-full lg:max-w-[60%] p-3 shadow-sm bg-neutral-800/50 text-white rounded-l-xl rounded-br-xl">
-            <div className="text-white whitespace-pre-wrap break-all text-md leading-7">
+          <div className="max-w-full lg:max-w-[75%] p-3 shadow-sm bg-neutral-800/50 text-white rounded-l-xl rounded-br-xl">
+            <div className="text-white whitespace-pre-wrap break-words text-md leading-7">
               {message.images && message.images.length > 0 && (
                 <ImageDisplay images={message.images} />
               )}
