@@ -382,7 +382,7 @@ const MessageComponent = memo(
 
                   thead: ({ children, ...props }) => (
                     <thead
-                      className="bg-neutral-700/50 border-b border-neutral-600/50 "
+                      className="bg-neutral-700/50 border-b border-neutral-600/50"
                       {...props}
                     >
                       {children}
@@ -391,7 +391,7 @@ const MessageComponent = memo(
 
                   th: ({ children, ...props }) => (
                     <th
-                      className="px-4 py-3 text-left font-medium text-gray-200 text-sm"
+                      className="px-4 py-3 text-center  text-gray-200 text-sm font-semibold"
                       {...props}
                     >
                       {children}
@@ -400,7 +400,7 @@ const MessageComponent = memo(
 
                   td: ({ children, ...props }) => (
                     <td
-                      className="px-4 py-3 text-gray-300 border-b border-neutral-700/30 hover:bg-neutral-700/30 transition-colors duration-150"
+                      className="px-4 py-3 text-gray-300 border-b border-neutral-700/30 hover:bg-neutral-700/30 transition-colors duration-150 text-center"
                       {...props}
                     >
                       {children}
@@ -409,7 +409,7 @@ const MessageComponent = memo(
 
                   tr: ({ children, ...props }) => (
                     <tr
-                      className="hover:bg-neutral-700/20 transition-colors duration-150"
+                      className="hover:bg-neutral-700/20 transition-colors duration-150 "
                       {...props}
                     >
                       {children}
