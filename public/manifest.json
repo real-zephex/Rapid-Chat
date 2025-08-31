@@ -1,6 +1,6 @@
 {
-  "name": "FastAI - Rapid AI Chat Interface",
-  "short_name": "FastAI",
+  "name": "Rapid Chat",
+  "short_name": "Rapid Chat",
   "description": "A fast, modern AI chat interface supporting multiple AI models including GPT, Claude, Gemini, and more.",
   "start_url": "/",
   "display": "standalone",
@@ -61,7 +61,7 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "FastAI Chat Interface"
+      "label": "Rapid Chat"
     }
   ],
   "prefer_related_applications": false,

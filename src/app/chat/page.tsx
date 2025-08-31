@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Chat | Rapid AI",
+  title: "Chat | Rapid Chat",
   description:
     "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
   keywords: [
@@ -12,14 +12,14 @@ export const metadata: Metadata = {
     "AI assistant",
   ],
   openGraph: {
-    title: "Chat | Rapid AI",
+    title: "Chat | Rapid Chat",
     description:
       "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Chat | Rapid AI",
+    title: "Chat | Rapid Chat",
     description:
       "Start a new AI conversation. Experience lightning-fast conversations with multiple AI models in one unified interface.",
   },

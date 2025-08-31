@@ -23,8 +23,8 @@ const notoSans = Noto_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Rapid AI - Rapid AI Chat Interface",
-    template: "%s | Rapid AI",
+    default: "Rapid Chat",
+    template: "%s | Rapid Chat",
   },
   description:
     "A fast, modern AI chat interface supporting multiple AI models. Experience lightning-fast conversations with cutting-edge AI technology.",
@@ -53,20 +53,20 @@ export const metadata: Metadata = {
     url: "/",
     title: "Rapid Chat",
     description:
-      "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with GPT, Claude, Gemini, and more.",
+      "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with Gemini, GPT, Llama, and more.",
     siteName: "Rapid Chat",
     images: [
       {
         url: "https://fafb.vercel.app/logo.png",
         width: 1200,
         height: 630,
-        alt: "Rapid AI - Rapid AI Chat Interface",
+        alt: "Rapid Chat",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rapid AI - Rapid AI Chat Interface",
+    title: "Rapid Chat",
     description:
       "Experience lightning-fast conversations with multiple AI models in one unified interface.",
     images: ["https://fafb.vercel.app/logo.png"],
@@ -120,7 +120,7 @@ export const metadata: Metadata = {
   manifest: "https://fafb.vercel.app/manifest.json",
   category: "technology",
   classification: "AI Chat Application",
-  applicationName: "Rapid AI",
+  applicationName: "Rapid Chat",
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
   // other: {
@@ -136,7 +136,7 @@ export default function RootLayout({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Rapid AI",
+    name: "Rapid Chat",
     description:
       "A fast, modern AI chat interface supporting multiple AI models. Experience lightning-fast conversations with cutting-edge AI technology.",
     url: "https://fafb.vercel.app",
