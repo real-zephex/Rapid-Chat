@@ -31,7 +31,10 @@ import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import modelDescriptionMaker from "@/utils/model-list";
+import {
+  ModelInfo,
+  ModelInformation,
+} from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
 
@@ -88,21 +91,14 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [modelsLoading, setModelsLoading] = useState<boolean>(false);
-  const [models, setModels] = useState<
-    {
-      name: string;
-      code: string;
-      image: boolean;
-      pdf: boolean;
-      description: string;
-      type: "reasoning" | "conversational" | "general";
-    }[]
-  >([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+
+  const modelInfo = new ModelInformation();
 
   useEffect(() => {
     async function getModels() {
       setModelsLoading(true);
-      const models = await modelDescriptionMaker();
+      const models = await modelInfo.retrieveFromLocal();
       setModels(models);
       setModelsLoading(false);
     }
