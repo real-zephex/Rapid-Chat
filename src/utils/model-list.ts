@@ -24,7 +24,7 @@ export class ModelInformation {
     try {
       const items = localStorage.getItem("models");
 
-      if (!items) {
+      if (!items || items.length == 0) {
         await this.saveToLocal(); 
         const freshItems = localStorage.getItem("models");
         return freshItems ? JSON.parse(freshItems) : [];

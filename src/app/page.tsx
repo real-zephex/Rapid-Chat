@@ -9,7 +9,7 @@ const Homepage = () => {
 
   setTimeout(() => {
     router.push("/chat/" + uuid);
-  }, 500);
+  }, 200);
 
   return (
     <main className="min-h-[calc(100dvh-8px)] flex items-center justify-center gap-2 bg-neutral-900 rounded-xl">

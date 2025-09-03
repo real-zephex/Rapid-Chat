@@ -31,12 +31,11 @@ import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import {
-  ModelInfo,
-  ModelInformation,
-} from "@/utils/model-list";
+import { ModelInfo, ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
+import { FiRefreshCcw } from "react-icons/fi";
+import { useToast } from "@/context/ToastContext";
 
 // const modelInformation: Record<string, string> = Object.fromEntries(
 //   models.map((model) => [model.code, model.description])
@@ -84,6 +83,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   const { refreshTitles } = useSidebar();
+  const { setMessage: sM, setType, fire } = useToast();
 
   const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -101,6 +101,13 @@ const ChatInterface = ({ id }: { id: string }) => {
       const models = await modelInfo.retrieveFromLocal();
       setModels(models);
       setModelsLoading(false);
+
+      // Show success message
+      setTimeout(() => {
+        sM("Models loaded successfully!");
+        setType("success");
+        fire();
+      }, 500);
     }
 
     getModels();
@@ -713,6 +720,28 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
             <div className="flex flex-row items-center gap-2">
               <AudioRecord setAudio={setAudio} />
+              <div
+                className="hover:bg-lime-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
+                title="Refresh Messages"
+                onClick={async () => {
+                  sM("Refreshing models...");
+                  setType("info");
+                  fire();
+                  modelInfo.refresh();
+                  const models = await modelInfo.retrieveFromLocal();
+                  setModels(models);
+
+                  // Show success message
+                  setTimeout(() => {
+                    sM("Models refreshed successfully!");
+                    setType("success");
+                    fire();
+                  }, 500);
+                }}
+              >
+                <FiRefreshCcw size={14} />
+              </div>
+
               {models.find(
                 (item) => item.image === true && item.code === model
               ) ? (
