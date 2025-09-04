@@ -6,7 +6,6 @@ import {
   useCallback,
   memo,
   ChangeEvent,
-  useContext,
 } from "react";
 import {
   addTabs,
@@ -722,14 +721,19 @@ const ChatInterface = ({ id }: { id: string }) => {
               <AudioRecord setAudio={setAudio} />
               <div
                 className="hover:bg-lime-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
-                title="Refresh Messages"
+                title="Refresh Models"
                 onClick={async () => {
+                  setModelsLoading(true);
                   sM("Refreshing models...");
                   setType("info");
                   fire();
-                  modelInfo.refresh();
-                  const models = await modelInfo.retrieveFromLocal();
-                  setModels(models);
+                  try {
+                    modelInfo.refresh();
+                    const models = await modelInfo.retrieveFromLocal();
+                    setModels(models);
+                  } finally {
+                    setModelsLoading(false);
+                  }
 
                   // Show success message
                   setTimeout(() => {

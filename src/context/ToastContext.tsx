@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useRef,
+} from "react";
 
 interface ToastContextType {
   message: string;
@@ -20,13 +27,36 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
   const [showToast, setShowToast] = useState<boolean>(false);
 
+  // Track the auto-hide timer so we can clear it before starting a new one
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fire = () => {
     console.log(`Toast fired: [${type}] ${message}`);
+
+    // Clear any existing timer before starting a new one
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+
     setShowToast(true);
-    setTimeout(() => {
+
+    // Start a new timer and store its id
+    hideTimerRef.current = setTimeout(() => {
       setShowToast(false);
+      hideTimerRef.current = null;
     }, 3000);
   };
+
+  // Cleanup on unmount to prevent leaked timers or premature hides
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <ToastContext.Provider
@@ -40,7 +70,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
   const context = useContext(ToastContext);
   if (context === undefined) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
+    throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
 }

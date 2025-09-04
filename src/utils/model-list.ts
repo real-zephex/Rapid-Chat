@@ -22,15 +22,15 @@ export interface ModelInfo {
 export class ModelInformation {
   async retrieveFromLocal(): Promise<ModelInfo[] | []> {
     try {
-      const items = localStorage.getItem("models");
-
-      if (!items || items.length == 0) {
-        await this.saveToLocal(); 
+      const items = localStorage.getItem("models") || "[]";
+      const parsed = JSON.parse(items) || [];
+      if (parsed.length == 0) {
+        await this.saveToLocal();
         const freshItems = localStorage.getItem("models");
         return freshItems ? JSON.parse(freshItems) : [];
       }
 
-      return JSON.parse(items);
+      return parsed;
     } catch (err) {
       console.error("Failed to read models from localStorage:", err);
       return [];
@@ -67,4 +67,3 @@ export class ModelInformation {
     await this.saveToLocal();
   }
 }
-
