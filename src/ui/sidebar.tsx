@@ -1,6 +1,7 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 import { HiPlus, HiChatBubbleLeft } from "react-icons/hi2";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { v4 as uuidv4 } from "uuid";
 import { useSidebar } from "@/context/SidebarContext";
+import { useChat } from "@/context/ChatContext";
 import Link from "next/link";
 
 export async function handlePress(
@@ -22,6 +24,7 @@ export async function handlePress(
 
 const Sidebar = () => {
   const { isOpen, titles, setIsOpen } = useSidebar();
+  const { loadingSessions, connectionStatus } = useChat();
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
@@ -109,19 +112,34 @@ const Sidebar = () => {
           <div className="p-4 border-b border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Rapid Chat</h2>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsOpen(false);
-                }}
-                className="p-1 rounded hover:bg-white/10 transition-colors"
-                title="Close sidebar (Ctrl+B)"
-              >
-                <BsLayoutSidebarInsetReverse
-                  size={16}
-                  className="text-gray-400"
+              <div className="flex items-center gap-2">
+                {/* Connection Status Indicator */}
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    connectionStatus === "connected"
+                      ? "bg-green-400"
+                      : connectionStatus === "connecting"
+                      ? "bg-yellow-400"
+                      : connectionStatus === "error"
+                      ? "bg-red-400"
+                      : "bg-gray-400"
+                  }`}
+                  title={`WebSocket: ${connectionStatus}`}
                 />
-              </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(false);
+                  }}
+                  className="p-1 rounded hover:bg-white/10 transition-colors"
+                  title="Close sidebar (Ctrl+B)"
+                >
+                  <BsLayoutSidebarInsetReverse
+                    size={16}
+                    className="text-gray-400"
+                  />
+                </button>
+              </div>
             </div>
 
             {/* New Chat Button */}
@@ -164,13 +182,22 @@ const Sidebar = () => {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            pathname === id
-                              ? "bg-blue-400"
-                              : "bg-gray-600 group-hover:bg-gray-500"
-                          }`}
-                        />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              pathname === id
+                                ? "bg-blue-400"
+                                : "bg-gray-600 group-hover:bg-gray-500"
+                            }`}
+                          />
+                          {loadingSessions.includes(id) && (
+                            <AiOutlineLoading3Quarters
+                              size={12}
+                              className="text-blue-400 animate-spin"
+                              title="Chat loading in background"
+                            />
+                          )}
+                        </div>
                         <span
                           className={`text-xs truncate flex-1 ${
                             pathname === id

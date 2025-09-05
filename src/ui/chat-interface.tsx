@@ -19,9 +19,7 @@ import {
   FaArrowCircleRight,
   FaUpload,
 } from "react-icons/fa";
-import ModelProvider from "@/models";
 import { RiDeleteBin2Fill } from "react-icons/ri";
-import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
@@ -32,6 +30,8 @@ import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
 import { ModelInfo, ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
+import { useChat } from "@/context/ChatContext";
+import { ChatMessage } from "@/lib/websocket-client";
 import ExamplePromptsConstructors from "./example-prompts";
 import { FiRefreshCcw } from "react-icons/fi";
 import { useToast } from "@/context/ToastContext";
@@ -40,6 +40,7 @@ import { useToast } from "@/context/ToastContext";
 //   models.map((model) => [model.code, model.description])
 // );
 
+// Legacy message type for compatibility
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -48,6 +49,16 @@ type Message = {
   startTime?: number;
   endTime?: number;
 };
+
+// Helper function to convert ChatMessage to Message
+const chatMessageToMessage = (chatMsg: ChatMessage): Message => ({
+  role: chatMsg.role,
+  content: chatMsg.content,
+  images: chatMsg.images,
+  reasoning: chatMsg.reasoning,
+  startTime: chatMsg.startTime,
+  endTime: chatMsg.endTime,
+});
 
 const MessagesContainer = memo(
   ({
@@ -83,6 +94,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const { refreshTitles } = useSidebar();
   const { setMessage: sM, setType, fire } = useToast();
+  const { startChat, getSession, onChatUpdate, connectionStatus } = useChat();
 
   const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -136,13 +148,23 @@ const ChatInterface = ({ id }: { id: string }) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Fetching models here
+  // Load chats from IndexedDB on component mount
   useEffect(() => {
     const loadChats = async () => {
       setIsLoadingChats(true);
       try {
         const chats = await retrieveChats(id);
-        setMessages(chats);
+        const legacyMessages = chats.map(
+          (chat): Message => ({
+            role: chat.role,
+            content: chat.content,
+            images: chat.images,
+            reasoning: chat.reasoning,
+            startTime: chat.startTime,
+            endTime: chat.endTime,
+          })
+        );
+        setMessages(legacyMessages);
       } catch (error) {
         console.error("Error loading chats:", error);
       } finally {
@@ -150,6 +172,25 @@ const ChatInterface = ({ id }: { id: string }) => {
       }
     };
     loadChats();
+  }, [id]);
+
+  // Watch for session updates from WebSocket
+  useEffect(() => {
+    const session = getSession(id);
+    if (session) {
+      setMessages(session.messages.map(chatMessageToMessage));
+      setIsLoading(session.isLoading);
+    }
+  }, [id, getSession]);
+
+  // Listen for real-time updates to this chat
+  useEffect(() => {
+    const unsubscribe = onChatUpdate?.(id, (session: any) => {
+      setMessages(session.messages.map(chatMessageToMessage));
+      setIsLoading(session.isLoading);
+    });
+
+    return unsubscribe;
   }, [id]);
 
   useEffect(() => {
@@ -192,116 +233,42 @@ const ChatInterface = ({ id }: { id: string }) => {
       return;
     }
 
-    const userMessage: Message = {
-      role: "user",
-      content: input,
-      ...(images.length > 0 && { images: [...images] }), // Include images if any
-    };
-    if (messages.length === 0) {
-      await addTabs(id);
-      refreshTitles();
-    }
-    saveChats(id, [...messages, userMessage]);
-    setMessages((prev) => [...prev, userMessage]);
-
+    // Clear input immediately
     if (inputRef.current) {
       inputRef.current.value = "";
     }
 
-    setIsLoading(true);
+    // Add tab if this is the first message
+    if (messages.length === 0) {
+      await addTabs(id);
+      refreshTitles();
+    }
 
+    // Convert current messages to ChatMessage format
+    const previousChatMessages: ChatMessage[] = messages.map((msg, index) => ({
+      id: `msg_${index}`,
+      role: msg.role,
+      content: msg.content,
+      images: msg.images,
+      reasoning: msg.reasoning,
+      startTime: msg.startTime,
+      endTime: msg.endTime,
+      timestamp: Date.now(),
+    }));
+
+    // Start the chat using WebSocket or API fallback
     try {
-      const prevChats = await retrieveChats(id);
-      const response = await ModelProvider({
-        type: model,
-        query: input,
-        chats: prevChats.map((msg) => {
-          return {
-            role: msg.role,
-            content: msg.content,
-          };
-        }),
-        imageData: images,
-      });
-      setImages([]);
-      if (!(response instanceof ReadableStream)) {
-        throw new Error("Expected a ReadableStream response");
-      }
-
-      const reader = response.getReader();
-
-      let assistantMessage = "";
-      let lastDisplayContent = "";
-      let updateCounter = 0;
-      const UPDATE_THROTTLE = 1; // Update UI every 3 chunks for optimal balance
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Waiting for first tokens, please wait!",
-        },
-      ]);
-
-      const startTime = performance.now();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const text =
-          typeof value === "string" ? value : new TextDecoder().decode(value);
-        assistantMessage += text;
-        updateCounter++;
-
-        const { displayContent, reasoning } =
-          processMessageContent(assistantMessage);
-
-        // Throttle updates to prevent excessive re-renders during streaming
-        if (
-          displayContent !== lastDisplayContent &&
-          (updateCounter % UPDATE_THROTTLE === 0 || done)
-        ) {
-          lastDisplayContent = displayContent;
-
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              role: "assistant",
-              content: displayContent,
-              reasoning: reasoning || "",
-            };
-            return newMessages;
-          });
-        }
-      }
-
-      const endTime = performance.now();
-      // Final update to ensure we have the complete message
-      const { displayContent, reasoning } =
-        processMessageContent(assistantMessage);
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: "assistant",
-          content: displayContent,
-          reasoning: reasoning || "",
-          startTime: startTime,
-          endTime: endTime,
-        };
-        saveChats(id, newMessages);
-
-        return newMessages;
-      });
+      setIsLoading(true);
+      startChat(
+        id,
+        input,
+        model,
+        previousChatMessages,
+        images.length > 0 ? images : undefined
+      );
+      setImages([]); // Clear images after sending
     } catch (error) {
-      console.error("Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ]);
-    } finally {
+      console.error("Error starting chat:", error);
       setIsLoading(false);
     }
   };

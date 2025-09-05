@@ -6,6 +6,7 @@ import Sidebar from "@/ui/sidebar";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { ChatProvider } from "@/context/ChatContext";
 import MainContent from "@/ui/main-content";
 import { ToastProvider } from "@/context/ToastContext";
 import Toast from "@/ui/toast";
@@ -183,11 +184,13 @@ export default function RootLayout({
         className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
       >
         <ToastProvider>
-          <SidebarProvider>
-            <Sidebar />
-            <MainContent>{children}</MainContent>
-            <Toast />
-          </SidebarProvider>
+          <ChatProvider>
+            <SidebarProvider>
+              <Sidebar />
+              <MainContent>{children}</MainContent>
+              <Toast />
+            </SidebarProvider>
+          </ChatProvider>
         </ToastProvider>
       </body>
     </html>
