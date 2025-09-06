@@ -6,7 +6,6 @@ import {
   useCallback,
   memo,
   ChangeEvent,
-  useContext,
 } from "react";
 import {
   addTabs,
@@ -31,9 +30,11 @@ import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import modelDescriptionMaker from "@/utils/model-list";
+import { ModelInfo, ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
+import { FiRefreshCcw } from "react-icons/fi";
+import { useToast } from "@/context/ToastContext";
 
 // const modelInformation: Record<string, string> = Object.fromEntries(
 //   models.map((model) => [model.code, model.description])
@@ -81,6 +82,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   const { refreshTitles } = useSidebar();
+  const { setMessage: sM, setType, fire } = useToast();
 
   const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -88,23 +90,23 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [modelsLoading, setModelsLoading] = useState<boolean>(false);
-  const [models, setModels] = useState<
-    {
-      name: string;
-      code: string;
-      image: boolean;
-      pdf: boolean;
-      description: string;
-      type: "reasoning" | "conversational" | "general";
-    }[]
-  >([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+
+  const modelInfo = new ModelInformation();
 
   useEffect(() => {
     async function getModels() {
       setModelsLoading(true);
-      const models = await modelDescriptionMaker();
+      const models = await modelInfo.retrieveFromLocal();
       setModels(models);
       setModelsLoading(false);
+
+      // Show success message
+      setTimeout(() => {
+        sM("Models loaded successfully!");
+        setType("success");
+        fire();
+      }, 500);
     }
 
     getModels();
@@ -717,6 +719,33 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
             <div className="flex flex-row items-center gap-2">
               <AudioRecord setAudio={setAudio} />
+              <div
+                className="hover:bg-lime-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
+                title="Refresh Models"
+                onClick={async () => {
+                  setModelsLoading(true);
+                  sM("Refreshing models...");
+                  setType("info");
+                  fire();
+                  try {
+                    modelInfo.refresh();
+                    const models = await modelInfo.retrieveFromLocal();
+                    setModels(models);
+                  } finally {
+                    setModelsLoading(false);
+                  }
+
+                  // Show success message
+                  setTimeout(() => {
+                    sM("Models refreshed successfully!");
+                    setType("success");
+                    fire();
+                  }, 500);
+                }}
+              >
+                <FiRefreshCcw size={14} />
+              </div>
+
               {models.find(
                 (item) => item.image === true && item.code === model
               ) ? (

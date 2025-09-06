@@ -1,104 +1,3 @@
-// export const models = [
-//   {
-//     name: "Gemini Flash 2.5 Lite",
-//     code: "flash",
-//     image: true,
-//     description: "Quick, direct, no-frills replies.",
-//   },
-//   {
-//     name: "Gemini Flash 2.0",
-//     code: "flash_2",
-//     image: true,
-//     description: "Fast, concise, and to the point.",
-//   },
-//   // {
-//   //   name: "Compound Beta",
-//   //   code: "compound",
-//   //   image: true,
-//   //   description: "Good for complex tasks, handles multiple steps.",
-//   // },
-//   {
-//     name: "Qwen 32B",
-//     code: "qwen",
-//     image: false,
-//     description: "Strong reasoning, handles complex logic.",
-//   },
-//   {
-//     name: "Llama Scout",
-//     code: "scout",
-//     image: true,
-//     description: "Somewhat accurate facts, safe and clear answers.",
-//   },
-//   {
-//     name: "Devstral",
-//     code: "devstral",
-//     image: false,
-//     description: "Great for coding help and debugging.",
-//   },
-//   {
-//     name: "Venice Uncensored",
-//     code: "venice_uncensored",
-//     image: false,
-//     description: "Unfiltered, unbiased information.",
-//   },
-//   {
-//     name: "Deepseek",
-//     code: "deepseek",
-//     image: false,
-//     description: "Highly knowledgeable, excels at explaining complex topics.",
-//   },
-//   {
-//     name: "GPT OSS",
-//     code: "gptOss",
-//     image: false,
-//     description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
-//   },
-//   {
-//     name: "GPT OSS Free",
-//     code: "gptOssFree",
-//     image: false,
-//     description: "Conversational, friendly, and helpful. Similar to GPT 4.0",
-//   },
-
-//   // {
-//   //   name: "Llama Instant",
-//   //   code: "llama_instant",
-//   //   image: true,
-//   //   description: "Fast, accurate, and reliable.",
-//   // },
-//   // {
-//   //   name: "GPT 4.0 Mini",
-//   //   code: "gpt4oMini",
-//   //   image: false,
-//   //   description: "Versatile, good for a wide range of tasks.",
-//   // },
-//   // {
-//   //   name: "GPT 4.0 Mini",
-//   //   code: "gpt4oMini",
-//   //   image: false,
-//   //   description: "Versatile, good for a wide range of tasks.",
-//   // },
-//   // {
-//   //   name: "Gemma 3",
-//   //   code: "gemma3",
-//   //   image: true,
-//   //   description: "Summarizes and explains text well.",
-//   // },
-//   // {
-//   //   name: "Tools",
-//   //   code: "llama_instant",
-//   //   image: false,
-//   //   description: "Wikipedia, Weather updates, and more.",
-//   // },
-
-//   // {
-//   //   name: "Phi 4 Reasoning",
-//   //   code: "phi4",
-//   //   image: false,
-//   //   // No description provided
-//   // },
-// ];
-
 import get_model_information from "@/models/database/read_models_information";
 
 interface modelDescription {
@@ -111,16 +10,60 @@ interface modelDescription {
   active: boolean;
 }
 
-const modelDescriptionMaker = async () => {
-  const models: modelDescription[] = await get_model_information();
-  return models.map((model) => ({
-    name: model.display_name,
-    code: model.model_code,
-    image: model.image_support,
-    pdf: model.pdf_support,
-    description: model.description || "No description available.",
-    type: model.type,
-  }));
-};
+export interface ModelInfo {
+  name: string;
+  code: string;
+  image: boolean;
+  pdf: boolean;
+  description: string;
+  type: "reasoning" | "conversational" | "general";
+}
 
-export default modelDescriptionMaker;
+export class ModelInformation {
+  async retrieveFromLocal(): Promise<ModelInfo[] | []> {
+    try {
+      const items = localStorage.getItem("models") || "[]";
+      const parsed = JSON.parse(items) || [];
+      if (parsed.length == 0) {
+        await this.saveToLocal();
+        const freshItems = localStorage.getItem("models");
+        return freshItems ? JSON.parse(freshItems) : [];
+      }
+
+      return parsed;
+    } catch (err) {
+      console.error("Failed to read models from localStorage:", err);
+      return [];
+    }
+  }
+
+  async saveToLocal() {
+    try {
+      const items = await this.models();
+      localStorage.setItem("models", JSON.stringify(items));
+    } catch (err) {
+      console.error("Failed to save models to localStorage:", err);
+    }
+  }
+
+  private async models(): Promise<ModelInfo[] | []> {
+    try {
+      const rawModels: modelDescription[] = await get_model_information();
+      return rawModels.map((model) => ({
+        name: model.display_name,
+        code: model.model_code,
+        image: model.image_support,
+        pdf: model.pdf_support,
+        description: model.description || "No description available.",
+        type: model.type,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch model information:", err);
+      return [];
+    }
+  }
+
+  async refresh() {
+    await this.saveToLocal();
+  }
+}
