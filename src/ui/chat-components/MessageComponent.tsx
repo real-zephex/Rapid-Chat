@@ -18,7 +18,6 @@ import { Cascadia_Code } from "next/font/google";
 const cascadiaCode = Cascadia_Code({
   weight: ["400", "600"],
   subsets: ["latin"],
-  variable: "--font-cascadia-code",
 });
 
 type Message = {
