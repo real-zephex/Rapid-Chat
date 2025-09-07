@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans } from "next/font/google";
+// import { Inter, Noto_Sans } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import Sidebar from "@/ui/sidebar";
@@ -10,18 +10,18 @@ import MainContent from "@/ui/main-content";
 import { ToastProvider } from "@/context/ToastContext";
 import Toast from "@/ui/toast";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
+// const inter = Inter({
+//   subsets: ["latin"],
+//   display: "swap",
+//   variable: "--font-inter",
+// });
 
-const notoSans = Noto_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-noto-sans",
-  display: "swap",
-});
+// const notoSans = Noto_Sans({
+//   weight: ["400", "500", "600", "700"],
+//   subsets: ["latin"],
+//   variable: "--font-noto-sans",
+//   display: "swap",
+// });
 
 export const metadata: Metadata = {
   title: {
@@ -180,7 +180,7 @@ export default function RootLayout({
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
+        className="font-sans antialiased m-1 h-full"
       >
         <ToastProvider>
           <SidebarProvider>

@@ -35,6 +35,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
 import { FiRefreshCcw } from "react-icons/fi";
 import { useToast } from "@/context/ToastContext";
+import ModelBrowser from "./chat-components/ModelBrowser";
 
 // const modelInformation: Record<string, string> = Object.fromEntries(
 //   models.map((model) => [model.code, model.description])
@@ -307,11 +308,8 @@ const ChatInterface = ({ id }: { id: string }) => {
   };
 
   const handleModelChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      event.preventDefault();
-      const target = event.target as HTMLSelectElement;
-      const model = target.value;
-      setModel(model);
+    (modelCode: string) => {
+      setModel(modelCode);
     },
     []
   );
@@ -671,43 +669,12 @@ const ChatInterface = ({ id }: { id: string }) => {
           <div className="flex justify-between items-center gap-2">
             {models.length > 0 && (
               <div className="flex flex-row items-center gap-2">
-                <select
-                  className="text-white rounded-lg px-3 py-1 outline-none max-w-sm w-full text-xs bg-neutral-800/90 border border-neutral-700 hover:bg-neutral-700 focus:ring-2 focus:ring-cyan-500 transition-all duration-200 shadow-md"
-                  value={model}
-                  onChange={handleModelChange}
-                >
-                  <optgroup label="Conversational">
-                    {models
-                      .filter((m) => m.type === "conversational")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="General">
-                    {models
-                      .filter((m) => m.type === "general")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-
-                  <optgroup label="Reasoning">
-                    {models
-                      .filter((m) => m.type === "reasoning")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
+                <ModelBrowser
+                  models={models}
+                  selectedModel={model}
+                  onModelChange={handleModelChange}
+                  disabled={modelsLoading || isLoadingChats}
+                />
               </div>
             )}
             <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">

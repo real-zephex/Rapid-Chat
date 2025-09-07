@@ -13,13 +13,13 @@ import ImageDisplay from "./ImageDisplay";
 import { GoCpu } from "react-icons/go";
 import { TbAlphabetLatin } from "react-icons/tb";
 
-import { Cascadia_Code } from "next/font/google";
+// import { Cascadia_Code } from "next/font/google";
 
-const cascadiaCode = Cascadia_Code({
-  weight: ["400", "600"],
-  subsets: ["latin"],
-  variable: "--font-cascadia-code",
-});
+// const cascadiaCode = Cascadia_Code({
+//   weight: ["400", "600"],
+//   subsets: ["latin"],
+//   variable: "--font-cascadia-code",
+// });
 
 type Message = {
   role: "user" | "assistant";
@@ -144,7 +144,7 @@ const MessageComponent = memo(
                     const language = match ? match[1] : "";
                     return match ? (
                       <code
-                        className={`${className} ${cascadiaCode.className}  hljs`}
+                        className={`${className} font-mono hljs`}
                         {...props}
                       >
                         {children}
