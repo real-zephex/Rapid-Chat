@@ -6,6 +6,7 @@ import Sidebar from "@/ui/sidebar";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { ModelProvider } from "@/context/ModelContext";
 import MainContent from "@/ui/main-content";
 import { ToastProvider } from "@/context/ToastContext";
 import Toast from "@/ui/toast";
@@ -184,9 +185,11 @@ export default function RootLayout({
       >
         <ToastProvider>
           <SidebarProvider>
-            <Sidebar />
-            <MainContent>{children}</MainContent>
-            <Toast />
+            <ModelProvider>
+              <Sidebar />
+              <MainContent>{children}</MainContent>
+              <Toast />
+            </ModelProvider>
           </SidebarProvider>
         </ToastProvider>
       </body>
