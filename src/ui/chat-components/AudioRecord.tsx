@@ -111,10 +111,11 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
 
       {isRecording && (
         <div>
-          <div className="absolute top-0 left-0 w-full h-full bg-neutral-900/90 flex items-center justify-center flex-col gap-1 rounded-xl">
+          <div className="fixed top-0 left-0 w-full h-full bg-neutral-900/90 flex items-center justify-center flex-col gap-1 rounded-xl">
             <span className="text-white text-md font-bold">Recording...</span>
             <p className="text-xs text-white text-center ">
-              Press again to stop recording. Audio must be between 2 seconds and 3 minutes long.
+              Press again to stop recording. Audio must be between 2 seconds and
+              3 minutes long.
             </p>
             <MyStopwatch />
           </div>

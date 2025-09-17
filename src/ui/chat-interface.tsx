@@ -87,7 +87,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   const { setMessage: sM, setType, fire } = useToast();
   const { selectedModel, models } = useModel();
 
-  const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -539,6 +538,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         </button>
       </div>
 
+      {/* Scroll Button */}
       <button
         className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
         onClick={() => scrollToBottom()}
@@ -585,7 +585,8 @@ const ChatInterface = ({ id }: { id: string }) => {
           <MessagesContainer
             messages={messages}
             model={
-              models.find((m) => m.code === model)?.name || "Unknown Model"
+              models.find((m) => m.code === selectedModel)?.name ||
+              "Unknown Model"
             }
             onCopyResponse={handleCopyResponse}
           />
@@ -594,7 +595,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="w-full md:max-w-[60%] mx-auto p-2 z-50">
+      <div className="w-full md:max-w-[60%] mx-auto p-2 relative">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
@@ -610,137 +611,64 @@ const ChatInterface = ({ id }: { id: string }) => {
               }
             }}
           ></textarea>
-          {/* 
-          <div className="flex justify-between items-center gap-2">
-            {models.length > 0 && (
-              <div className="flex flex-row items-center gap-2">
-                <select
-                  className="text-white rounded-lg px-3 py-1 outline-none max-w-sm w-full text-xs bg-neutral-800/90 border border-neutral-700 hover:bg-neutral-700 focus:ring-2 focus:ring-cyan-500 transition-all duration-200 shadow-md"
-                  value={model}
-                  onChange={handleModelChange}
-                >
-                  <optgroup label="Conversational">
-                    {models
-                      .filter((m) => m.type === "conversational")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="General">
-                    {models
-                      .filter((m) => m.type === "general")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
+          <div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
+            <AudioRecord setAudio={setAudio} />
 
-                  <optgroup label="Reasoning">
-                    {models
-                      .filter((m) => m.type === "reasoning")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
-              </div>
+            {models.find(
+              (item) => item.image === true && item.code === selectedModel
+            ) ? (
+              <label
+                className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                title="Upload file"
+                htmlFor="fileInput"
+              >
+                <input
+                  name="file"
+                  type="file"
+                  accept={`image/png, image/jpeg, image/jpg, ${
+                    models.find((i) => i.code === selectedModel)?.pdf
+                      ? "application/pdf"
+                      : ""
+                  }`}
+                  className="hidden"
+                  id="fileInput"
+                  onChange={handleFileChange}
+                  multiple
+                />
+                <FaUpload size={14} />
+              </label>
+            ) : (
+              <></>
             )}
-            <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">
-              <CiSquareInfo size={20} color="cyan" />
-              <p className="line-clamp-1">
-                {models.find((i) => i.code === model)?.description ||
-                  "Loading models..."}
-              </p>
-            </div>
-            <div className="flex flex-row items-center gap-2">
-              <AudioRecord setAudio={setAudio} />
-              <div
-                className="hover:bg-lime-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
-                title="Refresh Models"
-                onClick={async () => {
-                  setModelsLoading(true);
-                  sM("Refreshing models...");
-                  setType("info");
-                  fire();
-                  try {
-                    modelInfo.refresh();
-                    const models = await modelInfo.retrieveFromLocal();
-                    setModels(models);
-                  } finally {
-                    setModelsLoading(false);
-                  }
-
-                  // Show success message
-                  setTimeout(() => {
-                    sM("Models refreshed successfully!");
-                    setType("success");
-                    fire();
-                  }, 500);
-                }}
-              >
-                <FiRefreshCcw size={14} />
-              </div>
-
-              {models.find(
-                (item) => item.image === true && item.code === model
-              ) ? (
-                <label
-                  className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                  title="Upload file"
-                  htmlFor="fileInput"
-                >
-                  <input
-                    name="file"
-                    type="file"
-                    accept={`image/png, image/jpeg, image/jpg, ${
-                      models.find((i) => i.code === model)?.pdf
-                        ? "application/pdf"
-                        : ""
-                    }`}
-                    className="hidden"
-                    id="fileInput"
-                    onChange={handleFileChange}
-                    multiple
-                  />
-                  <FaUpload size={14} />
-                </label>
+            <button
+              type="submit"
+              disabled={
+                isLoading ||
+                isUploadingImages ||
+                modelsLoading ||
+                isLoadingChats
+              }
+              className={`${
+                isLoading || isUploadingImages
+                  ? "bg-teal-700"
+                  : " hover:bg-teal-600"
+              } text-white rounded-full p-2 h-full transition-colors duration-300 `}
+              title={isUploadingImages ? "Waiting for images to upload..." : ""}
+            >
+              {isLoading ? (
+                <ImCloudUpload size={14} />
+              ) : isUploadingImages ? (
+                "⏳"
               ) : (
-                <></>
+                <FaArrowCircleRight size={14} />
               )}
+            </button>
+          </div>
+          {/* 
+          
+           
+            
 
-              <button
-                type="submit"
-                disabled={
-                  isLoading ||
-                  isUploadingImages ||
-                  modelsLoading ||
-                  isLoadingChats
-                }
-                className={`${
-                  isLoading || isUploadingImages
-                    ? "bg-teal-700"
-                    : " hover:bg-teal-600"
-                } text-white rounded-full p-2 h-full transition-colors duration-300 `}
-                title={
-                  isUploadingImages ? "Waiting for images to upload..." : ""
-                }
-              >
-                {isLoading ? (
-                  <ImCloudUpload size={14} />
-                ) : isUploadingImages ? (
-                  "⏳"
-                ) : (
-                  <FaArrowCircleRight size={14} />
-                )}
-              </button>
             </div>
           </div> */}
 

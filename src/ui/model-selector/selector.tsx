@@ -19,8 +19,6 @@ const ModelSelector = () => {
   const { isOpen } = useSidebar();
 
   function handleClick() {
-    console.log("Selected model is: ", selectedModel);
-    console.log("Available models are: ", models);
     setShowModal(true);
   }
 
@@ -83,9 +81,9 @@ const ModelSelector = () => {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-zinc-400 truncate">
+                      {/* <div className="text-xs text-zinc-400 truncate">
                         {m.code}
-                      </div>
+                      </div> */}
                     </div>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full ${typeStyles}`}
