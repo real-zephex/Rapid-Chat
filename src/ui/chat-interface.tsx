@@ -35,6 +35,8 @@ import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
 import { FiRefreshCcw } from "react-icons/fi";
 import { useToast } from "@/context/ToastContext";
+import ModelSelector from "./model-selector/selector";
+import { useModel } from "@/context/ModelContext";
 
 // const modelInformation: Record<string, string> = Object.fromEntries(
 //   models.map((model) => [model.code, model.description])
@@ -83,34 +85,33 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const { refreshTitles } = useSidebar();
   const { setMessage: sM, setType, fire } = useToast();
+  const { selectedModel, models } = useModel();
 
-  const [model, setModel] = useState<string>("llama_scout");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [modelsLoading, setModelsLoading] = useState<boolean>(false);
-  const [models, setModels] = useState<ModelInfo[]>([]);
 
   const modelInfo = new ModelInformation();
 
-  useEffect(() => {
-    async function getModels() {
-      setModelsLoading(true);
-      const models = await modelInfo.retrieveFromLocal();
-      setModels(models);
-      setModelsLoading(false);
+  // useEffect(() => {
+  //   async function getModels() {
+  //     setModelsLoading(true);
+  //     const models = await modelInfo.retrieveFromLocal();
+  //     setModels(models);
+  //     setModelsLoading(false);
 
-      // Show success message
-      setTimeout(() => {
-        sM("Models loaded successfully!");
-        setType("success");
-        fire();
-      }, 500);
-    }
+  //     // Show success message
+  //     setTimeout(() => {
+  //       sM("Models loaded successfully!");
+  //       setType("success");
+  //       fire();
+  //     }, 500);
+  //   }
 
-    getModels();
-  }, []);
+  //   getModels();
+  // }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -213,7 +214,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     try {
       const prevChats = await retrieveChats(id);
       const response = await ModelProvider({
-        type: model,
+        type: selectedModel,
         query: input,
         chats: prevChats.map((msg) => {
           return {
@@ -233,7 +234,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       let assistantMessage = "";
       let lastDisplayContent = "";
       let updateCounter = 0;
-      const UPDATE_THROTTLE = 1; // Update UI every 3 chunks for optimal balance
+      const UPDATE_THROTTLE = 1;
 
       setMessages((prev) => [
         ...prev,
@@ -306,15 +307,15 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   };
 
-  const handleModelChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      event.preventDefault();
-      const target = event.target as HTMLSelectElement;
-      const model = target.value;
-      setModel(model);
-    },
-    []
-  );
+  // const handleModelChange = useCallback(
+  //   (event: React.ChangeEvent<HTMLSelectElement>) => {
+  //     event.preventDefault();
+  //     const target = event.target as HTMLSelectElement;
+  //     const model = target.value;
+  //     setModel(model);
+  //   },
+  //   []
+  // );
 
   const handleCopyResponse = useCallback(async (content: string) => {
     try {
@@ -526,6 +527,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       onDrop={handleDragAndDrop}
       onDragOver={(e) => e.preventDefault()}
     >
+      <ModelSelector />
       {/* Delete Button */}
       <div className="absolute top-0 right-0 m-4 z-20">
         <button
@@ -536,6 +538,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         </button>
       </div>
 
+      {/* Scroll Button */}
       <button
         className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
         onClick={() => scrollToBottom()}
@@ -555,66 +558,6 @@ const ChatInterface = ({ id }: { id: string }) => {
           </div>
         ) : messages.length === 0 ? (
           <div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
-            {/* <div className="text-center max-w-2xl mx-auto px-4">
-              <div className="mb-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    💡 Ask Questions
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Get help with coding, explanations, or any topic you&apos;re
-                    curious about
-                  </p>
-                </div>
-
-                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    🖼️ Share Images
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Upload images or paste them directly for visual analysis and
-                    questions
-                  </p>
-                </div>
-
-                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    🎤 Voice Input
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Use the microphone button to speak your questions instead of
-                    typing
-                  </p>
-                </div>
-
-                <div className="bg-neutral-800/50 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    ⚡ Multiple Models
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Choose from various AI models optimized for different tasks
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-gray-400 text-sm">
-                <p className="mb-2">
-                  <strong>Pro tip:</strong> Use{" "}
-                  <kbd className="px-2 py-1 bg-neutral-700 rounded text-xs">
-                    Shift + Esc
-                  </kbd>{" "}
-                  to quickly focus the input field
-                </p>
-                <p>
-                  <strong>Quick delete:</strong> Use{" "}
-                  <kbd className="px-2 py-1 bg-neutral-700 rounded text-xs">
-                    Ctrl + Shift + Backspace
-                  </kbd>{" "}
-                  to delete this chat
-                </p>
-              </div>
-            </div> */}
             <h2 className="font-semibold text-2xl">
               How can I help you today?
             </h2>
@@ -642,7 +585,8 @@ const ChatInterface = ({ id }: { id: string }) => {
           <MessagesContainer
             messages={messages}
             model={
-              models.find((m) => m.code === model)?.name || "Unknown Model"
+              models.find((m) => m.code === selectedModel)?.name ||
+              "Unknown Model"
             }
             onCopyResponse={handleCopyResponse}
           />
@@ -651,7 +595,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       </div>
 
       {/* Chat Input Form */}
-      <div className="w-full md:max-w-[60%] mx-auto p-2 z-50">
+      <div className="w-full md:max-w-[60%] mx-auto p-2 relative">
         <form onSubmit={handleSubmit}>
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
@@ -667,147 +611,74 @@ const ChatInterface = ({ id }: { id: string }) => {
               }
             }}
           ></textarea>
+          <div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
+            <AudioRecord setAudio={setAudio} />
 
-          <div className="flex justify-between items-center gap-2">
-            {models.length > 0 && (
-              <div className="flex flex-row items-center gap-2">
-                <select
-                  className="text-white rounded-lg px-3 py-1 outline-none max-w-sm w-full text-xs bg-neutral-800/90 border border-neutral-700 hover:bg-neutral-700 focus:ring-2 focus:ring-cyan-500 transition-all duration-200 shadow-md"
-                  value={model}
-                  onChange={handleModelChange}
-                >
-                  <optgroup label="Conversational">
-                    {models
-                      .filter((m) => m.type === "conversational")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="General">
-                    {models
-                      .filter((m) => m.type === "general")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-
-                  <optgroup label="Reasoning">
-                    {models
-                      .filter((m) => m.type === "reasoning")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((m) => (
-                        <option key={m.code} value={m.code}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
-              </div>
+            {models.find(
+              (item) => item.image === true && item.code === selectedModel
+            ) ? (
+              <label
+                className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+                title="Upload file"
+                htmlFor="fileInput"
+              >
+                <input
+                  name="file"
+                  type="file"
+                  accept={`image/png, image/jpeg, image/jpg, ${
+                    models.find((i) => i.code === selectedModel)?.pdf
+                      ? "application/pdf"
+                      : ""
+                  }`}
+                  className="hidden"
+                  id="fileInput"
+                  onChange={handleFileChange}
+                  multiple
+                />
+                <FaUpload size={14} />
+              </label>
+            ) : (
+              <></>
             )}
-            <div className="hidden lg:flex flex-row items-center gap-2 text-xs px-2">
-              <CiSquareInfo size={20} color="cyan" />
-              <p className="line-clamp-1">
-                {models.find((i) => i.code === model)?.description ||
-                  "Loading models..."}
-              </p>
-            </div>
-            <div className="flex flex-row items-center gap-2">
-              <AudioRecord setAudio={setAudio} />
-              <div
-                className="hover:bg-lime-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
-                title="Refresh Models"
-                onClick={async () => {
-                  setModelsLoading(true);
-                  sM("Refreshing models...");
-                  setType("info");
-                  fire();
-                  try {
-                    modelInfo.refresh();
-                    const models = await modelInfo.retrieveFromLocal();
-                    setModels(models);
-                  } finally {
-                    setModelsLoading(false);
-                  }
-
-                  // Show success message
-                  setTimeout(() => {
-                    sM("Models refreshed successfully!");
-                    setType("success");
-                    fire();
-                  }, 500);
-                }}
-              >
-                <FiRefreshCcw size={14} />
-              </div>
-
-              {models.find(
-                (item) => item.image === true && item.code === model
-              ) ? (
-                <label
-                  className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                  title="Upload file"
-                  htmlFor="fileInput"
-                >
-                  <input
-                    name="file"
-                    type="file"
-                    accept={`image/png, image/jpeg, image/jpg, ${
-                      models.find((i) => i.code === model)?.pdf
-                        ? "application/pdf"
-                        : ""
-                    }`}
-                    className="hidden"
-                    id="fileInput"
-                    onChange={handleFileChange}
-                    multiple
-                  />
-                  <FaUpload size={14} />
-                </label>
+            <button
+              type="submit"
+              disabled={
+                isLoading ||
+                isUploadingImages ||
+                modelsLoading ||
+                isLoadingChats
+              }
+              className={`${
+                isLoading || isUploadingImages
+                  ? "bg-teal-700"
+                  : " hover:bg-teal-600"
+              } text-white rounded-full p-2 h-full transition-colors duration-300 `}
+              title={isUploadingImages ? "Waiting for images to upload..." : ""}
+            >
+              {isLoading ? (
+                <ImCloudUpload size={14} />
+              ) : isUploadingImages ? (
+                "⏳"
               ) : (
-                <></>
+                <FaArrowCircleRight size={14} />
               )}
-
-              <button
-                type="submit"
-                disabled={
-                  isLoading ||
-                  isUploadingImages ||
-                  modelsLoading ||
-                  isLoadingChats
-                }
-                className={`${
-                  isLoading || isUploadingImages
-                    ? "bg-teal-700"
-                    : " hover:bg-teal-600"
-                } text-white rounded-full p-2 h-full transition-colors duration-300 `}
-                title={
-                  isUploadingImages ? "Waiting for images to upload..." : ""
-                }
-              >
-                {isLoading ? (
-                  <ImCloudUpload size={14} />
-                ) : isUploadingImages ? (
-                  "⏳"
-                ) : (
-                  <FaArrowCircleRight size={14} />
-                )}
-              </button>
-            </div>
+            </button>
           </div>
+          {/* 
+          
+           
+            
 
-          <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
+            </div>
+          </div> */}
+
+          {/* <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
             <CiSquareInfo size={20} color="cyan" />
             <p className="line-clamp-1">
               {models.find((i) => i.code === model)?.description ||
                 "general tasks"}
             </p>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>
