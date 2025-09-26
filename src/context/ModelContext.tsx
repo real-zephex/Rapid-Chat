@@ -24,7 +24,9 @@ const ModelContext = createContext<ModelContextType | undefined>(undefined);
 const modelInfo = new ModelInformation();
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, changeModel] = useState<string>("gpt_oss_20b");
+  const [selectedModel, changeModel] = useState<string>(
+    "gemini_2.5_flash_lite"
+  );
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
 

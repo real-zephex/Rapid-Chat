@@ -84,7 +84,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   const { refreshTitles } = useSidebar();
-  const { setMessage: sM, setType, fire } = useToast();
   const { selectedModel, models } = useModel();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -550,11 +549,9 @@ const ChatInterface = ({ id }: { id: string }) => {
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-2 space-y-6 ">
         {isLoadingChats ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-              <p className="text-gray-300">Loading your conversation...</p>
-            </div>
+          <div className="flex items-center justify-center h-full gap-4">
+            <div className="animate-spin rounded-full size-5 border-b-2 border-white "></div>
+            <p className="text-gray-300">Loading your conversation...</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
@@ -600,7 +597,9 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className="w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm"
+            className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm ${
+              isLoading ? "animate-pulse" : ""
+            }`}
             rows={3}
             disabled={modelsLoading || isLoadingChats}
             placeholder="Ask anything..."
@@ -611,9 +610,14 @@ const ChatInterface = ({ id }: { id: string }) => {
               }
             }}
           ></textarea>
+          {isLoading && (
+            <div className="absolute -top-1 left-0 flex items-center gap-2 text-xs text-black bg-lime-300 px-2 rounded-xl animate-bounce">
+              <div className="animate-spin rounded-full size-2 border-b-2 border-black "></div>
+              <p>Generating response...</p>
+            </div>
+          )}
           <div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
             <AudioRecord setAudio={setAudio} />
-
             {models.find(
               (item) => item.image === true && item.code === selectedModel
             ) ? (

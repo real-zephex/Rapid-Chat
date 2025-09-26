@@ -1,7 +1,9 @@
 import { incomingData } from "../types";
 import OpenAI from "openai";
 import { ModelData } from "./types";
-import { DocumentParse, ImageParser } from "../groq/helper/attachments-parser";
+import { DocumentParse, ImageParser } from "./helper/attachments-parser";
+import { ChatCompletionChunk } from "openai/resources/chat/completions.mjs";
+import { Stream } from "openai/core/streaming.mjs";
 
 const groq_Client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
@@ -14,7 +16,7 @@ const openrouter_Client = new OpenAI({
 });
 
 const google_Client = new OpenAI({
-  baseURL: "https://generativelanguage.googleapis.com/openai",
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
   apiKey: process.env.GOOGLE_API_KEY,
 });
 
@@ -36,6 +38,7 @@ async function* ModelHandler({
     throw new Error(`Unsupported provider: ${model_data.provider}`);
   }
 
+  // Model Configurations
   const {
     provider_code,
     stream,
@@ -49,7 +52,7 @@ async function* ModelHandler({
     reasoning,
   } = model_data;
 
-  // Compose user content (text + optional images/pdfs)
+  // Multimodal handler
   const multimodal = Boolean(image_support || pdf_support);
   const userContent: string | Array<any> = multimodal
     ? [
@@ -58,6 +61,18 @@ async function* ModelHandler({
         ...(pdf_support ? DocumentParse({ inc }) : []),
       ]
     : inc.message;
+
+  // Reasoning level handler
+  let reasoning_effort;
+  if (reasoning) {
+    if (model_data.provider === "google") {
+      reasoning_effort = "medium";
+    } else if (model_data.provider === "openrouter") {
+      reasoning_effort = "medium";
+    } else {
+      reasoning_effort = "default";
+    }
+  }
 
   const params = {
     model: provider_code,
@@ -70,7 +85,8 @@ async function* ModelHandler({
     max_completion_tokens,
     top_p,
     stream,
-    stop,
+    reasoning_effort,
+    // stop,
   } as const;
 
   // Streamed response

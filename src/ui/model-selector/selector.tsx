@@ -6,6 +6,7 @@ import { ModelInfo } from "@/utils/model-list";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useEffect, useState } from "react";
 
 const ModelSelector = () => {
   const {
@@ -17,6 +18,9 @@ const ModelSelector = () => {
     refreshModels,
   } = useModel();
   const { isOpen } = useSidebar();
+
+  const [mod, setMod] = useState<ModelInfo[]>(models);
+  const [current, setCurrent] = useState<string>("all");
 
   function handleClick() {
     setShowModal(true);
@@ -92,7 +96,7 @@ const ModelSelector = () => {
                     </span>
                   </div>
 
-                  <p className="text-xs leading-relaxed text-zinc-300">
+                  <p className="text-xs leading-relaxed text-zinc-300 line-clamp-3">
                     {m.description}
                   </p>
 
@@ -200,7 +204,35 @@ const ModelSelector = () => {
                 </button>
               </section>
             </div>
-            <ModelCardGallery models={models} />
+            <p className="p-2 rounded-xl text-center text-xs text-zinc-300 mt-2">
+              Showing {current} ({mod.length} models)
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 text-xs">
+              {["conversational", "reasoning", "general"].map((item, idx) => (
+                <button
+                  key={idx}
+                  className="bg-sky-800 py-1 px-2 cursor-pointer rounded-xl hover:bg-sky-900 transition-all"
+                  onClick={() => {
+                    setMod(() => {
+                      return models.filter((m) => m.type === item);
+                    });
+                    setCurrent(item);
+                  }}
+                >
+                  <code>{item}</code>
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  setMod(models);
+                  setCurrent("all");
+                }}
+                className="bg-emerald-700 py-1 px-2 cursor-pointer rounded-xl hover:bg-emerald-900 transition-all"
+              >
+                <code>All</code>
+              </button>
+            </div>
+            <ModelCardGallery models={mod} />
           </div>
         </div>
       )}
