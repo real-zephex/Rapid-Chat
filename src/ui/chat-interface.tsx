@@ -92,6 +92,25 @@ const ChatInterface = ({ id }: { id: string }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setIsAndroid(/Android/i.test(navigator.userAgent));
+    }
+  }, []);
+
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    // Reset height to auto to correctly read scrollHeight
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    autoResize();
+  }, [autoResize]);
 
   useHotkeys("shift+esc", (e) => {
     e.preventDefault();
@@ -193,6 +212,8 @@ const ChatInterface = ({ id }: { id: string }) => {
 
     if (inputRef.current) {
       inputRef.current.value = "";
+      // Reset height after sending
+      inputRef.current.style.height = "";
     }
 
     setIsLoading(true);
@@ -485,9 +506,11 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (file === null) {
       input.value =
         "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
+      autoResize();
     } else {
       const text = await Whisper(file);
       input.value = text.toString();
+      autoResize();
 
       //   text || "Sorry but this feature is currently disabled.";
       // inputRef.current.focus();
@@ -514,6 +537,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (input) {
       input.value = text;
       input.focus();
+      autoResize();
     }
   }
 
@@ -594,16 +618,25 @@ const ChatInterface = ({ id }: { id: string }) => {
           <ImagePreview images={images} onRemove={removeImage} />
           <textarea
             ref={inputRef}
-            className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm ${
+            className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none overflow-hidden p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 max-h-72 text-sm ${
               isLoading ? "animate-pulse" : ""
             }`}
             rows={3}
             disabled={isLoadingChats}
             placeholder="Ask anything..."
+            onInput={autoResize}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
+                if (isAndroid) {
+                  // On Android, let Enter insert a newline
+                  return;
+                }
+                // On non-Android, Enter submits
                 e.preventDefault();
-                handleSubmit(e);
+                const form = (e.currentTarget as HTMLTextAreaElement).form;
+                if (form && typeof form.requestSubmit === "function") {
+                  form.requestSubmit();
+                }
               }
             }}
           ></textarea>
