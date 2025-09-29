@@ -31,6 +31,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   const { setMessage: sM, setType, fire } = useToast();
 
   async function getModelsFromLocal() {
+    await modelInfo.refresh();
     const storedModels = await modelInfo.retrieveFromLocal();
 
     setModels(storedModels);

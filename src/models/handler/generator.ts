@@ -47,7 +47,7 @@ async function* ModelHandler({
     system_prompt,
     max_completion_tokens,
     top_p,
-    stop,
+    // stop,
     temperature,
     image_support,
     pdf_support,

@@ -2,74 +2,70 @@
 import Image from "next/image";
 import { memo, useMemo, useEffect } from "react";
 import { MdOutlineDocumentScanner } from "react-icons/md";
+import { FiDownload } from "react-icons/fi";
 
 const ImageDisplay = memo(
   ({ images }: { images: { mimeType: string; data: Uint8Array }[] }) => {
-    console.log(images);
-    const documents = useMemo(() => {
-      return images.filter((img) => img.mimeType === "application/pdf");
-    }, [images]);
-
-    const imageUrls = useMemo(() => {
+    const files = useMemo(() => {
       return images
-        .filter(
-          (img) =>
-            img.mimeType === "image/png" ||
-            img.mimeType === "image/jpeg" ||
-            img.mimeType === "image/jpg"
-        )
-        .map((image) => {
-          const blob = new Blob([new Uint8Array(image.data)], {
-            type: image.mimeType,
-          });
-          return URL.createObjectURL(blob);
-        });
+        .map((item, originalIndex) => {
+          const kind =
+            item.mimeType === "application/pdf"
+              ? "pdf"
+              : item.mimeType === "image/png" ||
+                item.mimeType === "image/jpeg" ||
+                item.mimeType === "image/jpg"
+              ? "image"
+              : "other";
+          if (kind === "other") return null;
+          const url = URL.createObjectURL(
+            new Blob([new Uint8Array(item.data)], { type: item.mimeType })
+          );
+          return { url, kind, index: originalIndex, mimeType: item.mimeType } as const;
+        })
+        .filter(Boolean) as Array<{
+        url: string;
+        kind: "image" | "pdf";
+        index: number;
+        mimeType: string;
+      }>;
     }, [images]);
 
     // Cleanup blob URLs when component unmounts or images change
     useEffect(() => {
       return () => {
-        imageUrls.forEach((url) => URL.revokeObjectURL(url));
+        files.forEach((f) => URL.revokeObjectURL(f.url));
       };
-    }, [imageUrls]);
+    }, [files]);
 
     return (
       <div className="flex flex-row overflow-x-auto items-center gap-2 mt-2 mb-2 w-full">
-        {imageUrls &&
-          imageUrls.map((dataUrl, index) => (
-            <div key={index} className="relative">
+        {files.map((file) => (
+          <div key={file.index} className="relative">
+            {file.kind === "image" ? (
               <Image
-                src={dataUrl}
-                alt={`Uploaded image ${index + 1}`}
-                width={100}
-                height={200}
-                className="max-w-xs max-h-48 object-cover rounded-lg border border-gray-600"
-                // style={{
-                //   width: "auto",
-                //   height: "auto",
-                //   maxWidth: "300px",
-                //   maxHeight: "192px",
-                // }}
+                src={file.url}
+                alt={`File ${file.index + 1}`}
+                width={160}
+                height={160}
+                className="w-40 h-40 object-cover rounded-lg border border-gray-600 bg-neutral-900"
                 unoptimized={true}
               />
-            </div>
-          ))}
-        {documents.length > 0 &&
-          documents.map((doc, index) => (
+            ) : (
+              <div className="w-40 h-40 rounded-lg border border-gray-600 bg-neutral-900 flex items-center justify-center text-neutral-300">
+                <MdOutlineDocumentScanner size={28} />
+              </div>
+            )}
             <a
-              key={index}
-              href={URL.createObjectURL(
-                new Blob([new Uint8Array(doc.data)], {
-                  type: doc.mimeType,
-                })
-              )}
-              download={`document-${index + 1}.pdf`}
-              className="text-xs bg-neutral-800 p-1 rounded-lg px-2 flex flex-row items-center gap-1 hover:bg-neutral-600 transition-colors duration-200"
+              href={file.url}
+              download
+              className="absolute bottom-2 left-2 bg-neutral-700/80 hover:bg-neutral-600 text-white rounded p-1 text-[10px] flex items-center gap-1"
+              title="Download file"
             >
-              <MdOutlineDocumentScanner />
-              Document {index + 1}
+              <FiDownload size={12} />
             </a>
-          ))}
+          </div>
+        ))}
       </div>
     );
   }
