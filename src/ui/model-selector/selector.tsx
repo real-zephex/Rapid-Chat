@@ -159,7 +159,9 @@ const ModelSelector = () => {
       className={`fixed top-0 ${!isOpen ? "left-10" : "left-0"} z-[9999] p-3`}
     >
       <div
-        className=" flex flex-row items-center justify-between bg-sky-300/80 text-black p-0.5 rounded-md"
+        className={`flex-row items-center justify-between bg-sky-400 text-black p-0.5 rounded-md ${
+          models.length === 0 ? "hidden" : "flex"
+        }`}
         onClick={() => handleClick()}
       >
         <p className="ml-1">

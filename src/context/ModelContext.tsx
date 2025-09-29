@@ -30,18 +30,18 @@ export function ModelProvider({ children }: { children: ReactNode }) {
 
   const { setMessage: sM, setType, fire } = useToast();
 
-  async function getModelsFromLocal() {
-    await modelInfo.refresh();
-    const storedModels = await modelInfo.retrieveFromLocal();
+  // This function is not needed, as I want fresh models to be fetched on first load.
+  // async function getModelsFromLocal() {
+  //   const storedModels = await modelInfo.retrieveFromLocal();
 
-    setModels(storedModels);
-    setTimeout(() => {
-      sM("Models loaded successfully!");
-      setType("success");
-      fire();
-    }, 500);
-    console.info("Models loaded successfully.");
-  }
+  //   setModels(storedModels);
+  //   setTimeout(() => {
+  //     sM("Models loaded successfully!");
+  //     setType("success");
+  //     fire();
+  //   }, 500);
+  //   console.info("Models loaded successfully.");
+  // }
 
   const refreshModels = async () => {
     await modelInfo.refresh();
@@ -55,7 +55,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    getModelsFromLocal();
+    refreshModels();
   }, []);
 
   return (
