@@ -19,28 +19,22 @@ import {
   FaArrowCircleRight,
   FaUpload,
 } from "react-icons/fa";
-import ModelProvider from "@/models";
+import ModelProvider, { cancelModelRun } from "@/models";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
-import { CiSquareInfo } from "react-icons/ci";
 import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import { ModelInfo, ModelInformation } from "@/utils/model-list";
+import { ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
-import { FiRefreshCcw } from "react-icons/fi";
-import { useToast } from "@/context/ToastContext";
 import ModelSelector from "./model-selector/selector";
 import { useModel } from "@/context/ModelContext";
-
-// const modelInformation: Record<string, string> = Object.fromEntries(
-//   models.map((model) => [model.code, model.description])
-// );
+import { v4 as uuidv4 } from "uuid";
 
 type Message = {
   role: "user" | "assistant";
@@ -90,32 +84,15 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
-  const [modelsLoading, setModelsLoading] = useState<boolean>(false);
-
-  const modelInfo = new ModelInformation();
-
-  // useEffect(() => {
-  //   async function getModels() {
-  //     setModelsLoading(true);
-  //     const models = await modelInfo.retrieveFromLocal();
-  //     setModels(models);
-  //     setModelsLoading(false);
-
-  //     // Show success message
-  //     setTimeout(() => {
-  //       sM("Models loaded successfully!");
-  //       setType("success");
-  //       fire();
-  //     }, 500);
-  //   }
-
-  //   getModels();
-  // }, []);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
+  const abortRef = useRef<boolean>(false);
+  const runIdRef = useRef<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Use ref for input to prevent re-renders on every keystroke
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+
   useHotkeys("shift+esc", (e) => {
     e.preventDefault();
     inputRef.current?.focus();
@@ -171,15 +148,25 @@ const ChatInterface = ({ id }: { id: string }) => {
     };
   }, []);
 
-  // useEffect(() => {
-  //   if (images.length > 0) {
-  //     setModel("scout");
-  //   }
-  // }, [model, images]);
-
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, []);
+  const stopStreaming = useCallback(async () => {
+    try {
+      abortRef.current = true;
+      const runId = runIdRef.current;
+      if (readerRef.current) {
+        await readerRef.current.cancel("User interrupted");
+      }
+      if (runId) {
+        // Best-effort server-side abort
+        await cancelModelRun(runId);
+      }
+    } catch (err) {
+      console.error("Error cancelling stream:", err);
+    } finally {
+      setIsStreaming(false);
+      setIsLoading(false);
+      runIdRef.current = null;
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,9 +196,13 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
 
     setIsLoading(true);
+    setIsStreaming(true);
+    abortRef.current = false;
 
     try {
       const prevChats = await retrieveChats(id);
+      const runId = uuidv4();
+      runIdRef.current = runId;
       const response = await ModelProvider({
         type: selectedModel,
         query: input,
@@ -222,6 +213,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           };
         }),
         imageData: images,
+        runId,
       });
       setImages([]);
       if (!(response instanceof ReadableStream)) {
@@ -229,6 +221,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       }
 
       const reader = response.getReader();
+      readerRef.current = reader;
 
       let assistantMessage = "";
       let lastDisplayContent = "";
@@ -245,6 +238,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       const startTime = performance.now();
       while (true) {
+        if (abortRef.current) break;
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -303,6 +297,9 @@ const ChatInterface = ({ id }: { id: string }) => {
       ]);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      readerRef.current = null;
+      runIdRef.current = null;
     }
   };
 
@@ -601,7 +598,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               isLoading ? "animate-pulse" : ""
             }`}
             rows={3}
-            disabled={modelsLoading || isLoadingChats}
+            disabled={isLoadingChats}
             placeholder="Ask anything..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -641,32 +638,38 @@ const ChatInterface = ({ id }: { id: string }) => {
                 />
                 <FaUpload size={14} />
               </label>
+            ) : null}
+            {isStreaming ? (
+              <button
+                type="button"
+                onClick={stopStreaming}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-full px-3 py-1 text-xs"
+                title="Stop generation"
+              >
+                Stop
+              </button>
             ) : (
-              <></>
+              <button
+                type="submit"
+                disabled={isLoading || isUploadingImages || isLoadingChats}
+                className={`${
+                  isLoading || isUploadingImages
+                    ? "bg-teal-700"
+                    : " hover:bg-teal-600"
+                } text-white rounded-full p-2 h-full transition-colors duration-300 `}
+                title={
+                  isUploadingImages ? "Waiting for images to upload..." : "Send"
+                }
+              >
+                {isLoading ? (
+                  <ImCloudUpload size={14} />
+                ) : isUploadingImages ? (
+                  "⏳"
+                ) : (
+                  <FaArrowCircleRight size={14} />
+                )}
+              </button>
             )}
-            <button
-              type="submit"
-              disabled={
-                isLoading ||
-                isUploadingImages ||
-                modelsLoading ||
-                isLoadingChats
-              }
-              className={`${
-                isLoading || isUploadingImages
-                  ? "bg-teal-700"
-                  : " hover:bg-teal-600"
-              } text-white rounded-full p-2 h-full transition-colors duration-300 `}
-              title={isUploadingImages ? "Waiting for images to upload..." : ""}
-            >
-              {isLoading ? (
-                <ImCloudUpload size={14} />
-              ) : isUploadingImages ? (
-                "⏳"
-              ) : (
-                <FaArrowCircleRight size={14} />
-              )}
-            </button>
           </div>
           {/* 
           

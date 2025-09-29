@@ -29,9 +29,11 @@ const providerMappings = {
 async function* ModelHandler({
   inc,
   model_data,
+  signal,
 }: {
   inc: incomingData;
   model_data: ModelData;
+  signal?: AbortSignal;
 }): AsyncGenerator<string> {
   const provider = providerMappings[model_data.provider];
   if (!provider) {
@@ -92,8 +94,9 @@ async function* ModelHandler({
   // Streamed response
   try {
     if (stream) {
-      const chatStream = await provider.chat.completions.create(params as any);
+      const chatStream = await provider.chat.completions.create(params as any, { signal } as any);
       for await (const chunk of chatStream as any) {
+        if (signal?.aborted) break;
         const token = chunk?.choices?.[0]?.delta?.content ?? "";
         if (token) {
           yield token;
@@ -106,10 +109,14 @@ async function* ModelHandler({
     const completion = await provider.chat.completions.create({
       ...(params as any),
       stream: false,
-    });
+    } as any, { signal } as any);
     const text = completion?.choices?.[0]?.message?.content ?? "";
     if (text) yield text;
-  } catch (error) {
+  } catch (error: any) {
+    if (signal?.aborted) {
+      // Silent exit on cooperative abort
+      return;
+    }
     console.error(error);
     console.error("Model generation error:", {
       provider: model_data.provider,

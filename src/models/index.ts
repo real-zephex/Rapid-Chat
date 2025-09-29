@@ -59,53 +59,74 @@ export interface fileUploads {
 //   gptOssFree: gptOSSfree,
 // };
 
+const controllers = new Map<string, AbortController>();
+
 const ModelProvider = async ({
   type,
   query,
   chats,
   imageData,
+  runId,
 }: {
   type: string;
   query: string;
   chats: Messages[];
   imageData?: fileUploads[];
+  runId?: string;
 }): Promise<ReadableStream<string>> => {
-  // const fin = ModelHandler();
-
   const model = await fetchActiveModels();
   const model_data = model.find((m) => m.model_code === type);
-  console.log(model_data)
-  // console.info("Model Selection:", {
-  //   modelCode: model_data?.model_code || "fallback",
-  //   provider: model_data?.provider || fallbackModel.provider,
-  //   imageSupport: model_data?.image_support || fallbackModel.image_support,
-  //   hasImages: !!imageData?.length,
-  //   reasoning: model_data?.reasoning,
-  // });
+  console.log(model_data);
 
-  const stream = new ReadableStream({
+  const stream = new ReadableStream<string>({
     async start(controller) {
+      const ac = new AbortController();
+      const { signal } = ac;
+      if (runId) controllers.set(runId, ac);
       try {
         for await (const chunk of ModelHandler({
           inc: { message: query, chats, imageData },
           model_data: model_data ?? fallbackModel,
+          signal,
         })) {
+          if (signal.aborted) break;
           if (chunk.length > 0) {
             controller.enqueue(`${chunk}`);
           }
         }
         controller.close();
       } catch (error) {
-        console.error("Stream error:", error);
-        controller.enqueue(
-          `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`
-        );
+        if (!signal.aborted) {
+          console.error("Stream error:", error);
+          controller.enqueue(
+            `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`
+          );
+        }
         controller.close();
+      } finally {
+        if (runId) controllers.delete(runId);
+      }
+    },
+    cancel(reason) {
+      if (runId) {
+        const c = controllers.get(runId);
+        c?.abort(typeof reason === "string" ? reason : "Client cancelled");
+        controllers.delete(runId);
       }
     },
   });
 
   return stream;
 };
+
+export async function cancelModelRun(runId: string) {
+  const c = controllers.get(runId);
+  if (c) {
+    c.abort("User cancelled");
+    controllers.delete(runId);
+    return true;
+  }
+  return false;
+}
 
 export default ModelProvider;
