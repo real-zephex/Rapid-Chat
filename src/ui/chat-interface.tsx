@@ -6,6 +6,7 @@ import {
   useCallback,
   memo,
   ChangeEvent,
+  FormEvent,
 } from "react";
 import {
   addTabs,
@@ -17,30 +18,24 @@ import {
 import {
   FaArrowCircleDown,
   FaArrowCircleRight,
+  FaStop,
   FaUpload,
 } from "react-icons/fa";
-import ModelProvider from "@/models";
+import ModelProvider, { cancelModelRun } from "@/models";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
-import { CiSquareInfo } from "react-icons/ci";
 import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import { ModelInfo, ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
-import { FiRefreshCcw } from "react-icons/fi";
-import { useToast } from "@/context/ToastContext";
 import ModelSelector from "./model-selector/selector";
 import { useModel } from "@/context/ModelContext";
-
-// const modelInformation: Record<string, string> = Object.fromEntries(
-//   models.map((model) => [model.code, model.description])
-// );
+import { v4 as uuidv4 } from "uuid";
 
 type Message = {
   role: "user" | "assistant";
@@ -56,21 +51,33 @@ const MessagesContainer = memo(
     messages,
     model,
     onCopyResponse,
+    messageRefs,
   }: {
     messages: Message[];
     model: string;
     onCopyResponse: (content: string) => void;
+    messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
   }) => {
     return (
       <div className="container mx-auto max-w-full lg:max-w-[60%]">
         {messages.map((message, index) => (
-          <MessageComponent
+          <div
             key={index}
-            message={message}
-            index={index}
-            model={model}
-            onCopyResponse={onCopyResponse}
-          />
+            ref={(el) => {
+              if (el) {
+                messageRefs.current.set(index, el);
+              } else {
+                messageRefs.current.delete(index);
+              }
+            }}
+          >
+            <MessageComponent
+              message={message}
+              index={index}
+              model={model}
+              onCopyResponse={onCopyResponse}
+            />
+          </div>
         ))}
       </div>
     );
@@ -79,10 +86,7 @@ const MessagesContainer = memo(
 MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
-  if (!id) {
-    return;
-  }
-
+  const uuid = uuidv4();
   const { refreshTitles } = useSidebar();
   const { selectedModel, models } = useModel();
 
@@ -90,29 +94,9 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
-  const [modelsLoading, setModelsLoading] = useState<boolean>(false);
-
-  const modelInfo = new ModelInformation();
-
-  // useEffect(() => {
-  //   async function getModels() {
-  //     setModelsLoading(true);
-  //     const models = await modelInfo.retrieveFromLocal();
-  //     setModels(models);
-  //     setModelsLoading(false);
-
-  //     // Show success message
-  //     setTimeout(() => {
-  //       sM("Models loaded successfully!");
-  //       setType("success");
-  //       fire();
-  //     }, 500);
-  //   }
-
-  //   getModels();
-  // }, []);
-
+  const [cancelId, setCancelId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Use ref for input to prevent re-renders on every keystroke
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -130,6 +114,13 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const scrollToMessage = useCallback((index: number) => {
+    const messageElement = messageRefs.current.get(index);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }, []);
 
   const removeImage = useCallback((index: number) => {
@@ -171,16 +162,6 @@ const ChatInterface = ({ id }: { id: string }) => {
     };
   }, []);
 
-  // useEffect(() => {
-  //   if (images.length > 0) {
-  //     setModel("scout");
-  //   }
-  // }, [model, images]);
-
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const input = inputRef.current?.value.trim() || "";
@@ -209,18 +190,21 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
 
     setIsLoading(true);
+    const abortId = uuid;
+    setCancelId(abortId);
 
     try {
       const prevChats = await retrieveChats(id);
       const response = await ModelProvider({
         type: selectedModel,
         query: input,
-        chats: prevChats.map((msg) => {
+        chats: prevChats.slice(-10).map((msg) => {
           return {
             role: msg.role,
             content: msg.content,
           };
         }),
+        runId: abortId,
         imageData: images,
       });
       setImages([]);
@@ -381,7 +365,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   // Function to handle paste
   const handlePaste = useCallback(
     async (e: ClipboardEvent) => {
-      // Allow native paste behavior in textarea
       try {
         if (e.target === inputRef.current) {
           return;
@@ -441,7 +424,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const handleDragAndDrop = useCallback(
     async (e: React.DragEvent<HTMLDivElement>) => {
       try {
-        console.info("Drag and Drop deteched.");
+        console.info("Drag and Drop detected.");
         e.preventDefault();
 
         const files = e.dataTransfer.files;
@@ -457,9 +440,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               file.type === "application/pdf") &&
             checkFileSize(file)
           ) {
-            if (checkFileSize(file)) {
-              uploads.push(file);
-            }
+            uploads.push(file);
           }
         }
 
@@ -491,10 +472,6 @@ const ChatInterface = ({ id }: { id: string }) => {
     } else {
       const text = await Whisper(file);
       input.value = text.toString();
-
-      //   text || "Sorry but this feature is currently disabled.";
-      // inputRef.current.focus();
-      // const url = URL.createObjectURL(file);
     }
   };
 
@@ -520,62 +497,98 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   }
 
+  function handleSize(_: FormEvent<HTMLTextAreaElement>): void {
+    const ref = inputRef.current;
+    if (ref) {
+      ref.style.height = "0px";
+      ref.style.height = ref.scrollHeight + "px";
+    }
+  }
+
+  if (!id) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-300">No chat ID provided</p>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="flex flex-col h-[calc(100dvh-10px)] relative"
+      className="flex flex-col h-[calc(100dvh-10px)] overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent bg-[#212121] relative"
       onDrop={handleDragAndDrop}
       onDragOver={(e) => e.preventDefault()}
     >
       <ModelSelector />
-      {/* Delete Button */}
-      <div className="absolute top-0 right-0 m-4 z-20">
+      <div className="absolute top-3 right-4 z-20">
         <button
-          className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
+          className="p-2 rounded-lg text-gray-400 hover:bg-[#2f2f2f] transition-colors"
           onClick={() => deleteChatFunc()}
+          title="Delete chat"
         >
-          <RiDeleteBin2Fill size={20} color="red" />
+          <RiDeleteBin2Fill size={18} />
         </button>
       </div>
 
+      {/* Minimap */}
+      {messages.length > 0 && (
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-2 bg-[#2f2f2f]/60 backdrop-blur-sm p-2 rounded-full max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+          {messages
+            .map((message, index) => ({ message, index }))
+            .filter(({ message }) => message.role === "user")
+            .map(({ index }) => (
+              <button
+                key={index}
+                onClick={() => scrollToMessage(index)}
+                className="w-2 h-2 rounded-full bg-gray-500 hover:bg-gray-300 transition-all duration-200 cursor-pointer"
+                title={`Jump to query ${Math.floor(index / 2) + 1}`}
+              />
+            ))}
+        </div>
+      )}
+
       {/* Scroll Button */}
       <button
-        className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
+        className="fixed right-6 bottom-28 p-2 rounded-full bg-[#2f2f2f] text-gray-300 hover:bg-[#3f3f3f] transition-colors shadow-lg hidden md:block"
         onClick={() => scrollToBottom()}
         title="Scroll to bottom"
       >
-        <FaArrowCircleDown size={16} />
+        <FaArrowCircleDown size={20} />
       </button>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-6 ">
+      <div className="flex-1 overflow-y-auto">
         {isLoadingChats ? (
-          <div className="flex items-center justify-center h-full gap-4">
-            <div className="animate-spin rounded-full size-5 border-b-2 border-white "></div>
-            <p className="text-gray-300">Loading your conversation...</p>
+          <div className="flex items-center justify-center h-full gap-3">
+            <div className="animate-spin rounded-full size-5 border-2 border-gray-500 border-t-white"></div>
+            <p className="text-gray-400 text-sm">
+              Loading your conversation...
+            </p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
-            <h2 className="font-semibold text-2xl">
-              How can I help you today?
-            </h2>
-            <div className="bborder-0 h-px bg-gradient-to-r from-gray-400/60 to-transparent my-4" />
-            <div className="flex flex-col gap-2 items-center">
-              <ExamplePromptsConstructors
-                text="Write a short story about a robot discovering emotions."
-                onClick={onClickExample}
-              />
-              <ExamplePromptsConstructors
-                text="Help me outline a sci-fi novel set in a post-apocalyptic world."
-                onClick={onClickExample}
-              />{" "}
-              <ExamplePromptsConstructors
-                text="Create a character profile for a complex villain with sympathetic motives."
-                onClick={onClickExample}
-              />{" "}
-              <ExamplePromptsConstructors
-                text="Give me 5 creative writing prompts for flash fiction."
-                onClick={onClickExample}
-              />
+          <div className="flex flex-col items-center justify-center h-full px-4">
+            <div className="w-full max-w-3xl mx-auto mb-8">
+              <h1 className="text-4xl font-semibold text-center text-white/90 mb-12">
+                What can I help with?
+              </h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                <ExamplePromptsConstructors
+                  text="Write a short story about a robot discovering emotions."
+                  onClick={onClickExample}
+                />
+                <ExamplePromptsConstructors
+                  text="Help me outline a sci-fi novel set in a post-apocalyptic world."
+                  onClick={onClickExample}
+                />
+                <ExamplePromptsConstructors
+                  text="Create a character profile for a complex villain with sympathetic motives."
+                  onClick={onClickExample}
+                />
+                <ExamplePromptsConstructors
+                  text="Give me 5 creative writing prompts for flash fiction."
+                  onClick={onClickExample}
+                />
+              </div>
             </div>
           </div>
         ) : (
@@ -586,104 +599,104 @@ const ChatInterface = ({ id }: { id: string }) => {
               "Unknown Model"
             }
             onCopyResponse={handleCopyResponse}
+            messageRefs={messageRefs}
           />
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Chat Input Form */}
-      <div className="w-full md:max-w-[60%] mx-auto p-2 relative">
-        <form onSubmit={handleSubmit}>
+      <div className="w-full max-w-3xl mx-auto px-4 pb-2 pt-2 relative">
+        <form onSubmit={handleSubmit} className="relative">
           <ImagePreview images={images} onRemove={removeImage} />
-          <textarea
-            ref={inputRef}
-            className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm ${
-              isLoading ? "animate-pulse" : ""
-            }`}
-            rows={3}
-            disabled={modelsLoading || isLoadingChats}
-            placeholder="Ask anything..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
-          ></textarea>
+          <div className="relative bg-[#2f2f2f] rounded-3xl shadow-lg border border-gray-700/50">
+            <textarea
+              ref={inputRef}
+              className={`w-full bg-transparent text-white outline-none resize-none px-5 py-4 pr-32 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${
+                isLoading ? "animate-pulse" : ""
+              }`}
+              rows={1}
+              onInput={handleSize}
+              disabled={isLoadingChats}
+              placeholder="Message Rapid-Chat"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+            ></textarea>
+            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+              <AudioRecord setAudio={setAudio} />
+              {models.find(
+                (item) => item.image === true && item.code === selectedModel
+              ) && (
+                <label
+                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
+                  title="Upload file"
+                  htmlFor="fileInput"
+                >
+                  <input
+                    name="file"
+                    type="file"
+                    accept={`image/png, image/jpeg, image/jpg, ${
+                      models.find((i) => i.code === selectedModel)?.pdf
+                        ? "application/pdf"
+                        : ""
+                    }`}
+                    className="hidden"
+                    id="fileInput"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                  <FaUpload size={16} />
+                </label>
+              )}
+              <button
+                type="submit"
+                className={`block lg:hidden p-2 rounded-lg transition-colors ${
+                  isLoading ||
+                  isUploadingImages ||
+                  !inputRef.current?.value.trim()
+                    ? "text-gray-600 "
+                    : "text-white bg-white/10 hover:bg-white/20"
+                }`}
+                title={
+                  isUploadingImages
+                    ? "Waiting for images to upload..."
+                    : "Send message"
+                }
+                onClick={async (e) => {
+                  if (isLoading) {
+                    await cancelModelRun(cancelId);
+                  }
+                }}
+              >
+                {isLoading ? (
+                  <div
+                    className="rounded-full size-5 hover:bg-neutral-600 transition-all hover:cursor-pointer"
+                    title="Stop the stream"
+                  >
+                    <FaStop color="grey" size={20} />
+                  </div>
+                ) : isUploadingImages ? (
+                  <ImCloudUpload size={20} />
+                ) : (
+                  <FaArrowCircleRight size={20} />
+                )}
+              </button>
+            </div>
+          </div>
           {isLoading && (
-            <div className="absolute -top-1 left-0 flex items-center gap-2 text-xs text-black bg-lime-300 px-2 rounded-xl animate-bounce">
-              <div className="animate-spin rounded-full size-2 border-b-2 border-black "></div>
-              <p>Generating response...</p>
+            <div className="absolute -top-10 left-4 flex items-center gap-2 text-xs text-gray-400 bg-[#2f2f2f] px-3 py-1.5 rounded-lg">
+              <div className="animate-spin rounded-full size-3 border-2 border-gray-500 border-t-white"></div>
+              <p>Generating...</p>
             </div>
           )}
-          <div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
-            <AudioRecord setAudio={setAudio} />
-            {models.find(
-              (item) => item.image === true && item.code === selectedModel
-            ) ? (
-              <label
-                className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                title="Upload file"
-                htmlFor="fileInput"
-              >
-                <input
-                  name="file"
-                  type="file"
-                  accept={`image/png, image/jpeg, image/jpg, ${
-                    models.find((i) => i.code === selectedModel)?.pdf
-                      ? "application/pdf"
-                      : ""
-                  }`}
-                  className="hidden"
-                  id="fileInput"
-                  onChange={handleFileChange}
-                  multiple
-                />
-                <FaUpload size={14} />
-              </label>
-            ) : (
-              <></>
-            )}
-            <button
-              type="submit"
-              disabled={
-                isLoading ||
-                isUploadingImages ||
-                modelsLoading ||
-                isLoadingChats
-              }
-              className={`${
-                isLoading || isUploadingImages
-                  ? "bg-teal-700"
-                  : " hover:bg-teal-600"
-              } text-white rounded-full p-2 h-full transition-colors duration-300 `}
-              title={isUploadingImages ? "Waiting for images to upload..." : ""}
-            >
-              {isLoading ? (
-                <ImCloudUpload size={14} />
-              ) : isUploadingImages ? (
-                "⏳"
-              ) : (
-                <FaArrowCircleRight size={14} />
-              )}
-            </button>
-          </div>
-          {/* 
-          
-           
-            
-
-            </div>
-          </div> */}
-
-          {/* <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
-            <CiSquareInfo size={20} color="cyan" />
-            <p className="line-clamp-1">
-              {models.find((i) => i.code === model)?.description ||
-                "general tasks"}
-            </p>
-          </div> */}
         </form>
+        <p className="text-center text-xs text-gray-500 mt-2 px-4">
+          Rapid-Chat can make mistakes. Consider checking important information.
+        </p>
       </div>
     </div>
   );
