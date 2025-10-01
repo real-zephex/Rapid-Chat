@@ -654,7 +654,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               )}
               <button
                 type="submit"
-                className={`block lg:hidden p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors ${
                   isLoading ||
                   isUploadingImages ||
                   !inputRef.current?.value.trim()
@@ -666,16 +666,16 @@ const ChatInterface = ({ id }: { id: string }) => {
                     ? "Waiting for images to upload..."
                     : "Send message"
                 }
-                onClick={async (e) => {
-                  if (isLoading) {
-                    await cancelModelRun(cancelId);
-                  }
-                }}
               >
                 {isLoading ? (
                   <div
                     className="rounded-full size-5 hover:bg-neutral-600 transition-all hover:cursor-pointer"
                     title="Stop the stream"
+                    onClick={async () => {
+                      if (isLoading) {
+                        await cancelModelRun(cancelId);
+                      }
+                    }}
                   >
                     <FaStop color="grey" size={20} />
                   </div>
