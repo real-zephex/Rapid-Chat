@@ -47,34 +47,34 @@ const ImagePreview = memo(
     if (files.length === 0) return null;
 
     return (
-      <div className="flex flex-wrap gap-2 p-2 bg-neutral-800/50 rounded-lg mb-2">
+      <div className="flex flex-wrap gap-2 mb-3">
         {files.map((file) => (
-          <div key={file.originalIndex} className="relative">
+          <div key={file.originalIndex} className="relative group">
             {file.kind === "image" ? (
               <Image
                 src={file.url}
                 alt={`File ${file.originalIndex + 1}`}
-                width={80}
-                height={80}
-                className="w-20 h-20 object-cover rounded border border-gray-600 bg-neutral-900"
+                width={100}
+                height={100}
+                className="w-24 h-24 object-cover rounded-lg border border-gray-600 bg-[#2f2f2f]"
                 unoptimized={true}
               />
             ) : (
-              <div className="w-20 h-20 rounded border border-gray-600 bg-neutral-900 flex items-center justify-center text-neutral-300">
-                <MdOutlineDocumentScanner size={22} />
+              <div className="w-24 h-24 rounded-lg border border-gray-600 bg-[#2f2f2f] flex items-center justify-center text-gray-400">
+                <MdOutlineDocumentScanner size={28} />
               </div>
             )}
             <a
               href={file.url}
               download
-              className="absolute bottom-1 left-1 bg-neutral-700/80 hover:bg-neutral-600 text-white rounded p-1 text-[10px] flex items-center gap-1"
+              className="absolute bottom-1 left-1 bg-black/70 hover:bg-black/90 text-white rounded p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
               title="Download file"
             >
-              <FiDownload size={10} />
+              <FiDownload size={12} />
             </a>
             <button
               onClick={() => onRemove(file.originalIndex)}
-              className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-lg"
               title="Remove"
             >
               ×

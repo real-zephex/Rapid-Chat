@@ -1,23 +1,5 @@
 "use server";
 
-// import FlashLite from "./google/gemini-2.5-flash-lite";
-// import LlamaScout from "../../archive/groq/llama-scout";
-// import Qwen from "../../archive/groq/qwen";
-// import Deepseek from "./openrouter/deepseek";
-// import Devstral from "../../archive/openrouter/devstral";
-// import Phi4 from "./openrouter/phi-4-reasoning";
-// import Phi4Plus from "./openrouter/phi-4-reasoning-plus";
-// import Sarvam from "./openrouter/sarvam";
-// import LlamaInstant from "../../archive/groq/llama-8.1b-instant";
-// import GPT4oMini from "./openai/gpt-4o-mini";
-// import Sarvam from "./openrouter/sarvam";
-// import VeniceUncensored from "../../archive/openrouter/venice_uncensored";
-// import Deepseek from "../../archive/openrouter/deepseek";
-// import Gemma3 from "./google/gemma3";
-// import Flash2 from "./google/gemini-2.0-flash";
-// import gptOSS from "../../archive/groq/gpt-oss";
-// import gptOSSfree from "../../archive/openrouter/gpt-oss-20b";
-
 import ModelHandler from "./handler/generator";
 import { fetchActiveModels } from "./database/read_models";
 import { incomingData, Messages } from "./types";
@@ -38,26 +20,10 @@ const fallbackModel = {
   active: true,
 };
 
-type ModelFunction = ({ inc }: { inc: incomingData }) => AsyncIterable<string>;
-
 export interface fileUploads {
   mimeType: string;
   data: Uint8Array;
 }
-
-// const mappings: Record<string, ModelFunction> = {
-//   llama_instant: LlamaInstant,
-//   flash: FlashLite,
-//   flash_2: Flash2,
-//   qwen: Qwen,
-//   scout: LlamaScout,
-//   devstral: Devstral,
-//   gpt4oMini: GPT4oMini,
-//   venice_uncensored: VeniceUncensored,
-//   deepseek: Deepseek,
-//   gptOss: gptOSS,
-//   gptOssFree: gptOSSfree,
-// };
 
 const controllers = new Map<string, AbortController>();
 

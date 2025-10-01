@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, JSX } from "react";
-// import { isMobile } from "react-device-detect";
 import { AiFillAudio } from "react-icons/ai";
 import MyStopwatch from "../stopwatch";
 
@@ -100,24 +99,28 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
 
   return (
     <div
-      className="hover:bg-violet-300 transition-colors duration-300 p-2 rounded-full cursor-pointer"
+      className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
       onClick={handleClick}
     >
       <AiFillAudio
-        color={isRecording ? "red" : "currentColor"}
+        color={isRecording ? "#ef4444" : "currentColor"}
         title="Click to record audio. Click again to stop."
-        size={14}
+        size={16}
       />
 
       {isRecording && (
         <div>
-          <div className="fixed top-0 left-0 w-full h-full bg-neutral-900/90 flex items-center justify-center flex-col gap-1 rounded-xl">
-            <span className="text-white text-md font-bold">Recording...</span>
-            <p className="text-xs text-white text-center ">
-              Press again to stop recording. Audio must be between 2 seconds and
-              3 minutes long.
-            </p>
-            <MyStopwatch />
+          <div className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-sm flex items-center justify-center flex-col gap-3 z-[10000]">
+            <div className="bg-[#2f2f2f] rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
+              <span className="text-white text-xl font-semibold block text-center mb-2">
+                Recording...
+              </span>
+              <p className="text-sm text-gray-400 text-center max-w-md mb-4">
+                Press again to stop recording. Audio must be between 2 seconds
+                and 3 minutes long.
+              </p>
+              <MyStopwatch />
+            </div>
           </div>
         </div>
       )}

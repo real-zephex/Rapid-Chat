@@ -68,13 +68,17 @@ const MessageComponent = memo(
 
     if (isUser) {
       return (
-        <div className="flex mb-4 justify-end animate-[userMessageFadeIn_1s]">
-          <div className="max-w-full lg:max-w-[75%] p-3 shadow-sm bg-neutral-800/50 text-white rounded-l-xl rounded-br-xl">
-            <div className="text-white whitespace-pre-wrap break-words text-md leading-7">
-              {message.images && message.images.length > 0 && (
-                <ImageDisplay images={message.images} />
-              )}
-              {message.content}
+        <div className="w-full border-b border-gray-700/30 bg-[#212121]">
+          <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="flex justify-end">
+              <div className="max-w-[90%]">
+                {message.images && message.images.length > 0 && (
+                  <ImageDisplay images={message.images} />
+                )}
+                <div className="bg-[#2f2f2f] rounded-3xl px-5 py-3 text-white whitespace-pre-wrap break-words leading-7">
+                  {message.content}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -82,20 +86,12 @@ const MessageComponent = memo(
     }
 
     return (
-      <div className="flex mb-4 justify-start animate-[assistantMessageFadeIn_1s]">
-        <div className="max-w-full py-4 bg-transparent text-white ">
-          <div className="prose prose-invert prose-md max-w-full w-full leading-8 overflow-x-auto">
-            <div className={`flex flex-col p-1`}>
-              {/* <div className="flex flex-row items-center mb-3">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neutral-600/80 mr-3 text-xs font-medium">
-                  AI
-                </div>
-                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
-                  {model}
-                </span>
-              </div> */}
+      <div className="w-full">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="w-full">
+            <div className="prose prose-invert prose-lg max-w-full w-full leading-7 overflow-x-auto">
               {message.reasoning && (
-                <div className="mt-2 mb-4">
+                <div className="mb-4">
                   <button
                     onClick={() => {
                       const el = document.getElementById(`reasoning-${index}`);
@@ -123,7 +119,7 @@ const MessageComponent = memo(
                     >
                       <path d="M9 18l6-6-6-6" />
                     </svg>
-                    <span className="font-semibold">Reasoning</span>
+                    <span className="font-semibold text-sm">Reasoning</span>
                   </button>
                   <div
                     id={`reasoning-${index}`}
@@ -415,21 +411,19 @@ const MessageComponent = memo(
                     </tr>
                   ),
 
-                  hr: ({ children, ...props }) => {
-                    return (
-                      <hr
-                        className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-400/60 to-transparent"
-                        {...props}
-                      />
-                    );
-                  },
+                  hr: ({ children, ...props }) => (
+                    <hr
+                      className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-400/60 to-transparent"
+                      {...props}
+                    />
+                  ),
                 }}
               >
                 {message.content}
               </ReactMarkdown>
-              <div className="flex flex-row items-center justify-between gap-2 mt-2">
+              <div className="flex flex-row items-center gap-2 mt-4 pt-2 border-t border-gray-700/30">
                 <button
-                  className="hover:bg-neutral-800 p-2 rounded-lg transition-colors duration-300 "
+                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"
                   title="Copy to clipboard"
                   onClick={(e) => {
                     onCopyResponse(message.content);
@@ -437,16 +431,17 @@ const MessageComponent = memo(
                 >
                   <FaRegCopy size={14} />
                 </button>
+                <div className="flex-1"></div>
                 <div className="flex flex-row items-center gap-2">
                   {tokens > 0 && (
-                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-neutral-800/20 p-1 rounded-lg">
-                      <TbAlphabetLatin /> {tokens} tokens
+                    <span className="text-xs text-gray-500 flex flex-row items-center gap-1.5 px-2 py-1 rounded">
+                      <TbAlphabetLatin size={14} /> {tokens}
                     </span>
                   )}
                   {Number(tokensPerSecond) > 0 && (
-                    <span className="text-xs text-gray-400 flex flex-row items-center gap-1 bg-neutral-800/20 p-1 rounded-lg">
-                      <GoCpu />
-                      {tokensPerSecond} tokens/sec
+                    <span className="text-xs text-gray-500 flex flex-row items-center gap-1.5 px-2 py-1 rounded">
+                      <GoCpu size={14} />
+                      {tokensPerSecond} t/s
                     </span>
                   )}
                 </div>
