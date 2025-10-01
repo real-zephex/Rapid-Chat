@@ -187,6 +187,7 @@ const ChatInterface = ({ id }: { id: string }) => {
 
     if (inputRef.current) {
       inputRef.current.value = "";
+      inputRef.current.style.height = "0px";
     }
 
     setIsLoading(true);
