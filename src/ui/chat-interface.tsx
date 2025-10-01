@@ -424,7 +424,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const handleDragAndDrop = useCallback(
     async (e: React.DragEvent<HTMLDivElement>) => {
       try {
-        console.info("Drag and Drop deteched.");
+        console.info("Drag and Drop detected.");
         e.preventDefault();
 
         const files = e.dataTransfer.files;
@@ -440,9 +440,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               file.type === "application/pdf") &&
             checkFileSize(file)
           ) {
-            if (checkFileSize(file)) {
-              uploads.push(file);
-            }
+            uploads.push(file);
           }
         }
 
@@ -669,7 +667,6 @@ const ChatInterface = ({ id }: { id: string }) => {
                     : "Send message"
                 }
                 onClick={async (e) => {
-
                   if (isLoading) {
                     await cancelModelRun(cancelId);
                   }
