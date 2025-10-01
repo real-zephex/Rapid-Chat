@@ -1,728 +1,674 @@
 "use client";
 import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  memo,
-  ChangeEvent,
+	useState,
+	useRef,
+	useEffect,
+	useCallback,
+	memo,
+	ChangeEvent,
 } from "react";
 import {
-  addTabs,
-  deleteChat,
-  deleteTab,
-  retrieveChats,
-  saveChats,
+	addTabs,
+	deleteChat,
+	deleteTab,
+	retrieveChats,
+	saveChats,
 } from "@/utils/indexedDB";
 import {
-  FaArrowCircleDown,
-  FaArrowCircleRight,
-  FaUpload,
+	FaArrowCircleDown,
+	FaArrowCircleRight,
+	FaUpload,
 } from "react-icons/fa";
-import ModelProvider, { cancelModelRun } from "@/models";
+import ModelProvider from "@/models";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
+import { CiSquareInfo } from "react-icons/ci";
 import { useHotkeys } from "react-hotkeys-hook";
 import AudioRecord from "./chat-components/AudioRecord";
 import Whisper from "@/models/groq/whisper";
 import { ImCloudUpload } from "react-icons/im";
-import { ModelInformation } from "@/utils/model-list";
+import { ModelInfo, ModelInformation } from "@/utils/model-list";
 import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
+import { FiRefreshCcw } from "react-icons/fi";
+import { useToast } from "@/context/ToastContext";
 import ModelSelector from "./model-selector/selector";
 import { useModel } from "@/context/ModelContext";
-import { v4 as uuidv4 } from "uuid";
+
+// const modelInformation: Record<string, string> = Object.fromEntries(
+//   models.map((model) => [model.code, model.description])
+// );
 
 type Message = {
-  role: "user" | "assistant";
-  content: string;
-  images?: { mimeType: string; data: Uint8Array }[];
-  reasoning?: string;
-  startTime?: number;
-  endTime?: number;
+	role: "user" | "assistant";
+	content: string;
+	images?: { mimeType: string; data: Uint8Array }[];
+	reasoning?: string;
+	startTime?: number;
+	endTime?: number;
 };
 
 const MessagesContainer = memo(
-  ({
-    messages,
-    model,
-    onCopyResponse,
-  }: {
-    messages: Message[];
-    model: string;
-    onCopyResponse: (content: string) => void;
-  }) => {
-    return (
-      <div className="container mx-auto max-w-full lg:max-w-[60%]">
-        {messages.map((message, index) => (
-          <MessageComponent
-            key={index}
-            message={message}
-            index={index}
-            model={model}
-            onCopyResponse={onCopyResponse}
-          />
-        ))}
-      </div>
-    );
-  }
+	({
+		messages,
+		model,
+		onCopyResponse,
+		messageRefs,
+	}: {
+		messages: Message[];
+		model: string;
+		onCopyResponse: (content: string) => void;
+		messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
+	}) => {
+		return (
+			<div className="container mx-auto max-w-full lg:max-w-[60%]">
+				{messages.map((message, index) => (
+					<div
+						key={index}
+						ref={(el) => {
+							if (el) {
+								messageRefs.current.set(index, el);
+							} else {
+								messageRefs.current.delete(index);
+							}
+						}}
+					>
+						<MessageComponent
+							message={message}
+							index={index}
+							model={model}
+							onCopyResponse={onCopyResponse}
+						/>
+					</div>
+				))}
+			</div>
+		);
+	}
 );
 MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
-  if (!id) {
-    return;
-  }
+	if (!id) {
+		return;
+	}
 
-  const { refreshTitles } = useSidebar();
-  const { selectedModel, models } = useModel();
+	const { refreshTitles } = useSidebar();
+	const { selectedModel, models } = useModel();
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
-  const [isLoadingChats, setIsLoadingChats] = useState(true);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
-  const abortRef = useRef<boolean>(false);
-  const runIdRef = useRef<string | null>(null);
+	const [messages, setMessages] = useState<Message[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [isUploadingImages, setIsUploadingImages] = useState(false);
+	const [isLoadingChats, setIsLoadingChats] = useState(true);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  const [isAndroid, setIsAndroid] = useState(false);
+	// Use ref for input to prevent re-renders on every keystroke
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+	useHotkeys("shift+esc", (e) => {
+		e.preventDefault();
+		inputRef.current?.focus();
+	});
 
-  useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      setIsAndroid(/Android/i.test(navigator.userAgent));
-    }
-  }, []);
+	// Images
+	const [images, setImages] = useState<
+		{ mimeType: string; data: Uint8Array }[]
+	>([]);
 
-  const autoResize = useCallback(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    // Reset height to auto to correctly read scrollHeight
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
+	const router = useRouter();
 
-  useEffect(() => {
-    autoResize();
-  }, [autoResize]);
+	const scrollToBottom = useCallback(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, []);
 
-  useHotkeys("shift+esc", (e) => {
-    e.preventDefault();
-    inputRef.current?.focus();
-  });
+	const scrollToMessage = useCallback((index: number) => {
+		const messageElement = messageRefs.current.get(index);
+		if (messageElement) {
+			messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+		}
+	}, []);
 
-  // Images
-  const [images, setImages] = useState<
-    { mimeType: string; data: Uint8Array }[]
-  >([]);
+	const removeImage = useCallback((index: number) => {
+		setImages((prev) => prev.filter((_, i) => i !== index));
+	}, []);
 
-  const router = useRouter();
+	// Fetching models here
+	useEffect(() => {
+		const loadChats = async () => {
+			setIsLoadingChats(true);
+			try {
+				const chats = await retrieveChats(id);
+				setMessages(chats);
+			} catch (error) {
+				console.error("Error loading chats:", error);
+			} finally {
+				setIsLoadingChats(false);
+			}
+		};
+		loadChats();
+	}, [id]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+	useEffect(() => {
+		const handleOffline = () => setIsLoading(true);
+		const handleOnline = () => setIsLoading(false);
+		window.addEventListener("offline", handleOffline);
+		window.addEventListener("online", handleOnline);
+		return () => {
+			window.removeEventListener("offline", handleOffline);
+			window.removeEventListener("online", handleOnline);
+		};
+	}, []);
 
-  const removeImage = useCallback((index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+	useEffect(() => {
+		window.addEventListener("paste", handlePaste);
 
-  // Fetching models here
-  useEffect(() => {
-    const loadChats = async () => {
-      setIsLoadingChats(true);
-      try {
-        const chats = await retrieveChats(id);
-        setMessages(chats);
-      } catch (error) {
-        console.error("Error loading chats:", error);
-      } finally {
-        setIsLoadingChats(false);
-      }
-    };
-    loadChats();
-  }, [id]);
+		return () => {
+			window.removeEventListener("paste", handlePaste);
+		};
+	}, []);
 
-  useEffect(() => {
-    const handleOffline = () => setIsLoading(true);
-    const handleOnline = () => setIsLoading(false);
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const input = inputRef.current?.value.trim() || "";
+		if (!input || isLoading || isUploadingImages) return;
 
-  useEffect(() => {
-    window.addEventListener("paste", handlePaste);
+		if (images.length > 5) {
+			alert("You can only upload a maximum of 5 files at a time.");
+			setImages([]);
+			return;
+		}
 
-    return () => {
-      window.removeEventListener("paste", handlePaste);
-    };
-  }, []);
+		const userMessage: Message = {
+			role: "user",
+			content: input,
+			...(images.length > 0 && { images: [...images] }), // Include images if any
+		};
+		if (messages.length === 0) {
+			await addTabs(id);
+			refreshTitles();
+		}
+		saveChats(id, [...messages, userMessage]);
+		setMessages((prev) => [...prev, userMessage]);
 
-  const stopStreaming = useCallback(async () => {
-    try {
-      abortRef.current = true;
-      const runId = runIdRef.current;
-      if (readerRef.current) {
-        await readerRef.current.cancel("User interrupted");
-      }
-      if (runId) {
-        // Best-effort server-side abort
-        await cancelModelRun(runId);
-      }
-    } catch (err) {
-      console.error("Error cancelling stream:", err);
-    } finally {
-      setIsStreaming(false);
-      setIsLoading(false);
-      runIdRef.current = null;
-    }
-  }, []);
+		if (inputRef.current) {
+			inputRef.current.value = "";
+		}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const input = inputRef.current?.value.trim() || "";
-    if (!input || isLoading || isUploadingImages) return;
+		setIsLoading(true);
 
-    if (images.length > 5) {
-      alert("You can only upload a maximum of 5 files at a time.");
-      setImages([]);
-      return;
-    }
+		try {
+			const prevChats = await retrieveChats(id);
+			const response = await ModelProvider({
+				type: selectedModel,
+				query: input,
+				chats: prevChats.map((msg) => {
+					return {
+						role: msg.role,
+						content: msg.content,
+					};
+				}),
+				imageData: images,
+			});
+			setImages([]);
+			if (!(response instanceof ReadableStream)) {
+				throw new Error("Expected a ReadableStream response");
+			}
 
-    const userMessage: Message = {
-      role: "user",
-      content: input,
-      ...(images.length > 0 && { images: [...images] }), // Include images if any
-    };
-    if (messages.length === 0) {
-      await addTabs(id);
-      refreshTitles();
-    }
-    saveChats(id, [...messages, userMessage]);
-    setMessages((prev) => [...prev, userMessage]);
+			const reader = response.getReader();
 
-    if (inputRef.current) {
-      inputRef.current.value = "";
-      // Reset height after sending
-      inputRef.current.style.height = "";
-    }
+			let assistantMessage = "";
+			let lastDisplayContent = "";
+			let updateCounter = 0;
+			const UPDATE_THROTTLE = 1;
 
-    setIsLoading(true);
-    setIsStreaming(true);
-    abortRef.current = false;
+			setMessages((prev) => [
+				...prev,
+				{
+					role: "assistant",
+					content: "Waiting for first tokens, please wait!",
+				},
+			]);
 
-    try {
-      const prevChats = await retrieveChats(id);
-      const runId = uuidv4();
-      runIdRef.current = runId;
-      const response = await ModelProvider({
-        type: selectedModel,
-        query: input,
-        chats: prevChats.map((msg) => {
-          return {
-            role: msg.role,
-            content: msg.content,
-          };
-        }),
-        imageData: images,
-        runId,
-      });
-      setImages([]);
-      if (!(response instanceof ReadableStream)) {
-        throw new Error("Expected a ReadableStream response");
-      }
+			const startTime = performance.now();
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
 
-      const reader = response.getReader();
-      readerRef.current = reader;
+				const text =
+					typeof value === "string" ? value : new TextDecoder().decode(value);
+				assistantMessage += text;
+				updateCounter++;
 
-      let assistantMessage = "";
-      let lastDisplayContent = "";
-      let updateCounter = 0;
-      const UPDATE_THROTTLE = 1;
+				const { displayContent, reasoning } =
+					processMessageContent(assistantMessage);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Waiting for first tokens, please wait!",
-        },
-      ]);
+				// Throttle updates to prevent excessive re-renders during streaming
+				if (
+					displayContent !== lastDisplayContent &&
+					(updateCounter % UPDATE_THROTTLE === 0 || done)
+				) {
+					lastDisplayContent = displayContent;
 
-      const startTime = performance.now();
-      while (true) {
-        if (abortRef.current) break;
-        const { done, value } = await reader.read();
-        if (done) break;
+					setMessages((prev) => {
+						const newMessages = [...prev];
+						newMessages[newMessages.length - 1] = {
+							role: "assistant",
+							content: displayContent,
+							reasoning: reasoning || "",
+						};
+						return newMessages;
+					});
+				}
+			}
 
-        const text =
-          typeof value === "string" ? value : new TextDecoder().decode(value);
-        assistantMessage += text;
-        updateCounter++;
+			const endTime = performance.now();
+			// Final update to ensure we have the complete message
+			const { displayContent, reasoning } =
+				processMessageContent(assistantMessage);
+			setMessages((prev) => {
+				const newMessages = [...prev];
+				newMessages[newMessages.length - 1] = {
+					role: "assistant",
+					content: displayContent,
+					reasoning: reasoning || "",
+					startTime: startTime,
+					endTime: endTime,
+				};
+				saveChats(id, newMessages);
 
-        const { displayContent, reasoning } =
-          processMessageContent(assistantMessage);
+				return newMessages;
+			});
+		} catch (error) {
+			console.error("Error:", error);
+			setMessages((prev) => [
+				...prev,
+				{
+					role: "assistant",
+					content: "Sorry, there was an error processing your request.",
+				},
+			]);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-        // Throttle updates to prevent excessive re-renders during streaming
-        if (
-          displayContent !== lastDisplayContent &&
-          (updateCounter % UPDATE_THROTTLE === 0 || done)
-        ) {
-          lastDisplayContent = displayContent;
+	// const handleModelChange = useCallback(
+	//   (event: React.ChangeEvent<HTMLSelectElement>) => {
+	//     event.preventDefault();
+	//     const target = event.target as HTMLSelectElement;
+	//     const model = target.value;
+	//     setModel(model);
+	//   },
+	//   []
+	// );
 
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              role: "assistant",
-              content: displayContent,
-              reasoning: reasoning || "",
-            };
-            return newMessages;
-          });
-        }
-      }
+	const handleCopyResponse = useCallback(async (content: string) => {
+		try {
+			await navigator.clipboard.writeText(content);
+		} catch (error) {
+			console.error("Error copying response:", error);
+		}
+	}, []);
 
-      const endTime = performance.now();
-      // Final update to ensure we have the complete message
-      const { displayContent, reasoning } =
-        processMessageContent(assistantMessage);
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: "assistant",
-          content: displayContent,
-          reasoning: reasoning || "",
-          startTime: startTime,
-          endTime: endTime,
-        };
-        saveChats(id, newMessages);
+	const checkFileSize = useCallback((file: File) => {
+		// wanted size in MB * bytes * kilobytes
+		if (file.size > 10 * 1024 * 1024) {
+			return false;
+		}
+		return true;
+	}, []);
 
-        return newMessages;
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-      setIsStreaming(false);
-      readerRef.current = null;
-      runIdRef.current = null;
-    }
-  };
+	const handleFileChange = useCallback(
+		async (event: ChangeEvent<HTMLInputElement>) => {
+			if (event.target.files) {
+				setIsUploadingImages(true);
+				try {
+					const file = event.target.files;
+					const fileArray = Array.from(file);
 
-  // const handleModelChange = useCallback(
-  //   (event: React.ChangeEvent<HTMLSelectElement>) => {
-  //     event.preventDefault();
-  //     const target = event.target as HTMLSelectElement;
-  //     const model = target.value;
-  //     setModel(model);
-  //   },
-  //   []
-  // );
+					if (fileArray.length > 5) {
+						alert("You can only upload a maximum of 5 files at a time.");
+						event.target.value = "";
+						return;
+					}
+					const validFiles = fileArray.filter((f) => {
+						return (
+							(f.type.startsWith("image/") || f.type === "application/pdf") &&
+							checkFileSize(f)
+						);
+					});
+					if (validFiles.length == 0) {
+						alert("No valid image files selected.");
+						event.target.value = "";
+						return;
+					}
+					const arraizedImages = await Promise.all(
+						validFiles.map(async (f) => {
+							const buffer = await f.arrayBuffer();
+							return {
+								mimeType: f.type,
+								data: new Uint8Array(buffer),
+							};
+						})
+					);
+					setImages(arraizedImages);
+					event.target.value = "";
+				} catch (error) {
+					console.error("Error uploading images:", error);
+					alert("Error uploading images. Please try again.");
+				} finally {
+					setIsUploadingImages(false);
+				}
+			}
+		},
+		[]
+	);
 
-  const handleCopyResponse = useCallback(async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch (error) {
-      console.error("Error copying response:", error);
-    }
-  }, []);
+	// Function to handle paste
+	const handlePaste = useCallback(
+		async (e: ClipboardEvent) => {
+			try {
+				if (e.target === inputRef.current) {
+					return;
+				}
 
-  const checkFileSize = useCallback((file: File) => {
-    // wanted size in MB * bytes * kilobytes
-    if (file.size > 10 * 1024 * 1024) {
-      return false;
-    }
-    return true;
-  }, []);
+				console.info("Pasting content from clipboard...");
 
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.target.files) {
-        setIsUploadingImages(true);
-        try {
-          const file = event.target.files;
-          const fileArray = Array.from(file);
+				e.preventDefault();
 
-          if (fileArray.length > 5) {
-            alert("You can only upload a maximum of 5 files at a time.");
-            event.target.value = "";
-            return;
-          }
-          const validFiles = fileArray.filter((f) => {
-            return (
-              (f.type.startsWith("image/") || f.type === "application/pdf") &&
-              checkFileSize(f)
-            );
-          });
-          if (validFiles.length == 0) {
-            alert("No valid image files selected.");
-            event.target.value = "";
-            return;
-          }
-          const arraizedImages = await Promise.all(
-            validFiles.map(async (f) => {
-              const buffer = await f.arrayBuffer();
-              return {
-                mimeType: f.type,
-                data: new Uint8Array(buffer),
-              };
-            })
-          );
-          setImages(arraizedImages);
-          event.target.value = "";
-        } catch (error) {
-          console.error("Error uploading images:", error);
-          alert("Error uploading images. Please try again.");
-        } finally {
-          setIsUploadingImages(false);
-        }
-      }
-    },
-    []
-  );
+				if (!e.clipboardData) {
+					console.warn("No clipboard data available.");
+					return;
+				}
 
-  // Function to handle paste
-  const handlePaste = useCallback(
-    async (e: ClipboardEvent) => {
-      // Allow native paste behavior in textarea
-      try {
-        if (e.target === inputRef.current) {
-          return;
-        }
+				const files: File[] = [];
+				const items = e.clipboardData.items;
+				if (!items) {
+					console.warn("No items in clipboard data.");
+					return;
+				}
+				console.info(`${items.length} items found in clipboard`);
+				for (const item of items) {
+					if (item.type.startsWith("image/")) {
+						const file = item.getAsFile();
+						if (file && checkFileSize(file)) {
+							files.push(file);
+						}
+					}
+				}
 
-        console.info("Pasting content from clipboard...");
+				if (files.length === 0) {
+					console.warn("No valid image files found in clipboard.");
+					return;
+				}
 
-        e.preventDefault();
+				console.info(`Processing ${files.length} valid images...`);
+				const arraizedImages = await Promise.all(
+					files.map(async (file) => {
+						const buffer = await file.arrayBuffer();
+						return {
+							mimeType: file.type,
+							data: new Uint8Array(buffer),
+						};
+					})
+				);
 
-        if (!e.clipboardData) {
-          console.warn("No clipboard data available.");
-          return;
-        }
+				setImages((prev) => [...prev, ...arraizedImages]);
+			} catch (error) {
+				console.error("Error handling paste:", error);
+				alert("Error handling paste. Please try again.");
+			}
+		},
+		[checkFileSize]
+	);
 
-        const files: File[] = [];
-        const items = e.clipboardData.items;
-        if (!items) {
-          console.warn("No items in clipboard data.");
-          return;
-        }
-        console.info(`${items.length} items found in clipboard`);
-        for (const item of items) {
-          if (item.type.startsWith("image/")) {
-            const file = item.getAsFile();
-            if (file && checkFileSize(file)) {
-              files.push(file);
-            }
-          }
-        }
+	// Function to handle Drag and Drop
+	const handleDragAndDrop = useCallback(
+		async (e: React.DragEvent<HTMLDivElement>) => {
+			try {
+				console.info("Drag and Drop deteched.");
+				e.preventDefault();
 
-        if (files.length === 0) {
-          console.warn("No valid image files found in clipboard.");
-          return;
-        }
+				const files = e.dataTransfer.files;
+				if (!files || files.length === 0) {
+					console.warn("No files dropped.");
+					return;
+				}
 
-        console.info(`Processing ${files.length} valid images...`);
-        const arraizedImages = await Promise.all(
-          files.map(async (file) => {
-            const buffer = await file.arrayBuffer();
-            return {
-              mimeType: file.type,
-              data: new Uint8Array(buffer),
-            };
-          })
-        );
+				const uploads: File[] = [];
+				for (const file of files) {
+					if (
+						(file.type.startsWith("image/") ||
+							file.type === "application/pdf") &&
+						checkFileSize(file)
+					) {
+						if (checkFileSize(file)) {
+							uploads.push(file);
+						}
+					}
+				}
 
-        setImages((prev) => [...prev, ...arraizedImages]);
-      } catch (error) {
-        console.error("Error handling paste:", error);
-        alert("Error handling paste. Please try again.");
-      }
-    },
-    [checkFileSize]
-  );
+				const arraizedImages = await Promise.all(
+					uploads.map(async (file) => {
+						const buffer = await file.arrayBuffer();
+						return {
+							mimeType: file.type,
+							data: new Uint8Array(buffer),
+						};
+					})
+				);
 
-  // Function to handle Drag and Drop
-  const handleDragAndDrop = useCallback(
-    async (e: React.DragEvent<HTMLDivElement>) => {
-      try {
-        console.info("Drag and Drop deteched.");
-        e.preventDefault();
+				setImages((prev) => [...prev, ...arraizedImages]);
+			} catch (error) {
+				console.error("Error handling drag and drop:", error);
+				alert("Error handling drag and drop. Please try again.");
+			}
+		},
+		[checkFileSize]
+	);
 
-        const files = e.dataTransfer.files;
-        if (!files || files.length === 0) {
-          console.warn("No files dropped.");
-          return;
-        }
+	const setAudio = async (file: Blob | null) => {
+		const input = inputRef.current!;
 
-        const uploads: File[] = [];
-        for (const file of files) {
-          if (
-            (file.type.startsWith("image/") ||
-              file.type === "application/pdf") &&
-            checkFileSize(file)
-          ) {
-            if (checkFileSize(file)) {
-              uploads.push(file);
-            }
-          }
-        }
+		if (file === null) {
+			input.value =
+				"Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
+		} else {
+			const text = await Whisper(file);
+			input.value = text.toString();
+		}
+	};
 
-        const arraizedImages = await Promise.all(
-          uploads.map(async (file) => {
-            const buffer = await file.arrayBuffer();
-            return {
-              mimeType: file.type,
-              data: new Uint8Array(buffer),
-            };
-          })
-        );
+	// Delete chat hotkey
+	useHotkeys("ctrl+shift+backspace", (e) => {
+		e.preventDefault();
+		deleteChatFunc();
+	});
 
-        setImages((prev) => [...prev, ...arraizedImages]);
-      } catch (error) {
-        console.error("Error handling drag and drop:", error);
-        alert("Error handling drag and drop. Please try again.");
-      }
-    },
-    [checkFileSize]
-  );
+	function deleteChatFunc() {
+		deleteChat(id);
+		deleteTab(id);
+		refreshTitles();
+		router.push("/chat");
+	}
 
-  const setAudio = async (file: Blob | null) => {
-    const input = inputRef.current!;
+	function onClickExample(text: string) {
+		console.log(text);
+		const input = inputRef.current;
+		if (input) {
+			input.value = text;
+			input.focus();
+		}
+	}
 
-    if (file === null) {
-      input.value =
-        "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
-      autoResize();
-    } else {
-      const text = await Whisper(file);
-      input.value = text.toString();
-      autoResize();
+	return (
+		<div
+			className="flex flex-col h-[calc(100dvh-10px)] relative"
+			onDrop={handleDragAndDrop}
+			onDragOver={(e) => e.preventDefault()}
+		>
+			<ModelSelector />
+			{/* Delete Button */}
+			<div className="absolute top-0 right-0 m-4 z-20">
+				<button
+					className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
+					onClick={() => deleteChatFunc()}
+				>
+					<RiDeleteBin2Fill size={20} color="red" />
+				</button>
+			</div>
 
-      //   text || "Sorry but this feature is currently disabled.";
-      // inputRef.current.focus();
-      // const url = URL.createObjectURL(file);
-    }
-  };
+			{/* Minimap */}
+			{messages.length > 0 && (
+				<div className="fixed right-2 top-1/2 -translate-y-1/2 z-10 hidden md:flex flex-col gap-1 bg-neutral-800/80 backdrop-blur-sm p-2 rounded-lg max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-transparent">
+					{messages
+						.map((message, index) => ({ message, index }))
+						.filter(({ message }) => message.role === "user")
+						.map(({ index }) => (
+							<button
+								key={index}
+								onClick={() => scrollToMessage(index)}
+								className="w-3 h-3 rounded-full bg-cyan-500 hover:bg-cyan-400 hover:scale-125 transition-all duration-200 cursor-pointer shadow-sm"
+								title={`Jump to query ${Math.floor(index / 2) + 1}`}
+							/>
+						))}
+				</div>
+			)}
 
-  // Delete chat hotkey
-  useHotkeys("ctrl+shift+backspace", (e) => {
-    e.preventDefault();
-    deleteChatFunc();
-  });
+			{/* Scroll Button */}
+			<button
+				className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
+				onClick={() => scrollToBottom()}
+				title="Scroll to bottom"
+			>
+				<FaArrowCircleDown size={16} />
+			</button>
 
-  function deleteChatFunc() {
-    deleteChat(id);
-    deleteTab(id);
-    refreshTitles();
-    router.push("/chat");
-  }
+			{/* Messages Container */}
+			<div className="flex-1 overflow-y-auto p-2 space-y-6 ">
+				{isLoadingChats ? (
+					<div className="flex items-center justify-center h-full gap-4">
+						<div className="animate-spin rounded-full size-5 border-b-2 border-white "></div>
+						<p className="text-gray-300">Loading your conversation...</p>
+					</div>
+				) : messages.length === 0 ? (
+					<div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
+						<h2 className="font-semibold text-2xl">
+							How can I help you today?
+						</h2>
+						<div className="bborder-0 h-px bg-gradient-to-r from-gray-400/60 to-transparent my-4" />
+						<div className="flex flex-col gap-2 items-center">
+							<ExamplePromptsConstructors
+								text="Write a short story about a robot discovering emotions."
+								onClick={onClickExample}
+							/>
+							<ExamplePromptsConstructors
+								text="Help me outline a sci-fi novel set in a post-apocalyptic world."
+								onClick={onClickExample}
+							/>{" "}
+							<ExamplePromptsConstructors
+								text="Create a character profile for a complex villain with sympathetic motives."
+								onClick={onClickExample}
+							/>{" "}
+							<ExamplePromptsConstructors
+								text="Give me 5 creative writing prompts for flash fiction."
+								onClick={onClickExample}
+							/>
+						</div>
+					</div>
+				) : (
+					<MessagesContainer
+						messages={messages}
+						model={
+							models.find((m) => m.code === selectedModel)?.name ||
+							"Unknown Model"
+						}
+						onCopyResponse={handleCopyResponse}
+						messageRefs={messageRefs}
+					/>
+				)}
+				<div ref={messagesEndRef} />
+			</div>
 
-  function onClickExample(text: string) {
-    console.log(text);
-    const input = inputRef.current;
-    if (input) {
-      input.value = text;
-      input.focus();
-      autoResize();
-    }
-  }
-
-  return (
-    <div
-      className="flex flex-col h-[calc(100dvh-10px)] relative"
-      onDrop={handleDragAndDrop}
-      onDragOver={(e) => e.preventDefault()}
-    >
-      <ModelSelector />
-      {/* Delete Button */}
-      <div className="absolute top-0 right-0 m-4 z-20">
-        <button
-          className="bg-bg/50 p-2 rounded-lg active:scale-95 transition-transform duration-200 hover:bg-bg/70 hover:shadow-lg shadow-gray-500/20"
-          onClick={() => deleteChatFunc()}
-        >
-          <RiDeleteBin2Fill size={20} color="red" />
-        </button>
-      </div>
-
-      {/* Scroll Button */}
-      <button
-        className="fixed right-0 bottom-0 m-4 rounded-full text-white hover:bg-amber-300 transition-colors duration-300 hover:text-black hidden md:block"
-        onClick={() => scrollToBottom()}
-        title="Scroll to bottom"
-      >
-        <FaArrowCircleDown size={16} />
-      </button>
-
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-6 ">
-        {isLoadingChats ? (
-          <div className="flex items-center justify-center h-full gap-4">
-            <div className="animate-spin rounded-full size-5 border-b-2 border-white "></div>
-            <p className="text-gray-300">Loading your conversation...</p>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="mx-auto w-full md:max-w-[60%] p-6 md:p-8">
-            <h2 className="font-semibold text-2xl">
-              How can I help you today?
-            </h2>
-            <div className="bborder-0 h-px bg-gradient-to-r from-gray-400/60 to-transparent my-4" />
-            <div className="flex flex-col gap-2 items-center">
-              <ExamplePromptsConstructors
-                text="Write a short story about a robot discovering emotions."
-                onClick={onClickExample}
-              />
-              <ExamplePromptsConstructors
-                text="Help me outline a sci-fi novel set in a post-apocalyptic world."
-                onClick={onClickExample}
-              />{" "}
-              <ExamplePromptsConstructors
-                text="Create a character profile for a complex villain with sympathetic motives."
-                onClick={onClickExample}
-              />{" "}
-              <ExamplePromptsConstructors
-                text="Give me 5 creative writing prompts for flash fiction."
-                onClick={onClickExample}
-              />
-            </div>
-          </div>
-        ) : (
-          <MessagesContainer
-            messages={messages}
-            model={
-              models.find((m) => m.code === selectedModel)?.name ||
-              "Unknown Model"
-            }
-            onCopyResponse={handleCopyResponse}
-          />
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Chat Input Form */}
-      <div className="w-full md:max-w-[60%] mx-auto p-2 relative">
-        <form onSubmit={handleSubmit}>
-          <ImagePreview images={images} onRemove={removeImage} />
-          <textarea
-            ref={inputRef}
-            className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none overflow-hidden p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 max-h-72 text-sm ${
-              isLoading ? "animate-pulse" : ""
-            }`}
-            rows={3}
-            disabled={isLoadingChats}
-            placeholder="Ask anything..."
-            onInput={autoResize}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                if (isAndroid) {
-                  // On Android, let Enter insert a newline
-                  return;
-                }
-                // On non-Android, Enter submits
-                e.preventDefault();
-                const form = (e.currentTarget as HTMLTextAreaElement).form;
-                if (form && typeof form.requestSubmit === "function") {
-                  form.requestSubmit();
-                }
-              }
-            }}
-          ></textarea>
-          {isLoading && (
-            <div className="absolute -top-1 left-0 flex items-center gap-2 text-xs text-black bg-lime-300 px-2 rounded-xl animate-bounce">
-              <div className="animate-spin rounded-full size-2 border-b-2 border-black "></div>
-              <p>Generating response...</p>
-            </div>
-          )}
-          <div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
-            <AudioRecord setAudio={setAudio} />
-            {models.find(
-              (item) => item.image === true && item.code === selectedModel
-            ) ? (
-              <label
-                className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
-                title="Upload file"
-                htmlFor="fileInput"
-              >
-                <input
-                  name="file"
-                  type="file"
-                  accept={`image/png, image/jpeg, image/jpg, ${
-                    models.find((i) => i.code === selectedModel)?.pdf
-                      ? "application/pdf"
-                      : ""
-                  }`}
-                  className="hidden"
-                  id="fileInput"
-                  onChange={handleFileChange}
-                  multiple
-                />
-                <FaUpload size={14} />
-              </label>
-            ) : null}
-            {isStreaming ? (
-              <button
-                type="button"
-                onClick={stopStreaming}
-                className="bg-red-600 hover:bg-red-700 text-white rounded-full px-3 py-1 text-xs"
-                title="Stop generation"
-              >
-                Stop
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={isLoading || isUploadingImages || isLoadingChats}
-                className={`${
-                  isLoading || isUploadingImages
-                    ? "bg-teal-700"
-                    : " hover:bg-teal-600"
-                } text-white rounded-full p-2 h-full transition-colors duration-300 `}
-                title={
-                  isUploadingImages ? "Waiting for images to upload..." : "Send"
-                }
-              >
-                {isLoading ? (
-                  <ImCloudUpload size={14} />
-                ) : isUploadingImages ? (
-                  "⏳"
-                ) : (
-                  <FaArrowCircleRight size={14} />
-                )}
-              </button>
-            )}
-          </div>
-          {/* 
-          
-           
-            
-
-            </div>
-          </div> */}
-
-          {/* <div className="lg:hidden flex flex-row items-center gap-2 text-xs px-2">
-            <CiSquareInfo size={20} color="cyan" />
-            <p className="line-clamp-1">
-              {models.find((i) => i.code === model)?.description ||
-                "general tasks"}
-            </p>
-          </div> */}
-        </form>
-      </div>
-    </div>
-  );
+			{/* Chat Input Form */}
+			<div className="w-full md:max-w-[60%] mx-auto p-2 relative">
+				<form onSubmit={handleSubmit}>
+					<ImagePreview images={images} onRemove={removeImage} />
+					<textarea
+						ref={inputRef}
+						className={`w-full bg-neutral-800 rounded-t-xl text-white outline-none resize-none p-2 placeholder-gray-300 placeholder:opacity-50 placeholder:text-sm disabled:bg-neutral-900 text-sm ${
+							isLoading ? "animate-pulse" : ""
+						}`}
+						rows={3}
+						disabled={isLoadingChats}
+						placeholder="Ask anything..."
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && !e.shiftKey) {
+								e.preventDefault();
+								handleSubmit(e);
+							}
+						}}
+					></textarea>
+					{isLoading && (
+						<div className="absolute -top-1 left-0 flex items-center gap-2 text-xs text-black bg-lime-300 px-2 rounded-xl animate-bounce">
+							<div className="animate-spin rounded-full size-2 border-b-2 border-black "></div>
+							<p>Generating response...</p>
+						</div>
+					)}
+					<div className="absolute -top-1 right-0 bg-neutral-300/30 rounded-xl flex flex-row items-center gap-2">
+						<AudioRecord setAudio={setAudio} />
+						{models.find(
+							(item) => item.image === true && item.code === selectedModel
+						) ? (
+							<label
+								className="h-full p-2 rounded-full text-white hover:bg-cyan-300 transition-colors duration-300 hover:text-black cursor-pointer"
+								title="Upload file"
+								htmlFor="fileInput"
+							>
+								<input
+									name="file"
+									type="file"
+									accept={`image/png, image/jpeg, image/jpg, ${
+										models.find((i) => i.code === selectedModel)?.pdf
+											? "application/pdf"
+											: ""
+									}`}
+									className="hidden"
+									id="fileInput"
+									onChange={handleFileChange}
+									multiple
+								/>
+								<FaUpload size={14} />
+							</label>
+						) : (
+							<></>
+						)}
+						<button
+							type="submit"
+							disabled={isLoading || isUploadingImages || isLoadingChats}
+							className={`${
+								isLoading || isUploadingImages
+									? "bg-teal-700"
+									: " hover:bg-teal-600"
+							} text-white rounded-full p-2 h-full transition-colors duration-300 `}
+							title={isUploadingImages ? "Waiting for images to upload..." : ""}
+						>
+							{isLoading ? (
+								<ImCloudUpload size={14} />
+							) : isUploadingImages ? (
+								"⏳"
+							) : (
+								<FaArrowCircleRight size={14} />
+							)}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
 };
 
 export default ChatInterface;
