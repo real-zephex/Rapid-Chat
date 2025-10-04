@@ -29,13 +29,17 @@ const JinaAIReader = async ({
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch("https://r.jina.ai/" + url, {
-      method: "GET",
-      headers: {
-        Referer: "https://speedchat.vercel.app",
-      },
-      signal: controller.signal,
-    });
+    const res = await fetch(
+      "https://goodproxy.goodproxy.workers.dev/fetch?url=https://r.jina.ai/" +
+        url,
+      {
+        method: "GET",
+        headers: {
+          Referer: "https://speedchat.vercel.app",
+        },
+        signal: controller.signal,
+      }
+    );
     clearTimeout(timeout);
 
     if (!res.ok) {
