@@ -164,7 +164,7 @@ async function* ModelHandler({
             toolResponses.push({
               role: "tool" as const,
               tool_call_id: id,
-              content: output.content?.toString() || "No output found.",
+              content: output || "No output found.",
             });
           }
         }
