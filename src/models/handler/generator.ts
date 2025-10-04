@@ -158,14 +158,26 @@ async function* ModelHandler({
 
             const toolFunction =
               functionMaps[functionName as keyof typeof functionMaps];
-            const functionArgs = JSON.parse(functionArguments);
 
-            const output = await toolFunction(functionArgs);
-            toolResponses.push({
-              role: "tool" as const,
-              tool_call_id: id,
-              content: output || "No output found.",
-            });
+            try {
+              const functionArgs = JSON.parse(functionArguments);
+              const output = await toolFunction(functionArgs);
+              toolResponses.push({
+                role: "tool" as const,
+                tool_call_id: id,
+                content: output || "No output found.",
+              });
+            } catch (err) {
+              // Handle tool execution failures gracefully
+              const errorMessage =
+                err instanceof Error ? err.message : String(err);
+              toolResponses.push({
+                role: "tool" as const,
+                tool_call_id: id,
+                content: `Tool '${functionName}' failed: ${errorMessage}`,
+              });
+              console.error(`Tool execution error [${functionName}]:`, err);
+            }
           }
         }
 
