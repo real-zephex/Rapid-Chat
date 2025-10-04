@@ -21,9 +21,8 @@ import {
   FaStop,
   FaUpload,
 } from "react-icons/fa";
-import ModelProvider, { cancelModelRun } from "@/models";
+import { cancelModelRun } from "@/models";
 import { RiDeleteBin2Fill } from "react-icons/ri";
-import { processMessageContent } from "@/utils/responseCleaner";
 import { useRouter } from "next/navigation";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
@@ -36,6 +35,10 @@ import ExamplePromptsConstructors from "./example-prompts";
 import ModelSelector from "./model-selector/selector";
 import { useModel } from "@/context/ModelContext";
 import { v4 as uuidv4 } from "uuid";
+import {
+  generationManager,
+  type Message as GenerationMessage,
+} from "@/utils/generationManager";
 
 type Message = {
   role: "user" | "assistant";
@@ -134,6 +137,15 @@ const ChatInterface = ({ id }: { id: string }) => {
       try {
         const chats = await retrieveChats(id);
         setMessages(chats);
+
+        // Check if there's an ongoing generation for this chat
+        if (generationManager.isGenerating(id)) {
+          setIsLoading(true);
+          const abortId = generationManager.getAbortId(id);
+          if (abortId) {
+            setCancelId(abortId);
+          }
+        }
       } catch (error) {
         console.error("Error loading chats:", error);
       } finally {
@@ -141,6 +153,21 @@ const ChatInterface = ({ id }: { id: string }) => {
       }
     };
     loadChats();
+  }, [id]);
+
+  // Subscribe to generation updates when component mounts
+  useEffect(() => {
+    if (generationManager.isGenerating(id)) {
+      generationManager.subscribeToUpdates(id, (updatedMessages) => {
+        setMessages(updatedMessages);
+        setIsLoading(true);
+      });
+    }
+
+    return () => {
+      // Unsubscribe when component unmounts (user switches tabs)
+      generationManager.unsubscribeFromUpdates(id);
+    };
   }, [id]);
 
   useEffect(() => {
@@ -156,7 +183,6 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   useEffect(() => {
     window.addEventListener("paste", handlePaste);
-
     return () => {
       window.removeEventListener("paste", handlePaste);
     };
@@ -176,14 +202,17 @@ const ChatInterface = ({ id }: { id: string }) => {
     const userMessage: Message = {
       role: "user",
       content: input,
-      ...(images.length > 0 && { images: [...images] }), // Include images if any
+      ...(images.length > 0 && { images: [...images] }),
     };
+
     if (messages.length === 0) {
       await addTabs(id);
       refreshTitles();
     }
-    saveChats(id, [...messages, userMessage]);
-    setMessages((prev) => [...prev, userMessage]);
+
+    const updatedMessages = [...messages, userMessage];
+    await saveChats(id, updatedMessages);
+    setMessages(updatedMessages);
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -193,113 +222,28 @@ const ChatInterface = ({ id }: { id: string }) => {
     setIsLoading(true);
     const abortId = uuid;
     setCancelId(abortId);
- 
-    try {
-      const prevChats = await retrieveChats(id);
-      const response = await ModelProvider({
-        type: selectedModel,
-        query: input,
-        chats: prevChats.slice(-10).map((msg) => {
-          return {
-            role: msg.role,
-            content: msg.content,
-          };
-        }),
-        runId: abortId,
-        imageData: images,
-      });
-      setImages([]);
-      if (!(response instanceof ReadableStream)) {
-        throw new Error("Expected a ReadableStream response");
-      }
 
-      const reader = response.getReader();
+    const imagesToSend = [...images];
+    setImages([]);
 
-      let assistantMessage = "";
-      let lastDisplayContent = "";
-      let updateCounter = 0;
-      const UPDATE_THROTTLE = 1;
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Waiting for first tokens, please wait!",
-        },
-      ]);
-
-      const startTime = performance.now();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const text =
-          typeof value === "string" ? value : new TextDecoder().decode(value);
-        assistantMessage += text;
-        updateCounter++;
-
-        const { displayContent, reasoning } =
-          processMessageContent(assistantMessage);
-
-        // Throttle updates to prevent excessive re-renders during streaming
-        if (
-          displayContent !== lastDisplayContent &&
-          (updateCounter % UPDATE_THROTTLE === 0 || done)
-        ) {
-          lastDisplayContent = displayContent;
-
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              role: "assistant",
-              content: displayContent,
-              reasoning: reasoning || "",
-            };
-            return newMessages;
-          });
+    // Start generation in background
+    generationManager
+      .startGeneration(
+        id,
+        input,
+        selectedModel,
+        imagesToSend,
+        abortId,
+        updatedMessages,
+        (updatedMessages) => {
+          // Only update if this component is still mounted for this chat
+          setMessages(updatedMessages);
         }
-      }
-
-      const endTime = performance.now();
-      // Final update to ensure we have the complete message
-      const { displayContent, reasoning } =
-        processMessageContent(assistantMessage);
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: "assistant",
-          content: displayContent,
-          reasoning: reasoning || "",
-          startTime: startTime,
-          endTime: endTime,
-        };
-        saveChats(id, newMessages);
-
-        return newMessages;
+      )
+      .finally(() => {
+        setIsLoading(false);
       });
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
   };
-
-  // const handleModelChange = useCallback(
-  //   (event: React.ChangeEvent<HTMLSelectElement>) => {
-  //     event.preventDefault();
-  //     const target = event.target as HTMLSelectElement;
-  //     const model = target.value;
-  //     setModel(model);
-  //   },
-  //   []
-  // );
 
   const handleCopyResponse = useCallback(async (content: string) => {
     try {
@@ -310,7 +254,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, []);
 
   const checkFileSize = useCallback((file: File) => {
-    // wanted size in MB * bytes * kilobytes
     if (file.size > 10 * 1024 * 1024) {
       return false;
     }
@@ -363,7 +306,6 @@ const ChatInterface = ({ id }: { id: string }) => {
     []
   );
 
-  // Function to handle paste
   const handlePaste = useCallback(
     async (e: ClipboardEvent) => {
       try {
@@ -372,7 +314,6 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
 
         console.info("Pasting content from clipboard...");
-
         e.preventDefault();
 
         if (!e.clipboardData) {
@@ -421,7 +362,6 @@ const ChatInterface = ({ id }: { id: string }) => {
     [checkFileSize]
   );
 
-  // Function to handle Drag and Drop
   const handleDragAndDrop = useCallback(
     async (e: React.DragEvent<HTMLDivElement>) => {
       try {
