@@ -19,7 +19,6 @@ const ModelSelector = () => {
   } = useModel();
   const { isOpen } = useSidebar();
 
-  const [mod, setMod] = useState<ModelInfo[]>(models);
   const [current, setCurrent] = useState<string>("all");
 
   function handleClick() {
@@ -206,34 +205,35 @@ const ModelSelector = () => {
               </section>
             </div>
             <p className="p-3 text-center text-sm text-gray-400">
-              Showing {current} ({mod.length} models)
+              Showing {current} (
+              {models.filter((m) => m.type === current).length} models)
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-4">
-              {["conversational", "reasoning", "general"].map((item, idx) => (
-                <button
-                  key={idx}
-                  className="bg-[#3f3f3f] hover:bg-[#4f4f4f] py-2 px-3 rounded-lg transition-all text-sm font-medium text-gray-300 hover:text-white border border-gray-700/30 hover:border-gray-600"
-                  onClick={() => {
-                    setMod(() => {
-                      return models.filter((m) => m.type === item);
-                    });
-                    setCurrent(item);
-                  }}
-                >
-                  {item}
-                </button>
-              ))}
-              <button
-                onClick={() => {
-                  setMod(models);
-                  setCurrent("all");
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 py-2 px-3 rounded-lg transition-all text-sm font-medium text-white border border-emerald-500/30"
-              >
-                All
-              </button>
+              {["conversational", "reasoning", "general", "all"].map(
+                (item, idx) => (
+                  <button
+                    key={idx}
+                    className={`${
+                      current === item ? "bg-emerald-600" : "bg-[#3f3f3f]"
+                    } ${
+                      current === item ? "bg-emerald-800" : "hover:bg-[#4f4f4f]"
+                    } py-2 px-3 rounded-lg transition-all text-sm font-medium text-gray-300 hover:text-white border border-gray-700/30 hover:border-gray-600 `}
+                    onClick={() => {
+                      setCurrent(item);
+                    }}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
             </div>
-            <ModelCardGallery models={mod} />
+            <ModelCardGallery
+              models={
+                current === "all"
+                  ? models
+                  : models.filter((m) => m.type === current)
+              }
+            />
           </div>
         </div>
       )}

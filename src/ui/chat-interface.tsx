@@ -193,7 +193,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     setIsLoading(true);
     const abortId = uuid;
     setCancelId(abortId);
-
+ 
     try {
       const prevChats = await retrieveChats(id);
       const response = await ModelProvider({
