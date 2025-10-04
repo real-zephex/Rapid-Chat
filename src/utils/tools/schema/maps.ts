@@ -1,0 +1,26 @@
+import JinaAIReader from "../jina-ai-reader";
+import Calculator from "../calculator";
+import Weather from "../weather";
+import CodeExecutor from "../code-executor";
+
+export const functionMaps = {
+  get_website_content: async (args: { url: string }) => {
+    const result = await JinaAIReader({ url: args.url });
+    return JSON.stringify(result);
+  },
+  calculate: async (args: { expression: string }) => {
+    const result = await Calculator({ expression: args.expression });
+    return JSON.stringify(result);
+  },
+  get_weather: async (args: { location: string }) => {
+    const result = await Weather({ location: args.location });
+    return JSON.stringify(result);
+  },
+  execute_code: async (args: { code: string; language: string }) => {
+    const result = await CodeExecutor({
+      code: args.code,
+      language: args.language,
+    });
+    return JSON.stringify(result);
+  },
+};

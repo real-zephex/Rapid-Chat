@@ -2,8 +2,8 @@ import { incomingData } from "../types";
 import OpenAI from "openai";
 import { ModelData } from "./types";
 import { DocumentParse, ImageParser } from "./helper/attachments-parser";
-import { ChatCompletionChunk } from "openai/resources/chat/completions.mjs";
-import { Stream } from "openai/core/streaming.mjs";
+import { toolsSchema } from "@/utils/tools/schema";
+import { functionMaps } from "@/utils/tools/schema/maps";
 
 const groq_Client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
@@ -52,6 +52,7 @@ async function* ModelHandler({
     image_support,
     pdf_support,
     reasoning,
+    tools,
   } = model_data;
 
   const multimodal = Boolean(image_support || pdf_support);
@@ -77,13 +78,15 @@ async function* ModelHandler({
     }
   }
 
+  const messages = [
+    { role: "system" as const, content: system_prompt },
+    ...inc.chats,
+    { role: "user" as const, content: userContent as any },
+  ];
+
   const params = {
     model: provider_code,
-    messages: [
-      { role: "system" as const, content: system_prompt },
-      ...inc.chats,
-      { role: "user" as const, content: userContent as any },
-    ],
+    messages,
     temperature,
     max_completion_tokens,
     top_p,
@@ -94,34 +97,153 @@ async function* ModelHandler({
 
   // Streamed response
   try {
-    if (stream) {
-      const chatStream = await provider.chat.completions.create(
-        params as any,
+    if (!tools) {
+      // If the model does not support tools
+      if (stream) {
+        const chatStream = await provider.chat.completions.create(
+          params as any,
+          { signal } as any
+        );
+        for await (const chunk of chatStream as any) {
+          if (signal?.aborted) break;
+          const token = chunk?.choices?.[0]?.delta?.content ?? "";
+          if (token) {
+            yield token;
+          }
+        }
+        return;
+      }
+
+      // Non-streaming response
+      const completion = await provider.chat.completions.create(
+        {
+          ...(params as any),
+          stream: false,
+        } as any,
         { signal } as any
       );
-      for await (const chunk of chatStream as any) {
-        if (signal?.aborted) break;
-        const token = chunk?.choices?.[0]?.delta?.content ?? "";
-        if (token) {
-          yield token;
+      const text = completion?.choices?.[0]?.message?.content ?? "";
+      if (text) yield text;
+    } else {
+      const modelResponse = await provider.chat.completions.create({
+        model: provider_code,
+        messages: [
+          {
+            role: "system" as const,
+            content: system_prompt,
+          },
+          ...inc.chats.slice(-3), // no money for tokens
+          { role: "user" as const, content: userContent as any },
+        ],
+        stream: false,
+        tools: toolsSchema,
+      });
+
+      const toolResponses = [];
+      const responseMessage = modelResponse.choices[0].message;
+      const toolCalls = responseMessage.tool_calls || [];
+
+      if (responseMessage.content) {
+        yield responseMessage.content;
+      }
+
+      if (toolCalls.length > 0) {
+        console.info("=====Using Tools=====");
+        for (const toolCall of toolCalls) {
+          const { id, type } = toolCall;
+
+          if (type === "function" && "function" in toolCall) {
+            const functionName = toolCall.function.name;
+            const functionArguments = toolCall.function.arguments;
+
+            const toolFunction =
+              functionMaps[functionName as keyof typeof functionMaps];
+
+            try {
+              const functionArgs = JSON.parse(functionArguments);
+              const output = await toolFunction(functionArgs);
+              toolResponses.push({
+                role: "tool" as const,
+                tool_call_id: id,
+                content: output || "No output found.",
+              });
+            } catch (err) {
+              // Handle tool execution failures gracefully
+              const errorMessage =
+                err instanceof Error ? err.message : String(err);
+              toolResponses.push({
+                role: "tool" as const,
+                tool_call_id: id,
+                content: `Tool '${functionName}' failed: ${errorMessage}`,
+              });
+              console.error(`Tool execution error [${functionName}]:`, err);
+            }
+          }
+        }
+
+        const assistantToolCallMessage = {
+          role: "assistant" as const,
+          content: responseMessage.content ?? "",
+          tool_calls: toolCalls,
+        };
+
+        const finalMessageArray: any[] = [
+          ...messages,
+          assistantToolCallMessage,
+          ...toolResponses,
+        ];
+        console.log(finalMessageArray);
+        const finalResponse = await provider.chat.completions.create(
+          {
+            model: provider_code,
+            messages: finalMessageArray,
+            stream: true,
+            temperature: temperature,
+            max_completion_tokens: max_completion_tokens,
+            top_p: top_p,
+          },
+          { signal } as any
+        );
+
+        for await (const chunk of finalResponse as any) {
+          if (signal?.aborted) break;
+          const token = chunk?.choices?.[0]?.delta?.content ?? "";
+          if (token) {
+            yield token;
+          }
+        }
+        return;
+      } else {
+        const streamResponse = await provider.chat.completions.create(
+          {
+            model: provider_code,
+            messages: [
+              {
+                role: "system" as const,
+                content: system_prompt,
+              },
+              ...inc.chats,
+              { role: "user" as const, content: userContent as any },
+            ],
+            stream: true,
+            temperature: temperature,
+            max_completion_tokens: max_completion_tokens,
+            top_p: top_p,
+          },
+          { signal } as any
+        );
+
+        for await (const chunk of streamResponse as any) {
+          if (signal?.aborted) break;
+          const token = chunk?.choices?.[0]?.delta?.content ?? "";
+          if (token) {
+            yield token;
+          }
         }
       }
-      return;
     }
-
-    // Non-streaming response
-    const completion = await provider.chat.completions.create(
-      {
-        ...(params as any),
-        stream: false,
-      } as any,
-      { signal } as any
-    );
-    const text = completion?.choices?.[0]?.message?.content ?? "";
-    if (text) yield text;
   } catch (error: any) {
     if (signal?.aborted) {
-      // Silent exit on cooperative abort
       return;
     }
     console.error(error);
@@ -134,5 +256,4 @@ async function* ModelHandler({
     yield `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`;
   }
 }
-
 export default ModelHandler;
