@@ -143,6 +143,10 @@ async function* ModelHandler({
       const responseMessage = modelResponse.choices[0].message;
       const toolCalls = responseMessage.tool_calls || [];
 
+      if (responseMessage.content) {
+        yield responseMessage.content;
+      }
+
       if (toolCalls.length > 0) {
         console.info("=====Using Tools=====");
         for (const toolCall of toolCalls) {
