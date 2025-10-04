@@ -112,6 +112,7 @@ async function* ModelHandler({
       }
       return;
     } else {
+      // First, try to get response with tool support (non-streaming to check for tool calls)
       const modelResponse = await provider.chat.completions.create({
         model: provider_code,
         messages: [
@@ -131,7 +132,7 @@ async function* ModelHandler({
       const toolCalls = responseMessage.tool_calls || [];
 
       if (toolCalls.length > 0) {
-        // Only yield initial content if there are tool calls to process
+        // Tool calls detected - yield initial content and process tools
         if (responseMessage.content) {
           yield responseMessage.content;
         }
@@ -228,6 +229,7 @@ async function* ModelHandler({
             yield token;
           }
         }
+        return;
       }
     }
   } catch (error: any) {
