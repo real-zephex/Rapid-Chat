@@ -21,18 +21,22 @@ const JinaAIReader = async ({
 
     if (url.endsWith(".pdf")) {
       return {
-        status: true,
+        status: false,
         content:
           "Extracting PDF content from links is not supported. Please upload them directly.",
       };
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch("https://r.jina.ai/" + url, {
       method: "GET",
       headers: {
         Referer: "https://speedchat.vercel.app",
       },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
       return {
@@ -49,14 +53,18 @@ const JinaAIReader = async ({
         content: "The fetched content is empty.",
       };
     }
-
     content = cleanupMarkdown(content);
-
     return {
       status: true,
       content: content.trim(),
     };
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        status: false,
+        content: "The request took too long and was aborted.",
+      };
+    }
     return {
       status: false,
       content:

@@ -143,9 +143,6 @@ async function* ModelHandler({
       const responseMessage = modelResponse.choices[0].message;
       const toolCalls = responseMessage.tool_calls || [];
 
-      console.log(responseMessage);
-      console.log(toolCalls);
-
       if (toolCalls.length > 0) {
         console.info("=====Using Tools=====");
         for (const toolCall of toolCalls) {
@@ -160,18 +157,25 @@ async function* ModelHandler({
             const functionArgs = JSON.parse(functionArguments);
 
             const output = await toolFunction(functionArgs);
-            console.log(output);
             toolResponses.push({
-              role: "assistant",
-              content:
-                `[TOOL OUTPUT] \nName: ${functionName} \nArguments: ${JSON.stringify(
-                  functionArgs
-                )} \nOutput: ${output.content?.toString()}` ||
-                "No content found.",
+              role: "tool" as const,
+              tool_call_id: id,
+              content: output.content?.toString() || "No output found.",
             });
           }
         }
-        const finalMessageArray: any[] = [...messages, ...toolResponses];
+
+        const assistantToolCallMessage = {
+          role: "assistant" as const,
+          content: responseMessage.content ?? "",
+          tool_calls: toolCalls,
+        };
+
+        const finalMessageArray: any[] = [
+          ...messages,
+          assistantToolCallMessage,
+          ...toolResponses,
+        ];
         console.log(finalMessageArray);
         const finalResponse = await provider.chat.completions.create(
           {
