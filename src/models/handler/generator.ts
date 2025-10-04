@@ -99,31 +99,18 @@ async function* ModelHandler({
   try {
     if (!tools) {
       // If the model does not support tools
-      if (stream) {
-        const chatStream = await provider.chat.completions.create(
-          params as any,
-          { signal } as any
-        );
-        for await (const chunk of chatStream as any) {
-          if (signal?.aborted) break;
-          const token = chunk?.choices?.[0]?.delta?.content ?? "";
-          if (token) {
-            yield token;
-          }
-        }
-        return;
-      }
-
-      // Non-streaming response
-      const completion = await provider.chat.completions.create(
-        {
-          ...(params as any),
-          stream: false,
-        } as any,
+      const chatStream = await provider.chat.completions.create(
+        params as any,
         { signal } as any
       );
-      const text = completion?.choices?.[0]?.message?.content ?? "";
-      if (text) yield text;
+      for await (const chunk of chatStream as any) {
+        if (signal?.aborted) break;
+        const token = chunk?.choices?.[0]?.delta?.content ?? "";
+        if (token) {
+          yield token;
+        }
+      }
+      return;
     } else {
       const modelResponse = await provider.chat.completions.create({
         model: provider_code,
@@ -143,11 +130,12 @@ async function* ModelHandler({
       const responseMessage = modelResponse.choices[0].message;
       const toolCalls = responseMessage.tool_calls || [];
 
-      if (responseMessage.content) {
-        yield responseMessage.content;
-      }
-
       if (toolCalls.length > 0) {
+        // Only yield initial content if there are tool calls to process
+        if (responseMessage.content) {
+          yield responseMessage.content;
+        }
+
         console.info("=====Using Tools=====");
         for (const toolCall of toolCalls) {
           const { id, type } = toolCall;
@@ -214,32 +202,11 @@ async function* ModelHandler({
         }
         return;
       } else {
-        const streamResponse = await provider.chat.completions.create(
-          {
-            model: provider_code,
-            messages: [
-              {
-                role: "system" as const,
-                content: system_prompt,
-              },
-              ...inc.chats,
-              { role: "user" as const, content: userContent as any },
-            ],
-            stream: true,
-            temperature: temperature,
-            max_completion_tokens: max_completion_tokens,
-            top_p: top_p,
-          },
-          { signal } as any
-        );
-
-        for await (const chunk of streamResponse as any) {
-          if (signal?.aborted) break;
-          const token = chunk?.choices?.[0]?.delta?.content ?? "";
-          if (token) {
-            yield token;
-          }
+        // No tool calls, just stream the response directly
+        if (responseMessage.content) {
+          yield responseMessage.content;
         }
+        return;
       }
     }
   } catch (error: any) {
