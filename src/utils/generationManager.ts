@@ -124,7 +124,6 @@ class GenerationManager {
           };
           currentMessages = updatedMessages;
 
-          // Notify component if it's mounted
           onUpdate?.(currentMessages);
         }
       }

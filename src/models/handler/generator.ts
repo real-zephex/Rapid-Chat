@@ -54,13 +54,14 @@ async function* ModelHandler({
     reasoning,
   } = model_data;
 
-  // Multimodal handler
   const multimodal = Boolean(image_support || pdf_support);
   const userContent: string | Array<any> = multimodal
     ? [
         { type: "text", text: inc.message },
         ...(image_support ? ImageParser({ inc }) : []),
-        ...(pdf_support ? DocumentParse({ inc }) : []),
+        ...(pdf_support
+          ? DocumentParse({ inc, provider: model_data.provider })
+          : []),
       ]
     : inc.message;
 
@@ -94,7 +95,10 @@ async function* ModelHandler({
   // Streamed response
   try {
     if (stream) {
-      const chatStream = await provider.chat.completions.create(params as any, { signal } as any);
+      const chatStream = await provider.chat.completions.create(
+        params as any,
+        { signal } as any
+      );
       for await (const chunk of chatStream as any) {
         if (signal?.aborted) break;
         const token = chunk?.choices?.[0]?.delta?.content ?? "";
@@ -106,10 +110,13 @@ async function* ModelHandler({
     }
 
     // Non-streaming response
-    const completion = await provider.chat.completions.create({
-      ...(params as any),
-      stream: false,
-    } as any, { signal } as any);
+    const completion = await provider.chat.completions.create(
+      {
+        ...(params as any),
+        stream: false,
+      } as any,
+      { signal } as any
+    );
     const text = completion?.choices?.[0]?.message?.content ?? "";
     if (text) yield text;
   } catch (error: any) {
