@@ -202,11 +202,32 @@ async function* ModelHandler({
         }
         return;
       } else {
-        // No tool calls, just stream the response directly
-        if (responseMessage.content) {
-          yield responseMessage.content;
+        const streamResponse = await provider.chat.completions.create(
+          {
+            model: provider_code,
+            messages: [
+              {
+                role: "system" as const,
+                content: system_prompt,
+              },
+              ...inc.chats,
+              { role: "user" as const, content: userContent as any },
+            ],
+            stream: true,
+            temperature: temperature,
+            max_completion_tokens: max_completion_tokens,
+            top_p: top_p,
+          },
+          { signal } as any
+        );
+
+        for await (const chunk of streamResponse as any) {
+          if (signal?.aborted) break;
+          const token = chunk?.choices?.[0]?.delta?.content ?? "";
+          if (token) {
+            yield token;
+          }
         }
-        return;
       }
     }
   } catch (error: any) {
