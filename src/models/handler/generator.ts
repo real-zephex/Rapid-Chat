@@ -203,17 +203,13 @@ async function* ModelHandler({
         }
         return;
       } else {
+        // No tool calls
+        console.info("=====No Tools Used=====");
+        console.log(messages);
         const streamResponse = await provider.chat.completions.create(
           {
             model: provider_code,
-            messages: [
-              {
-                role: "system" as const,
-                content: system_prompt,
-              },
-              ...inc.chats,
-              { role: "user" as const, content: userContent as any },
-            ],
+            messages: messages,
             stream: true,
             temperature: temperature,
             max_completion_tokens: max_completion_tokens,
