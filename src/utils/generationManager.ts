@@ -65,10 +65,12 @@ class GenerationManager {
   ) {
     try {
       const prevChats = await retrieveChats(chatId);
+      // Get chat history excluding the last message - bro, this caused me so much confusion.
+      const chatHistory = prevChats.slice(0, -1).slice(-10);
       const response = await ModelProvider({
         type: selectedModel,
         query: input,
-        chats: prevChats.slice(-10).map((msg) => ({
+        chats: chatHistory.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })),

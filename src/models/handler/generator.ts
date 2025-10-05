@@ -99,32 +99,20 @@ async function* ModelHandler({
   try {
     if (!tools) {
       // If the model does not support tools
-      if (stream) {
-        const chatStream = await provider.chat.completions.create(
-          params as any,
-          { signal } as any
-        );
-        for await (const chunk of chatStream as any) {
-          if (signal?.aborted) break;
-          const token = chunk?.choices?.[0]?.delta?.content ?? "";
-          if (token) {
-            yield token;
-          }
-        }
-        return;
-      }
-
-      // Non-streaming response
-      const completion = await provider.chat.completions.create(
-        {
-          ...(params as any),
-          stream: false,
-        } as any,
+      const chatStream = await provider.chat.completions.create(
+        params as any,
         { signal } as any
       );
-      const text = completion?.choices?.[0]?.message?.content ?? "";
-      if (text) yield text;
+      for await (const chunk of chatStream as any) {
+        if (signal?.aborted) break;
+        const token = chunk?.choices?.[0]?.delta?.content ?? "";
+        if (token) {
+          yield token;
+        }
+      }
+      return;
     } else {
+      // First, try to get response with tool support (non-streaming to check for tool calls)
       const modelResponse = await provider.chat.completions.create({
         model: provider_code,
         messages: [
@@ -143,11 +131,12 @@ async function* ModelHandler({
       const responseMessage = modelResponse.choices[0].message;
       const toolCalls = responseMessage.tool_calls || [];
 
-      if (responseMessage.content) {
-        yield responseMessage.content;
-      }
-
       if (toolCalls.length > 0) {
+        // Tool calls detected - yield initial content and process tools
+        if (responseMessage.content) {
+          yield responseMessage.content;
+        }
+
         console.info("=====Using Tools=====");
         for (const toolCall of toolCalls) {
           const { id, type } = toolCall;
@@ -214,17 +203,13 @@ async function* ModelHandler({
         }
         return;
       } else {
+        // No tool calls
+        console.info("=====No Tools Used=====");
+        console.log(messages);
         const streamResponse = await provider.chat.completions.create(
           {
             model: provider_code,
-            messages: [
-              {
-                role: "system" as const,
-                content: system_prompt,
-              },
-              ...inc.chats,
-              { role: "user" as const, content: userContent as any },
-            ],
+            messages: messages,
             stream: true,
             temperature: temperature,
             max_completion_tokens: max_completion_tokens,
@@ -240,6 +225,7 @@ async function* ModelHandler({
             yield token;
           }
         }
+        return;
       }
     }
   } catch (error: any) {
