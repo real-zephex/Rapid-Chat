@@ -2,6 +2,7 @@ import JinaAIReader from "../jina-ai-reader";
 import Calculator from "../calculator";
 import Weather from "../weather";
 import CodeExecutor from "../code-executor";
+import YoutubeTranscription from "../youtube-summarizer";
 
 export const functionMaps = {
   get_website_content: async (args: { url: string }) => {
@@ -21,6 +22,10 @@ export const functionMaps = {
       code: args.code,
       language: args.language,
     });
+    return JSON.stringify(result);
+  },
+  youtube_transcription: async (args: { videoUrl: string }) => {
+    const result = await YoutubeTranscription({ videoUrl: args.videoUrl });
     return JSON.stringify(result);
   },
 };

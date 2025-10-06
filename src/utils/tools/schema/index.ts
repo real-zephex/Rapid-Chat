@@ -80,4 +80,21 @@ export const toolsSchema: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "youtube_transcription",
+      description: "Fetch and return the transcript of a YouTube video.",
+      parameters: {
+        type: "object",
+        properties: {
+          videoUrl: {
+            type: "string",
+            description: "The URL of the YouTube video to transcribe.",
+          },
+        },
+        required: ["videoUrl"],
+      },
+    },
+  },
 ];

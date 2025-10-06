@@ -9,7 +9,6 @@ const JinaAIReader = async ({
   url: string;
 }): Promise<JinaAIReaderReturnProps> => {
   try {
-    // Validate URL
     try {
       new URL(url);
     } catch {
