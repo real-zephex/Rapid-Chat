@@ -408,16 +408,22 @@ const ChatInterface = ({ id }: { id: string }) => {
   const setAudio = async (file: Blob | null) => {
     const input = inputRef.current!;
     setVoiceLoading(true);
-    if (file === null) {
-      input.value =
-        "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
-    } else {
-      input.value = "Transcribing audio...";
-      const text = await Whisper(file);
-      input.value = text.toString();
-      handleSize();
+    try {
+      if (file === null) {
+        input.value =
+          "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
+      } else {
+        input.value = "Transcribing audio...";
+        const text = await Whisper(file);
+        input.value = text.toString();
+        handleSize();
+      }
+    } catch (error) {
+      console.error("Error occured while trying to transcribe audio.");
+      input.value = "";
+    } finally {
+      setVoiceLoading(false);
     }
-    setVoiceLoading(false);
   };
 
   // Delete chat hotkey

@@ -6,9 +6,9 @@ import { v4 as uuidv4 } from "uuid";
 
 const Homepage = () => {
   const router = useRouter();
-  const uuid = uuidv4();
 
   useEffect(() => {
+    const uuid = uuidv4();
     setTimeout(() => {
       router.push("/chat/" + uuid);
     }, 200);
