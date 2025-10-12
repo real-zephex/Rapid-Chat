@@ -34,16 +34,7 @@
   --warning: #eab308;
   --error: #ef4444;
   --info: #3b82f6;
-
-  /* Font family stack */
-  --font-sans:
-    var(--font-geist-sans), var(--font-inter), ui-sans-serif, system-ui,
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-mono:
-    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
-
+  
   /* Force dark theme */
   --background: #202020;
   --foreground: var(--surface-50);
