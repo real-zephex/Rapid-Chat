@@ -15,10 +15,10 @@ const Toast = () => {
         type === "success"
           ? "bg-green-500 text-white"
           : type === "error"
-          ? "bg-red-500 text-white"
-          : type === "warning"
-          ? "bg-yellow-500 text-black"
-          : "bg-blue-500 text-white"
+            ? "bg-red-500 text-white"
+            : type === "warning"
+              ? "bg-yellow-500 text-black"
+              : "bg-blue-500 text-white"
       }`}
     >
       <div className="flex items-center">
