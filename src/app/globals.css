@@ -34,7 +34,8 @@
   --warning: #eab308;
   --error: #ef4444;
   --info: #3b82f6;
-  
+
+
   /* Force dark theme */
   --background: #202020;
   --foreground: var(--surface-50);
@@ -44,7 +45,6 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
   line-height: 1.5;
   transition:
     background-color 0.3s,
