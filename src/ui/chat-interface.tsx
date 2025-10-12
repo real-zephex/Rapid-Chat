@@ -84,7 +84,7 @@ const MessagesContainer = memo(
         ))}
       </div>
     );
-  }
+  },
 );
 MessagesContainer.displayName = "MessagesContainer";
 
@@ -98,6 +98,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [cancelId, setCancelId] = useState<string>("");
+  const [voiceLoading, setVoiceLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -238,7 +239,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         (updatedMessages) => {
           // Only update if this component is still mounted for this chat
           setMessages(updatedMessages);
-        }
+        },
       )
       .finally(() => {
         setIsLoading(false);
@@ -291,7 +292,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 mimeType: f.type,
                 data: new Uint8Array(buffer),
               };
-            })
+            }),
           );
           setImages(arraizedImages);
           event.target.value = "";
@@ -303,7 +304,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
       }
     },
-    []
+    [],
   );
 
   const handlePaste = useCallback(
@@ -350,7 +351,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -359,7 +360,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling paste. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const handleDragAndDrop = useCallback(
@@ -392,7 +393,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -401,19 +402,22 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling drag and drop. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const setAudio = async (file: Blob | null) => {
     const input = inputRef.current!;
-
+    setVoiceLoading(true);
     if (file === null) {
       input.value =
         "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
     } else {
+      input.value = "Transcribing audio...";
       const text = await Whisper(file);
       input.value = text.toString();
+      handleSize();
     }
+    setVoiceLoading(false);
   };
 
   // Delete chat hotkey
@@ -438,7 +442,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
   }
 
-  function handleSize(_: FormEvent<HTMLTextAreaElement>): void {
+  function handleSize(): void {
     const ref = inputRef.current;
     if (ref) {
       ref.style.height = "0px";
@@ -558,7 +562,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               }`}
               rows={1}
               onInput={handleSize}
-              disabled={isLoadingChats}
+              disabled={isLoadingChats || voiceLoading}
               placeholder="Message Rapid-Chat"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -570,7 +574,7 @@ const ChatInterface = ({ id }: { id: string }) => {
             <div className="absolute bottom-3 right-3 flex items-center gap-2">
               <AudioRecord setAudio={setAudio} />
               {models.find(
-                (item) => item.image === true && item.code === selectedModel
+                (item) => item.image === true && item.code === selectedModel,
               ) && (
                 <label
                   className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
