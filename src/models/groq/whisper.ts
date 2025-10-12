@@ -9,6 +9,7 @@ const Whisper = async (file: Blob) => {
       file: new File([file], "audio.webm"),
       model: "whisper-large-v3-turbo",
       response_format: "text",
+      language: "en",
     });
     return transcription;
   } catch (error) {

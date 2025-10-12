@@ -101,7 +101,7 @@ async function* ModelHandler({
       // If the model does not support tools
       const chatStream = await provider.chat.completions.create(
         params as any,
-        { signal } as any
+        { signal } as any,
       );
       for await (const chunk of chatStream as any) {
         if (signal?.aborted) break;
@@ -191,7 +191,7 @@ async function* ModelHandler({
             max_completion_tokens: max_completion_tokens,
             top_p: top_p,
           },
-          { signal } as any
+          { signal } as any,
         );
 
         for await (const chunk of finalResponse as any) {
@@ -215,7 +215,7 @@ async function* ModelHandler({
             max_completion_tokens: max_completion_tokens,
             top_p: top_p,
           },
-          { signal } as any
+          { signal } as any,
         );
 
         for await (const chunk of streamResponse as any) {

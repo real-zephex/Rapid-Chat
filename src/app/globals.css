@@ -7,7 +7,7 @@
   --color-bermuda: #78dcca;
 
   --color-bg: #414141;
-  --color-text: #CA3E47;
+  --color-text: #ca3e47;
 }
 
 :root {
@@ -35,9 +35,6 @@
   --error: #ef4444;
   --info: #3b82f6;
 
-  /* Font family stack */
-  --font-sans: var(--font-geist-sans), var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Force dark theme */
   --background: #202020;
@@ -48,31 +45,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
   line-height: 1.5;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+  scrollbar-width: none;
 }
-
 
 /* Modern scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--surface-200);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-200) transparent;
+  width: 0px;
+  height: 0px;
 }
 
 /* Highlight.js styles for syntax highlighting */
@@ -172,7 +155,7 @@ code.hljs {
   text-align: center;
 }
 
-.katex-display>.katex {
+.katex-display > .katex {
   display: block;
   text-align: center;
 }
