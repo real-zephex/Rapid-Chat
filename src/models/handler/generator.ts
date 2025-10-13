@@ -1,9 +1,10 @@
-import { incomingData } from "../types";
-import OpenAI from "openai";
-import { ModelData } from "./types";
-import { DocumentParse, ImageParser } from "./helper/attachments-parser";
 import { toolsSchema } from "@/utils/tools/schema";
 import { functionMaps } from "@/utils/tools/schema/maps";
+import OpenAI from "openai";
+import { incomingData } from "../types";
+import { DocumentParse, ImageParser } from "./helper/attachments-parser";
+import { ModelData } from "./types";
+import { fileUploads } from "..";
 
 const groq_Client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
@@ -40,6 +41,18 @@ async function* ModelHandler({
     throw new Error(`Unsupported provider: ${model_data.provider}`);
   }
 
+  let images: fileUploads[] = [];
+  let documents: fileUploads[] = [];
+  if (inc.imageData) {
+    images = inc.imageData.filter(
+      (i) =>
+        i.mimeType === "image/png" ||
+        i.mimeType === "image/jpeg" ||
+        i.mimeType === "image/jpg",
+    );
+    documents = inc.imageData.filter((i) => i.mimeType === "application/pdf");
+  }
+
   // Model Configurations
   const {
     provider_code,
@@ -47,7 +60,6 @@ async function* ModelHandler({
     system_prompt,
     max_completion_tokens,
     top_p,
-    // stop,
     temperature,
     image_support,
     pdf_support,
@@ -59,10 +71,8 @@ async function* ModelHandler({
   const userContent: string | Array<any> = multimodal
     ? [
         { type: "text", text: inc.message },
-        ...(image_support ? ImageParser({ inc }) : []),
-        ...(pdf_support
-          ? DocumentParse({ inc, provider: model_data.provider })
-          : []),
+        ...ImageParser({ inc: images, provider: model_data.provider }),
+        ...DocumentParse({ inc: documents, provider: model_data.provider }),
       ]
     : inc.message;
 
@@ -92,7 +102,6 @@ async function* ModelHandler({
     top_p,
     stream,
     reasoning_effort,
-    // stop,
   } as const;
 
   // Streamed response
@@ -113,6 +122,7 @@ async function* ModelHandler({
       return;
     } else {
       // First, try to get response with tool support (non-streaming to check for tool calls)
+      console.info("===Checking for tools===");
       const modelResponse = await provider.chat.completions.create({
         model: provider_code,
         messages: [
@@ -126,7 +136,7 @@ async function* ModelHandler({
         stream: false,
         tools: toolsSchema,
       });
-
+      console.info("===Tools check completed===");
       const toolResponses = [];
       const responseMessage = modelResponse.choices[0].message;
       const toolCalls = responseMessage.tool_calls || [];

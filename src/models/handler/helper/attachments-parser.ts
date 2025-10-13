@@ -1,59 +1,50 @@
-import { ModelInfo } from "@/utils/model-list";
+import { fileUploads } from "@/models";
 import { incomingData } from "../../types";
-import { ModelData } from "../types";
-const ImageParser = ({ inc }: { inc: incomingData }) => {
-  return inc.imageData
-    ? inc.imageData
-        .filter(
-          (img) =>
-            img.mimeType === "image/png" ||
-            img.mimeType === "image/jpeg" ||
-            img.mimeType === "image/jpg"
-        )
-        .map((img) => ({
-          type: "image_url" as const,
-          image_url: {
-            url: `data:${img.mimeType};base64,${Buffer.from(img.data).toString(
-              "base64"
-            )}`,
-          },
-        }))
-    : [];
+
+const ImageParser = ({
+  inc,
+  provider,
+}: {
+  inc: fileUploads[];
+  provider: "google" | "groq" | "openrouter";
+}) => {
+  return inc.map((img) => ({
+    type: "image_url" as const,
+    image_url: {
+      url: `data:${provider != "google" ? img.mimeType : "image/jpeg"};base64,${Buffer.from(
+        img.data,
+      ).toString("base64")}`,
+    },
+  }));
 };
 
 const DocumentParse = ({
   inc,
   provider,
 }: {
-  inc: incomingData;
+  inc: fileUploads[];
   provider: "google" | "openrouter" | "groq";
 }) => {
   if (provider === "google") {
-    return inc.imageData
-      ? inc.imageData.map((img) => ({
-          type: "image_url" as const, // fix was to use image_url for pdfs as well
-          image_url: {
-            url: `data:application/pdf;base64,${Buffer.from(img.data).toString(
-              "base64"
-            )}`,
-          },
-        }))
-      : [];
+    return inc.map((item) => ({
+      type: "image_url" as const,
+      image_url: {
+        url: `data:application/pdf;base64,${Buffer.from(item.data).toString(
+          "base64",
+        )}`,
+      },
+    }));
   }
 
-  return inc.imageData
-    ? inc.imageData
-        .filter((img) => img.mimeType === "application/pdf")
-        .map((img) => ({
-          type: "file",
-          file: {
-            filename: "document.pdf",
-            file_data: `data:application/pdf;base64,${Buffer.from(
-              img.data
-            ).toString("base64")}`,
-          },
-        }))
-    : [];
+  return inc.map((img) => ({
+    type: "file",
+    file: {
+      filename: "document.pdf",
+      file_data: `data:application/pdf;base64,${Buffer.from(img.data).toString(
+        "base64",
+      )}`,
+    },
+  }));
 };
 
-export { ImageParser, DocumentParse };
+export { DocumentParse, ImageParser };

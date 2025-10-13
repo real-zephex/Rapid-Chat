@@ -1,6 +1,6 @@
 import ModelProvider from "@/models";
-import { processMessageContent } from "@/utils/responseCleaner";
 import { retrieveChats, saveChats } from "@/utils/indexedDB";
+import { processMessageContent } from "@/utils/responseCleaner";
 
 type Message = {
   role: "user" | "assistant";
@@ -28,7 +28,7 @@ class GenerationManager {
     images: { mimeType: string; data: Uint8Array }[],
     abortId: string,
     initialMessages: Message[],
-    onUpdate?: (messages: Message[]) => void
+    onUpdate?: (messages: Message[]) => void,
   ) {
     // Cancel any existing generation for this chat
     if (this.activeTasks.has(chatId)) {
@@ -42,7 +42,7 @@ class GenerationManager {
       images,
       abortId,
       initialMessages,
-      onUpdate
+      onUpdate,
     );
 
     this.activeTasks.set(chatId, { chatId, abortId, promise, onUpdate });
@@ -61,7 +61,7 @@ class GenerationManager {
     images: { mimeType: string; data: Uint8Array }[],
     abortId: string,
     initialMessages: Message[],
-    onUpdate?: (messages: Message[]) => void
+    onUpdate?: (messages: Message[]) => void,
   ) {
     try {
       const prevChats = await retrieveChats(chatId);

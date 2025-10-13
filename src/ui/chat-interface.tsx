@@ -1,13 +1,9 @@
 "use client";
-import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  memo,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import { useModel } from "@/context/ModelContext";
+import { useSidebar } from "@/context/SidebarContext";
+import { cancelModelRun } from "@/models";
+import Whisper from "@/models/groq/whisper";
+import { generationManager } from "@/utils/generationManager";
 import {
   addTabs,
   deleteChat,
@@ -15,30 +11,30 @@ import {
   retrieveChats,
   saveChats,
 } from "@/utils/indexedDB";
+import { useRouter } from "next/navigation";
+import {
+  ChangeEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import {
   FaArrowCircleDown,
   FaArrowCircleRight,
   FaStop,
   FaUpload,
 } from "react-icons/fa";
-import { cancelModelRun } from "@/models";
+import { ImCloudUpload } from "react-icons/im";
 import { RiDeleteBin2Fill } from "react-icons/ri";
-import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import AudioRecord from "./chat-components/AudioRecord";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
-import { useHotkeys } from "react-hotkeys-hook";
-import AudioRecord from "./chat-components/AudioRecord";
-import Whisper from "@/models/groq/whisper";
-import { ImCloudUpload } from "react-icons/im";
-import { useSidebar } from "@/context/SidebarContext";
 import ExamplePromptsConstructors from "./example-prompts";
 import ModelSelector from "./model-selector/selector";
-import { useModel } from "@/context/ModelContext";
-import { v4 as uuidv4 } from "uuid";
-import {
-  generationManager,
-  type Message as GenerationMessage,
-} from "@/utils/generationManager";
 
 type Message = {
   role: "user" | "assistant";

@@ -1,8 +1,8 @@
 "use server";
 
-import ModelHandler from "./handler/generator";
 import { fetchActiveModels } from "./database/read_models";
-import { incomingData, Messages } from "./types";
+import ModelHandler from "./handler/generator";
+import { Messages } from "./types";
 
 const fallbackModel = {
   model_code: "scout",
@@ -65,7 +65,7 @@ const ModelProvider = async ({
         if (!signal.aborted) {
           console.error("Stream error:", error);
           controller.enqueue(
-            `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`
+            `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`,
           );
         }
         controller.close();
