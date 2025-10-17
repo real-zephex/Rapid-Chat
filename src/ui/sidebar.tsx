@@ -12,7 +12,7 @@ import Link from "next/link";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
-  router: AppRouterInstance
+  router: AppRouterInstance,
 ) {
   event.preventDefault();
 
@@ -37,67 +37,8 @@ const Sidebar = () => {
     setIsOpen(!isOpen);
   });
 
-  // useHotkeys("down", (e) => {
-  //   e.preventDefault();
-  //   if (!isOpen) return;
-  //   handleArrowKeys({ action: "down" });
-  // });
-
-  // useHotkeys("up", (e) => {
-  //   e.preventDefault();
-  //   if (!isOpen) return;
-  //   handleArrowKeys({ action: "up" });
-  // });
-
-  // function handleArrowKeys({ action }: { action: "up" | "down" }) {
-  //   const sidebar = sidebarRef.current;
-  //   if (!sidebar) return;
-
-  //   const el = getTabElementById(tabs[count]);
-  //   if (el) {
-  //     el.style.border = "none";
-  //   }
-
-  //   if (action === "up") {
-  //     if (count === 0) return;
-  //     const element = getTabElementById(tabs[count - 1]);
-  //     if (element) {
-  //       element.style.border = "1px solid #3b82f6";
-  //       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  //       element.setAttribute("tabindex", "0");
-  //       element.focus();
-
-  //       element.onkeydown = (e) => {
-  //         if (e.key === "Enter") {
-  //           element.click();
-  //         }
-  //       };
-
-  //       setCount(count - 1);
-  //     }
-  //   } else if (action === "down") {
-  //     if (count === tabs.length - 1) return;
-  //     const element = getTabElementById(tabs[count + 1]);
-  //     if (element) {
-  //       element.style.border = "1px solid #3b82f6";
-  //       element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  //       element.setAttribute("tabindex", "0");
-  //       element.focus();
-
-  //       element.onkeydown = (e) => {
-  //         if (e.key === "Enter") {
-  //           element.click();
-  //         }
-  //       };
-
-  //       setCount(count + 1);
-  //     }
-  //   }
-  // }
-
   return (
     <>
-      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full bg-[#171717] transition-all duration-300 ease-in-out z-30 ${
           isOpen ? "w-64" : "w-0"
@@ -105,7 +46,6 @@ const Sidebar = () => {
         ref={sidebarRef}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="p-3">
             <div className="flex items-center justify-between mb-3">
               <button
@@ -175,7 +115,6 @@ const Sidebar = () => {
               </div>
             )}
           </div>{" "}
-          {/* Footer */}
           <div className="p-3 border-t border-gray-800">
             <div className="text-[11px] text-gray-600 text-center">
               {titles && Object.keys(titles).length} conversation

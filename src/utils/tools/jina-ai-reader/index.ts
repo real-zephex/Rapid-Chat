@@ -3,6 +3,8 @@ interface JinaAIReaderReturnProps {
   content?: string;
 }
 
+const PROXY = "https://goodproxy.goodproxy.workers.dev/fetch?url=";
+
 const JinaAIReader = async ({
   url,
 }: {
@@ -28,7 +30,7 @@ const JinaAIReader = async ({
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch("https://r.jina.ai/" + url, {
+    const res = await fetch(`https://r.jina.ai/${PROXY}` + url, {
       method: "GET",
       headers: {
         Referer: "https://speedchat.vercel.app",
@@ -105,16 +107,16 @@ function cleanupMarkdown(content: string): string {
   });
   content = content.replace(
     /(?:^|\n).*?(?:©|\(c\)|copyright).*?\d{4}.*$/gim,
-    ""
+    "",
   );
   content = content.replace(
     /\b(Read more|Click here|Learn more|Show more)\b/gi,
-    ""
+    "",
   );
   // 10. Remove metadata patterns
   content = content.replace(
     /^.*?(Published|Updated|Last modified|Posted).*?\d{4}.*$/gim,
-    ""
+    "",
   );
   // 11. Remove table of contents (common pattern)
   content = content.replace(/^#+\s*Table of Contents[\s\S]*?(?=^#+ )/gim, "");
@@ -134,7 +136,7 @@ function cleanupMarkdown(content: string): string {
   // 17. Remove "Share on [platform]" patterns
   content = content.replace(
     /^.*?Share on (Facebook|Twitter|LinkedIn|Reddit|Whatsapp).*$/gim,
-    ""
+    "",
   );
   // 18. Final cleanup - remove blank lines at start/end
   content = content.trim();
