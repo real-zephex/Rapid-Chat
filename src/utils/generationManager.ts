@@ -96,6 +96,7 @@ class GenerationManager {
         {
           role: "assistant",
           content: "Waiting for first tokens, please wait!",
+          reasoning: "Thinking, please wait...",
         },
       ];
 

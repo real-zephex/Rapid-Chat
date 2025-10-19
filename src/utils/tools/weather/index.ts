@@ -23,9 +23,9 @@ const Weather = async ({
 
     const geoResponse = await fetch(
       `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-        location
+        location,
       )}&count=1&language=en&format=json`,
-      { signal: geoController.signal }
+      { signal: geoController.signal },
     );
     clearTimeout(geoTimeout);
 
@@ -52,8 +52,8 @@ const Weather = async ({
     const weatherTimeout = setTimeout(() => weatherController.abort(), 5000);
 
     const weatherResponse = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh`,
-      { signal: weatherController.signal }
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,apparent_temperature,precipitation,pressure_msl,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max&hourly=temperature_2m,weather_code,precipitation_probability&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=7&timezone=auto`,
+      { signal: weatherController.signal },
     );
     clearTimeout(weatherTimeout);
 
@@ -98,13 +98,52 @@ const Weather = async ({
     const condition =
       weatherConditions[current.weather_code] || "Unknown condition";
 
-    const weatherInfo = [
-      `Location: ${name}, ${country}`,
-      `Temperature: ${Math.round(current.temperature_2m)}°C`,
-      `Condition: ${condition}`,
-      `Humidity: ${current.relative_humidity_2m}%`,
-      `Wind Speed: ${Math.round(current.wind_speed_10m)} km/h`,
+    // Helper function to get condition from code
+    const getCondition = (code: number) =>
+      weatherConditions[code] || "Unknown condition";
+
+    // Build current weather info
+    let weatherInfo = [
+      `**Location:** ${name}, ${country}`,
+      `**Current Weather:**`,
+      `  Temperature: ${Math.round(current.temperature_2m)}°C (Feels like: ${Math.round(current.apparent_temperature)}°C)`,
+      `  Condition: ${condition}`,
+      `  Humidity: ${current.relative_humidity_2m}%`,
+      `  Wind Speed: ${Math.round(current.wind_speed_10m)} km/h`,
+      `  Precipitation: ${current.precipitation} mm`,
+      `  Pressure: ${Math.round(current.pressure_msl)} hPa`,
+      `  Visibility: ${Math.round(current.visibility / 1000)} km`,
     ].join("\n");
+
+    // Add hourly forecast (next 12 hours)
+    if (weatherData.hourly) {
+      weatherInfo += "\n\n**Hourly Forecast (Next 12 Hours):**\n";
+      const now = new Date();
+      const currentHour = now.getHours();
+      for (let i = 0; i < 12; i++) {
+        const hourIndex = i;
+        const hour = (currentHour + i) % 24;
+        const temp = Math.round(weatherData.hourly.temperature_2m[hourIndex]);
+        const cond = getCondition(weatherData.hourly.weather_code[hourIndex]);
+        const precipProb =
+          weatherData.hourly.precipitation_probability[hourIndex];
+        weatherInfo += `${hour.toString().padStart(2, "0")}:00 - ${temp}°C, ${cond}, ${precipProb}% rain\n`;
+      }
+    }
+
+    // Add daily forecast (next 5 days)
+    if (weatherData.daily) {
+      weatherInfo += "\n**Daily Forecast (Next 5 Days):**\n";
+      const days = ["Today", "Tomorrow", "Day 3", "Day 4", "Day 5"];
+      for (let i = 0; i < 5; i++) {
+        const maxTemp = Math.round(weatherData.daily.temperature_2m_max[i]);
+        const minTemp = Math.round(weatherData.daily.temperature_2m_min[i]);
+        const cond = getCondition(weatherData.daily.weather_code[i]);
+        const precipSum = weatherData.daily.precipitation_sum[i];
+        const precipProb = weatherData.daily.precipitation_probability_max[i];
+        weatherInfo += `${days[i]}: ${minTemp}°C - ${maxTemp}°C, ${cond}, ${precipSum}mm rain (${precipProb}% chance)\n`;
+      }
+    }
 
     return {
       status: true,

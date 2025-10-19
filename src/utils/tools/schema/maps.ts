@@ -3,6 +3,7 @@ import Calculator from "../calculator";
 import Weather from "../weather";
 import CodeExecutor from "../code-executor";
 import YoutubeTranscription from "../youtube-summarizer";
+import Time from "../time";
 
 export const functionMaps = {
   get_website_content: async (args: { url: string }) => {
@@ -26,6 +27,10 @@ export const functionMaps = {
   },
   youtube_transcription: async (args: { videoUrl: string }) => {
     const result = await YoutubeTranscription({ videoUrl: args.videoUrl });
+    return JSON.stringify(result);
+  },
+  get_time: async (args: { timezone?: string }) => {
+    const result = await Time({ timezone: args.timezone });
     return JSON.stringify(result);
   },
 };

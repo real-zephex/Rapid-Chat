@@ -233,7 +233,6 @@ const ChatInterface = ({ id }: { id: string }) => {
         abortId,
         updatedMessages,
         (updatedMessages) => {
-          // Only update if this component is still mounted for this chat
           setMessages(updatedMessages);
         },
       )

@@ -97,4 +97,23 @@ export const toolsSchema: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_time",
+      description:
+        "Get the current date and time. Optionally specify a timezone (e.g., 'America/New_York', 'Europe/London'). Defaults to UTC if not specified.",
+      parameters: {
+        type: "object",
+        properties: {
+          timezone: {
+            type: "string",
+            description:
+              "IANA timezone identifier (optional). Examples: 'UTC', 'America/New_York', 'Europe/London'.",
+          },
+        },
+        required: [],
+      },
+    },
+  },
 ];

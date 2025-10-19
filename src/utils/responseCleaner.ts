@@ -13,22 +13,37 @@ function processMessageContent(rawContent: string): {
   }
 
   // remove think tags from the raw content
-  let displayContent = rawContent.replace(/(?:<think>|◁think▷)[\s\S]*?(?:<\/think>|◁\/think▷)/gi, "");
+  let displayContent = rawContent.replace(
+    /(?:<think>|◁think▷)[\s\S]*?(?:<\/think>|◁\/think▷)/gi,
+    "",
+  );
 
   // handles improper think tags (for both variations)
-  const openThinkIndices = [
-    displayContent.lastIndexOf("<think>"),
-    displayContent.lastIndexOf("◁think▷")
-  ];
-  const closeThinkIndices = [
-    displayContent.lastIndexOf("</think>"),
-    displayContent.lastIndexOf("◁/think▷")
-  ];
+  const openTags = ["<think>", "◁think▷"];
+  const closeTags = ["</think>", "◁/think▷"];
 
-  const lastOpenIndex = Math.max(...openThinkIndices);
-  const lastCloseIndex = Math.max(...closeThinkIndices);
+  let lastOpenIndex = -1;
+  let openTag = "";
+  for (const tag of openTags) {
+    const idx = displayContent.lastIndexOf(tag);
+    if (idx > lastOpenIndex) {
+      lastOpenIndex = idx;
+      openTag = tag;
+    }
+  }
+
+  let lastCloseIndex = -1;
+  for (const tag of closeTags) {
+    const idx = displayContent.lastIndexOf(tag);
+    if (idx > lastCloseIndex) {
+      lastCloseIndex = idx;
+    }
+  }
 
   if (lastOpenIndex > lastCloseIndex) {
+    // Extract reasoning from the open think tag
+    reasoning +=
+      displayContent.substring(lastOpenIndex + openTag.length) + "\n";
     displayContent = displayContent.substring(0, lastOpenIndex);
   }
 
