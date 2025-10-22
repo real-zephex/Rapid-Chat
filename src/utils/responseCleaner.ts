@@ -3,7 +3,8 @@ function processMessageContent(rawContent: string): {
   reasoning: string;
 } {
   // Combined regex for different think tag variations
-  const thinkRegex = /(?:<think>|◁think▷)([\s\S]*?)(?:<\/think>|◁\/think▷)/gi;
+  const thinkRegex =
+    /(?:<think>|◁think▷|<thought>)([\s\S]*?)(?:<\/think>|◁\/think▷|<\/thought>)/gi;
   let reasoning = "";
   let match;
 
@@ -14,13 +15,13 @@ function processMessageContent(rawContent: string): {
 
   // remove think tags from the raw content
   let displayContent = rawContent.replace(
-    /(?:<think>|◁think▷)[\s\S]*?(?:<\/think>|◁\/think▷)/gi,
+    /(?:<think>|◁think▷|<thought>)[\s\S]*?(?:<\/think>|◁\/think▷|<\/thought>)/gi,
     "",
   );
 
   // handles improper think tags (for both variations)
-  const openTags = ["<think>", "◁think▷"];
-  const closeTags = ["</think>", "◁/think▷"];
+  const openTags = ["<think>", "◁think▷", "<thought>"];
+  const closeTags = ["</think>", "◁/think▷", "</thought>"];
 
   let lastOpenIndex = -1;
   let openTag = "";
