@@ -1,6 +1,7 @@
 "use client";
 import { useModel } from "@/context/ModelContext";
 import { useSidebar } from "@/context/SidebarContext";
+import { useChatCache } from "@/context/ChatCacheContext";
 import { cancelModelRun } from "@/models";
 import Whisper from "@/models/groq/whisper";
 import { generationManager } from "@/utils/generationManager";
@@ -86,6 +87,7 @@ MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
   const uuid = uuidv4();
+  const { getChat, setChat } = useChatCache();
   const { refreshTitles } = useSidebar();
   const { selectedModel, models } = useModel();
 
@@ -132,8 +134,14 @@ const ChatInterface = ({ id }: { id: string }) => {
     const loadChats = async () => {
       setIsLoadingChats(true);
       try {
-        const chats = await retrieveChats(id);
-        setMessages(chats);
+        const cachedMessages = getChat(id);
+        if (cachedMessages) {
+          setMessages(cachedMessages);
+        } else {
+          const chats = await retrieveChats(id);
+          setMessages(chats);
+          setChat(id, chats);
+        }
 
         // Check if there's an ongoing generation for this chat
         if (generationManager.isGenerating(id)) {
@@ -150,13 +158,14 @@ const ChatInterface = ({ id }: { id: string }) => {
       }
     };
     loadChats();
-  }, [id]);
+  }, [id, getChat, setChat]);
 
   // Subscribe to generation updates when component mounts
   useEffect(() => {
     if (generationManager.isGenerating(id)) {
       generationManager.subscribeToUpdates(id, (updatedMessages) => {
         setMessages(updatedMessages);
+        setChat(id, updatedMessages);
         setIsLoading(true);
       });
     }
@@ -165,7 +174,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       // Unsubscribe when component unmounts (user switches tabs)
       generationManager.unsubscribeFromUpdates(id);
     };
-  }, [id]);
+  }, [id, setChat]);
 
   useEffect(() => {
     const handleOffline = () => setIsLoading(true);
@@ -210,6 +219,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     const updatedMessages = [...messages, userMessage];
     await saveChats(id, updatedMessages);
     setMessages(updatedMessages);
+    setChat(id, updatedMessages);
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -234,6 +244,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         updatedMessages,
         (updatedMessages) => {
           setMessages(updatedMessages);
+          setChat(id, updatedMessages);
         },
       )
       .finally(() => {

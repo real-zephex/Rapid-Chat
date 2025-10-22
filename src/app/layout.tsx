@@ -9,6 +9,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { ModelProvider } from "@/context/ModelContext";
 import MainContent from "@/ui/main-content";
 import { ToastProvider } from "@/context/ToastContext";
+import { ChatCacheProvider } from "@/context/ChatCacheContext";
 import Toast from "@/ui/toast";
 
 const inter = Inter({
@@ -184,13 +185,15 @@ export default function RootLayout({
         className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
       >
         <ToastProvider>
-          <SidebarProvider>
-            <ModelProvider>
-              <Sidebar />
-              <MainContent>{children}</MainContent>
-              <Toast />
-            </ModelProvider>
-          </SidebarProvider>
+          <ChatCacheProvider>
+            <SidebarProvider>
+              <ModelProvider>
+                <Sidebar />
+                <MainContent>{children}</MainContent>
+                <Toast />
+              </ModelProvider>
+            </SidebarProvider>
+          </ChatCacheProvider>
         </ToastProvider>
       </body>
     </html>
