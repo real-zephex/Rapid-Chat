@@ -95,6 +95,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [cancelId, setCancelId] = useState<string>("");
   const [voiceLoading, setVoiceLoading] = useState<boolean>(false);
+  const [inputValue, setInputValue] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -233,6 +234,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       inputRef.current.value = "";
       inputRef.current.style.height = "auto";
     }
+    setInputValue("");
 
     setIsLoading(true);
     const abortId = uuidv4(); // Generate unique ID for each message
@@ -467,6 +469,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (ref) {
       ref.style.height = "0px";
       ref.style.height = ref.scrollHeight + "px";
+      setInputValue(ref.value);
     }
   }
 
@@ -641,19 +644,21 @@ const ChatInterface = ({ id }: { id: string }) => {
                 {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={isLoading || isUploadingImages || !inputRef.current?.value.trim()}
+                  disabled={isLoading || isUploadingImages || !inputValue.trim()}
                   className={`p-2 rounded-lg transition-colors ${isLoading ||
-                    isUploadingImages ||
-                    !inputRef.current?.value.trim()
-                    ? "text-gray-600 cursor-not-allowed"
-                    : "text-white bg-white/10 hover:bg-white/20"
+                      isUploadingImages ||
+                      !inputValue.trim()
+                      ? "text-gray-600 cursor-not-allowed"
+                      : "text-white bg-white/10 hover:bg-white/20"
                     }`}
                   title={
                     isUploadingImages
                       ? "Waiting for images to upload..."
                       : isLoading
                         ? "Generation in progress..."
-                        : "Send message (Enter)"
+                        : !inputValue.trim()
+                          ? "Type a message to send"
+                          : "Send message (Enter)"
                   }
                 >
                   {isUploadingImages ? (

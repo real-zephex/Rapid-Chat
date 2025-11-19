@@ -175,7 +175,15 @@ const AboutPage = () => {
     );
 };
 
-const BentoCard = ({ className, icon, title, description, variants }: any) => (
+interface BentoCardProps {
+    className?: string;
+    icon: React.ReactNode;
+    title: string;
+    description?: React.ReactNode | string;
+    variants?: Variants;
+}
+
+const BentoCard = ({ className, icon, title, description, variants }: BentoCardProps) => (
     <motion.div
         variants={variants}
         className={`p-8 rounded-3xl border border-white/5 backdrop-blur-md hover:border-white/10 transition-colors group ${className}`}
