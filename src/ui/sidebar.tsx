@@ -1,6 +1,6 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
-import { HiPlus, HiChatBubbleLeft } from "react-icons/hi2";
+import { HiPlus, HiChatBubbleLeft, HiInformationCircle } from "react-icons/hi2";
 
 import { useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +9,10 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import { v4 as uuidv4 } from "uuid";
 import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
+import { deleteAllChats } from "@/utils/indexedDB";
+import { RiDeleteBin2Fill } from "react-icons/ri";
+import { useState } from "react";
+import DeleteModal from "./delete-modal";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
@@ -21,7 +25,8 @@ export async function handlePress(
 }
 
 const Sidebar = () => {
-  const { isOpen, titles, setIsOpen } = useSidebar();
+  const { isOpen, titles, setIsOpen, refreshTitles } = useSidebar();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname().split("/")[2];
@@ -37,12 +42,27 @@ const Sidebar = () => {
     setIsOpen(!isOpen);
   });
 
+  const handleDeleteAll = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    await deleteAllChats();
+    refreshTitles();
+    setShowDeleteModal(false);
+    router.push("/chat");
+  };
+
   return (
     <>
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+      />
       <div
-        className={`fixed top-0 left-0 h-full bg-[#171717] transition-all duration-300 ease-in-out z-30 ${
-          isOpen ? "w-64" : "w-0"
-        } overflow-hidden border-r border-gray-800`}
+        className={`fixed top-0 left-0 h-full bg-[#171717] transition-all duration-300 ease-in-out z-30 ${isOpen ? "w-64" : "w-0"
+          } overflow-hidden border-r border-gray-800`}
         ref={sidebarRef}
       >
         <div className="flex flex-col h-full">
@@ -86,25 +106,22 @@ const Sidebar = () => {
                   <Link href={`/chat/${id}`} prefetch={true} key={id}>
                     <div
                       id={id}
-                      className={`group px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
-                        pathname === id ? "bg-[#2f2f2f]" : "hover:bg-[#212121]"
-                      }`}
+                      className={`group px-3 py-2.5 rounded-lg cursor-pointer transition-all ${pathname === id ? "bg-[#2f2f2f]" : "hover:bg-[#212121]"
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <HiChatBubbleLeft
                           size={16}
-                          className={`flex-shrink-0 ${
-                            pathname === id
-                              ? "text-white"
-                              : "text-gray-500 group-hover:text-gray-400"
-                          }`}
+                          className={`flex-shrink-0 ${pathname === id
+                            ? "text-white"
+                            : "text-gray-500 group-hover:text-gray-400"
+                            }`}
                         />
                         <span
-                          className={`text-sm truncate flex-1 ${
-                            pathname === id
-                              ? "text-white"
-                              : "text-gray-300 group-hover:text-gray-200"
-                          }`}
+                          className={`text-sm truncate flex-1 ${pathname === id
+                            ? "text-white"
+                            : "text-gray-300 group-hover:text-gray-200"
+                            }`}
                         >
                           {title}
                         </span>
@@ -115,11 +132,27 @@ const Sidebar = () => {
               </div>
             )}
           </div>{" "}
-          <div className="p-3 border-t border-gray-800">
-            <div className="text-[11px] text-gray-600 text-center">
+          <div className="p-3 border-t border-gray-800 flex items-center justify-between">
+            <div className="text-[11px] text-gray-600">
               {titles && Object.keys(titles).length} conversation
               {titles && Object.keys(titles).length !== 1 ? "s" : ""}
             </div>
+            {Object.keys(titles).length > 0 && (
+              <button
+                onClick={handleDeleteAll}
+                className="p-1.5 rounded-md hover:bg-red-900/30 text-gray-500 hover:text-red-400 transition-colors"
+                title="Delete all chats"
+              >
+                <RiDeleteBin2Fill size={14} />
+              </button>
+            )}
+            <Link
+              href="/about"
+              className="p-1.5 rounded-md hover:bg-white/10 text-gray-500 hover:text-gray-300 transition-colors ml-auto"
+              title="About Rapid Chat"
+            >
+              <HiInformationCircle size={16} />
+            </Link>
           </div>
         </div>
       </div>

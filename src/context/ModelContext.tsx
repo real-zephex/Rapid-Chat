@@ -25,7 +25,7 @@ const modelInfo = new ModelInformation();
 
 export function ModelProvider({ children }: { children: ReactNode }) {
   const [selectedModel, changeModel] = useState<string>(
-    "gemini_flash_lite_latest",
+    "llama_scout",
   );
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);

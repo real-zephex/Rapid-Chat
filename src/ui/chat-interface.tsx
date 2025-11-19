@@ -43,6 +43,7 @@ type Message = {
   reasoning?: string;
   startTime?: number;
   endTime?: number;
+  cancelled?: boolean;
 };
 
 const MessagesContainer = memo(
@@ -85,7 +86,6 @@ const MessagesContainer = memo(
 MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
-  const uuid = uuidv4();
   const { refreshTitles } = useSidebar();
   const { selectedModel, models } = useModel();
 
@@ -95,14 +95,25 @@ const ChatInterface = ({ id }: { id: string }) => {
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [cancelId, setCancelId] = useState<string>("");
   const [voiceLoading, setVoiceLoading] = useState<boolean>(false);
+  const [inputValue, setInputValue] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Use ref for input to prevent re-renders on every keystroke
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus textarea shortcut
   useHotkeys("shift+esc", (e) => {
     e.preventDefault();
     inputRef.current?.focus();
+  });
+
+  // Stop generation shortcut
+  useHotkeys("esc", (e) => {
+    if (isLoading) {
+      e.preventDefault();
+      handleStopGeneration();
+    }
   });
 
   // Images
@@ -162,21 +173,16 @@ const ChatInterface = ({ id }: { id: string }) => {
     }
 
     return () => {
-      // Unsubscribe when component unmounts (user switches tabs)
+      // Unsubscribe and cancel generation when component unmounts (user switches tabs)
       generationManager.unsubscribeFromUpdates(id);
+      if (isLoading && cancelId) {
+        cancelModelRun(cancelId);
+      }
     };
   }, [id]);
 
-  useEffect(() => {
-    const handleOffline = () => setIsLoading(true);
-    const handleOnline = () => setIsLoading(false);
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
+  // Removed problematic offline/online handlers - they set isLoading incorrectly
+  // The app handles network errors through the ModelProvider error handling
 
   useEffect(() => {
     window.addEventListener("paste", handlePaste);
@@ -184,6 +190,19 @@ const ChatInterface = ({ id }: { id: string }) => {
       window.removeEventListener("paste", handlePaste);
     };
   }, []);
+
+  const handleStopGeneration = useCallback(async () => {
+    if (cancelId) {
+      // Immediately update UI state
+      setIsLoading(false);
+
+      // Cancel the model run
+      await cancelModelRun(cancelId);
+
+      // Clear cancel ID
+      setCancelId("");
+    }
+  }, [cancelId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,9 +234,10 @@ const ChatInterface = ({ id }: { id: string }) => {
       inputRef.current.value = "";
       inputRef.current.style.height = "auto";
     }
+    setInputValue("");
 
     setIsLoading(true);
-    const abortId = uuid;
+    const abortId = uuidv4(); // Generate unique ID for each message
     setCancelId(abortId);
 
     const imagesToSend = [...images];
@@ -407,6 +427,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       if (file === null) {
         input.value =
           "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
+        handleSize();
       } else {
         input.value = "Transcribing audio...";
         const text = await Whisper(file);
@@ -424,6 +445,7 @@ const ChatInterface = ({ id }: { id: string }) => {
   // Delete chat hotkey
   useHotkeys("ctrl+shift+backspace", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     deleteChatFunc();
   });
 
@@ -435,7 +457,6 @@ const ChatInterface = ({ id }: { id: string }) => {
   }
 
   function onClickExample(text: string) {
-    console.log(text);
     const input = inputRef.current;
     if (input) {
       input.value = text;
@@ -448,6 +469,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (ref) {
       ref.style.height = "0px";
       ref.style.height = ref.scrollHeight + "px";
+      setInputValue(ref.value);
     }
   }
 
@@ -465,16 +487,8 @@ const ChatInterface = ({ id }: { id: string }) => {
       onDrop={handleDragAndDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-      <ModelSelector />
-      <div className="absolute top-3 right-4 z-20">
-        <button
-          className="p-2 rounded-lg text-gray-400 hover:bg-[#2f2f2f] transition-colors"
-          onClick={() => deleteChatFunc()}
-          title="Delete chat"
-        >
-          <RiDeleteBin2Fill size={18} />
-        </button>
-      </div>
+
+
 
       {/* Minimap */}
       {messages.length > 0 && (
@@ -555,82 +569,105 @@ const ChatInterface = ({ id }: { id: string }) => {
       <div className="w-full max-w-3xl mx-auto px-4 pb-2 pt-2 relative">
         <form onSubmit={handleSubmit} className="relative">
           <ImagePreview images={images} onRemove={removeImage} />
-          <div className="relative bg-[#2f2f2f] rounded-3xl shadow-lg border border-gray-700/50">
+          <div className="relative bg-[#2f2f2f] rounded-3xl shadow-lg border border-gray-700/50 p-2">
             <textarea
               ref={inputRef}
-              className={`w-full bg-transparent text-white outline-none resize-none px-5 py-4 pr-32 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${
-                isLoading ? "animate-pulse" : ""
-              }`}
+              className={`w-full bg-transparent text-white outline-none resize-none px-4 py-3 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${isLoading ? "animate-pulse" : ""
+                }`}
               rows={1}
               onInput={handleSize}
-              disabled={isLoadingChats || voiceLoading}
+              disabled={isLoadingChats || voiceLoading || isLoading}
               placeholder="Message Rapid-Chat"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit(e);
+                } else if (e.ctrlKey && e.shiftKey && e.key === "Backspace") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  deleteChatFunc();
                 }
               }}
             ></textarea>
-            <div className="absolute bottom-3 right-3 flex items-center gap-2">
-              <AudioRecord setAudio={setAudio} />
-              {models.find(
-                (item) => item.image === true && item.code === selectedModel,
-              ) && (
-                <label
-                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
-                  title="Upload file"
-                  htmlFor="fileInput"
+            <div className="flex justify-between items-center px-2 pb-1 mt-2">
+              <div className="flex items-center">
+                <ModelSelector />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors"
+                  onClick={() => deleteChatFunc()}
+                  title="Delete chat"
+                  type="button"
                 >
-                  <input
-                    name="file"
-                    type="file"
-                    accept={`image/png, image/jpeg, image/jpg, ${
-                      models.find((i) => i.code === selectedModel)?.pdf
-                        ? "application/pdf"
-                        : ""
-                    }`}
-                    className="hidden"
-                    id="fileInput"
-                    onChange={handleFileChange}
-                    multiple
-                  />
-                  <FaUpload size={16} />
-                </label>
-              )}
-              <button
-                type="submit"
-                className={`p-2 rounded-lg transition-colors ${
-                  isLoading ||
-                  isUploadingImages ||
-                  !inputRef.current?.value.trim()
-                    ? "text-gray-600 "
-                    : "text-white bg-white/10 hover:bg-white/20"
-                }`}
-                title={
-                  isUploadingImages
-                    ? "Waiting for images to upload..."
-                    : "Send message"
-                }
-              >
-                {isLoading ? (
-                  <div
-                    className="rounded-full size-5 hover:bg-neutral-600 transition-all hover:cursor-pointer"
-                    title="Stop the stream"
-                    onClick={async () => {
-                      if (isLoading) {
-                        await cancelModelRun(cancelId);
-                      }
+                  <RiDeleteBin2Fill size={18} />
+                </button>
+                <AudioRecord setAudio={setAudio} />
+                {models.find(
+                  (item) => item.image === true && item.code === selectedModel,
+                ) && (
+                    <label
+                      className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
+                      title="Upload file"
+                      htmlFor="fileInput"
+                    >
+                      <input
+                        name="file"
+                        type="file"
+                        accept={`image/png, image/jpeg, image/jpg, ${models.find((i) => i.code === selectedModel)?.pdf
+                          ? "application/pdf"
+                          : ""
+                          }`}
+                        className="hidden"
+                        id="fileInput"
+                        onChange={handleFileChange}
+                        multiple
+                      />
+                      <FaUpload size={16} />
+                    </label>
+                  )}
+                {/* Stop button - separate from submit */}
+                {isLoading && (
+                  <button
+                    type="button"
+                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors"
+                    title="Stop generation (Esc)"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleStopGeneration();
                     }}
                   >
-                    <FaStop color="grey" size={20} />
-                  </div>
-                ) : isUploadingImages ? (
-                  <ImCloudUpload size={20} />
-                ) : (
-                  <FaArrowCircleRight size={20} />
+                    <FaStop size={20} />
+                  </button>
                 )}
-              </button>
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  disabled={isLoading || isUploadingImages || !inputValue.trim()}
+                  className={`p-2 rounded-lg transition-colors ${isLoading ||
+                    isUploadingImages ||
+                    !inputValue.trim()
+                    ? "text-gray-600 cursor-not-allowed"
+                    : "text-white bg-white/10 hover:bg-white/20"
+                    }`}
+                  title={
+                    isUploadingImages
+                      ? "Waiting for images to upload..."
+                      : isLoading
+                        ? "Generation in progress..."
+                        : !inputValue.trim()
+                          ? "Type a message to send"
+                          : "Send message (Enter)"
+                  }
+                >
+                  {isUploadingImages ? (
+                    <ImCloudUpload size={20} />
+                  ) : (
+                    <FaArrowCircleRight size={20} />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
           {isLoading && (
