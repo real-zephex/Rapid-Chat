@@ -30,7 +30,7 @@ const AboutPage = () => {
     };
 
     return (
-        <main className="min-h-full bg-neutral-950 text-white overflow-y-auto relative selection:bg-blue-500/30">
+        <main className="min-h-screen bg-neutral-950 text-white overflow-y-auto relative selection:bg-blue-500/30">
             {/* Ambient Background Effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
@@ -118,11 +118,12 @@ const AboutPage = () => {
 
                         {/* Wide Feature */}
                         <BentoCard
-                            className="md:col-span-3 bg-neutral-900/50 flex flex-col md:flex-row items-center gap-8"
+                            className="md:col-span-3 bg-neutral-900/50"
                             icon={<FaMagic className="text-4xl text-purple-400" />}
                             title="Beyond Text"
                             description="Upload images for analysis, drop PDF documents for summarization, or use voice input for hands-free interaction. Rapid Chat handles it all."
                             variants={itemVariants}
+                            layout="horizontal"
                         />
                     </div>
                 </section>
@@ -181,23 +182,29 @@ interface BentoCardProps {
     title: string;
     description?: React.ReactNode | string;
     variants?: Variants;
+    layout?: 'vertical' | 'horizontal';
 }
 
-const BentoCard = ({ className, icon, title, description, variants }: BentoCardProps) => (
-    <motion.div
-        variants={variants}
-        className={`p-8 rounded-3xl border border-white/5 backdrop-blur-md hover:border-white/10 transition-colors group ${className}`}
-    >
-        <div className="h-full flex flex-col justify-between space-y-4">
-            <div className="bg-white/5 w-fit p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                {icon}
+const BentoCard = ({ className, icon, title, description, variants, layout = 'vertical' }: BentoCardProps) => {
+    const isHorizontal = layout === 'horizontal';
+
+    return (
+        <motion.div
+            variants={variants}
+            className={`p-8 rounded-3xl border border-white/5 backdrop-blur-md hover:border-white/10 transition-colors group ${className}`}
+        >
+            <div className={`h-full flex ${isHorizontal ? 'flex-col md:flex-row items-center gap-8' : 'flex-col justify-between space-y-4'
+                }`}>
+                <div className="bg-white/5 w-fit p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                    {icon}
+                </div>
+                <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">{title}</h3>
+                    <p className="text-neutral-400 leading-relaxed">{description}</p>
+                </div>
             </div>
-            <div>
-                <h3 className="text-2xl font-bold text-white mb-2">{title}</h3>
-                <p className="text-neutral-400 leading-relaxed">{description}</p>
-            </div>
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
 export default AboutPage;

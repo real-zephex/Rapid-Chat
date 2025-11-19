@@ -179,7 +179,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         cancelModelRun(cancelId);
       }
     };
-  }, [id, isLoading, cancelId]);
+  }, [id]);
 
   // Removed problematic offline/online handlers - they set isLoading incorrectly
   // The app handles network errors through the ModelProvider error handling
@@ -646,10 +646,10 @@ const ChatInterface = ({ id }: { id: string }) => {
                   type="submit"
                   disabled={isLoading || isUploadingImages || !inputValue.trim()}
                   className={`p-2 rounded-lg transition-colors ${isLoading ||
-                      isUploadingImages ||
-                      !inputValue.trim()
-                      ? "text-gray-600 cursor-not-allowed"
-                      : "text-white bg-white/10 hover:bg-white/20"
+                    isUploadingImages ||
+                    !inputValue.trim()
+                    ? "text-gray-600 cursor-not-allowed"
+                    : "text-white bg-white/10 hover:bg-white/20"
                     }`}
                   title={
                     isUploadingImages
