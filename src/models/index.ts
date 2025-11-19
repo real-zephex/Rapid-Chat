@@ -74,10 +74,9 @@ const ModelProvider = async ({
       }
     },
     cancel(reason) {
+      // Use the existing cancelModelRun function to avoid duplication
       if (runId) {
-        const c = controllers.get(runId);
-        c?.abort(typeof reason === "string" ? reason : "Client cancelled");
-        controllers.delete(runId);
+        cancelModelRun(runId);
       }
     },
   });

@@ -3,7 +3,7 @@ interface JinaAIReaderReturnProps {
   content?: string;
 }
 
-const PROXY = "https://goodproxy.goodproxy.workers.dev/fetch?url=";
+const PROXY = "https://goodproxy.dramaflix.workers.dev/fetch?url=";
 
 const JinaAIReader = async ({
   url,

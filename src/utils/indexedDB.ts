@@ -292,3 +292,34 @@ export const deleteTab = async (id: string): Promise<void> => {
     }
   }
 };
+
+export const deleteAllChats = async (): Promise<void> => {
+  try {
+    // Clear chats store
+    await performDBOperation(
+      CHATS_STORE,
+      (store) => store.clear(),
+      "readwrite"
+    );
+
+    // Clear tabs store (or reset to empty array)
+    await performDBOperation(
+      TABS_STORE,
+      (store) => store.put({ key: "chatTabs", tabs: [] }),
+      "readwrite"
+    );
+  } catch (error) {
+    console.error("Error deleting all chats:", error);
+    // Fallback to localStorage
+    try {
+      const chats = localStorage.getItem("chats");
+      if (chats) {
+        const parsed: string[] = JSON.parse(chats);
+        parsed.forEach((id) => localStorage.removeItem(id));
+      }
+      localStorage.setItem("chats", "[]");
+    } catch (fallbackError) {
+      console.error("Fallback to localStorage also failed:", fallbackError);
+    }
+  }
+};

@@ -14,6 +14,7 @@ import { GoCpu } from "react-icons/go";
 import { TbAlphabetLatin } from "react-icons/tb";
 
 import { Cascadia_Code } from "next/font/google";
+import { useSmoothStream } from "@/hooks/useSmoothStream";
 
 const cascadiaCode = Cascadia_Code({
   weight: ["400", "600"],
@@ -27,6 +28,7 @@ type Message = {
   reasoning?: string;
   startTime?: number;
   endTime?: number;
+  cancelled?: boolean;
 };
 
 const MessageComponent = memo(
@@ -42,6 +44,10 @@ const MessageComponent = memo(
     onCopyResponse: (content: string) => void;
   }) => {
     const isUser = message.role === "user";
+    const isStreaming = !message.endTime && !message.cancelled && !isUser;
+
+    const displayedContent = useSmoothStream(message.content, isStreaming);
+    const displayedReasoning = useSmoothStream(message.reasoning || "", isStreaming);
 
     const reasoningTokens = useMemo(() => {
       if (!message.reasoning) return 0;
@@ -90,7 +96,7 @@ const MessageComponent = memo(
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="w-full">
             <div className="prose prose-invert prose-lg max-w-full w-full leading-7 overflow-x-auto">
-              {message.reasoning && (
+              {displayedReasoning && (
                 <div className="mb-4">
                   <button
                     onClick={() => {
@@ -126,7 +132,7 @@ const MessageComponent = memo(
                     className="text-sm text-gray-400 mt-2 pl-6"
                     style={{ display: "none" }}
                   >
-                    {message.reasoning}
+                    {displayedReasoning}
                   </div>
                 </div>
               )}
@@ -204,11 +210,10 @@ const MessageComponent = memo(
                         )}
 
                         <pre
-                          className={`bg-neutral-800/90 border border-neutral-700/50 p-4 overflow-x-auto mt-0 ${
-                            language
-                              ? "rounded-t-none rounded-b-lg"
-                              : "rounded-lg"
-                          } text-gray-100`}
+                          className={`bg-neutral-800/90 border border-neutral-700/50 p-4 overflow-x-auto mt-0 ${language
+                            ? "rounded-t-none rounded-b-lg"
+                            : "rounded-lg"
+                            } text-gray-100`}
                           {...props}
                         >
                           {children}
@@ -419,8 +424,17 @@ const MessageComponent = memo(
                   ),
                 }}
               >
-                {message.content}
+                {displayedContent}
               </ReactMarkdown>
+              {/* Show cancelled badge if message was interrupted */}
+              {message.cancelled && (
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-900/20 border border-yellow-600/30 rounded-lg text-yellow-400 text-sm">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Generation was stopped</span>
+                </div>
+              )}
               <div className="flex flex-row items-center gap-2 mt-4 pt-2 border-t border-gray-700/30">
                 <button
                   className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"

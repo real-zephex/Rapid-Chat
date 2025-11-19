@@ -9,6 +9,7 @@ type Message = {
   reasoning?: string;
   startTime?: number;
   endTime?: number;
+  cancelled?: boolean; // Flag to indicate if generation was cancelled
 };
 
 type GenerationTask = {
@@ -30,9 +31,9 @@ class GenerationManager {
     initialMessages: Message[],
     onUpdate?: (messages: Message[]) => void,
   ) {
-    // Cancel any existing generation for this chat
+    // Cancel any existing generation for this chat (if resubmitting)
     if (this.activeTasks.has(chatId)) {
-      console.log(`Cancelling existing generation for chat ${chatId}`);
+      // Don't log in production, just handle it
     }
 
     const promise = this.runGeneration(
@@ -63,6 +64,10 @@ class GenerationManager {
     initialMessages: Message[],
     onUpdate?: (messages: Message[]) => void,
   ) {
+    // Declare variables at function scope so they're accessible in catch block
+    let assistantMessage = "";
+    let currentMessages: Message[] = [];
+
     try {
       const prevChats = await retrieveChats(chatId);
       // Get chat history excluding the last message - bro, this caused me so much confusion.
@@ -83,12 +88,11 @@ class GenerationManager {
       }
 
       const reader = response.getReader();
-      let assistantMessage = "";
       let updateCounter = 0;
       const UPDATE_THROTTLE = 1;
 
       // Get current messages from DB (they might have changed)
-      let currentMessages = await retrieveChats(chatId);
+      currentMessages = await retrieveChats(chatId);
 
       // Add placeholder assistant message
       currentMessages = [
@@ -152,15 +156,30 @@ class GenerationManager {
       onUpdate?.(finalMessages);
     } catch (error) {
       console.error("Error in generation:", error);
-      const errorMessages = [
-        ...initialMessages,
-        {
-          role: "assistant" as const,
-          content: "Sorry, there was an error processing your request.",
-        },
-      ];
-      await saveChats(chatId, errorMessages);
-      onUpdate?.(errorMessages);
+
+      // Save partial response if we have any content
+      const { displayContent, reasoning } = processMessageContent(assistantMessage);
+
+      const partialMessages = [...currentMessages];
+      if (currentMessages.length > 0) {
+        // Update the last message with partial content and cancelled flag
+        partialMessages[partialMessages.length - 1] = {
+          role: "assistant",
+          content: displayContent || "Generation was interrupted.",
+          reasoning: reasoning || "",
+          cancelled: true,
+        };
+      } else {
+        // Fallback: create new message if no currentMessages exist
+        partialMessages.push({
+          role: "assistant",
+          content: displayContent || "Sorry, there was an error processing your request.",
+          cancelled: true,
+        });
+      }
+
+      await saveChats(chatId, partialMessages);
+      onUpdate?.(partialMessages);
     }
   }
 
