@@ -1,6 +1,6 @@
 "use client";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
-import { HiPlus, HiChatBubbleLeft } from "react-icons/hi2";
+import { HiPlus, HiChatBubbleLeft, HiInformationCircle } from "react-icons/hi2";
 
 import { useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -146,6 +146,13 @@ const Sidebar = () => {
                 <RiDeleteBin2Fill size={14} />
               </button>
             )}
+            <Link
+              href="/about"
+              className="p-1.5 rounded-md hover:bg-white/10 text-gray-500 hover:text-gray-300 transition-colors ml-auto"
+              title="About Rapid Chat"
+            >
+              <HiInformationCircle size={16} />
+            </Link>
           </div>
         </div>
       </div>
