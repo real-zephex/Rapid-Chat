@@ -1,4 +1,5 @@
 "use client";
+import "./dracula.css";
 
 import { memo, useMemo } from "react";
 import { FaRegCopy, FaCheck } from "react-icons/fa6";
@@ -47,7 +48,10 @@ const MessageComponent = memo(
     const isStreaming = !message.endTime && !message.cancelled && !isUser;
 
     const displayedContent = useSmoothStream(message.content, isStreaming);
-    const displayedReasoning = useSmoothStream(message.reasoning || "", isStreaming);
+    const displayedReasoning = useSmoothStream(
+      message.reasoning || "",
+      isStreaming,
+    );
 
     const reasoningTokens = useMemo(() => {
       if (!message.reasoning) return 0;
@@ -61,7 +65,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content]
+      [message.content],
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -180,7 +184,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className
+                          element.props.className,
                         );
                         return match ? match[1] : "";
                       }
@@ -210,10 +214,11 @@ const MessageComponent = memo(
                         )}
 
                         <pre
-                          className={`bg-neutral-800/90 border border-neutral-700/50 p-4 overflow-x-auto mt-0 ${language
-                            ? "rounded-t-none rounded-b-lg"
-                            : "rounded-lg"
-                            } text-gray-100`}
+                          className={`bg-neutral-800/90 border border-neutral-700/50 p-4 overflow-x-auto mt-0 ${
+                            language
+                              ? "rounded-t-none rounded-b-lg"
+                              : "rounded-lg"
+                          } text-gray-100`}
                           {...props}
                         >
                           {children}
@@ -429,8 +434,18 @@ const MessageComponent = memo(
               {/* Show cancelled badge if message was interrupted */}
               {message.cancelled && (
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-900/20 border border-yellow-600/30 rounded-lg text-yellow-400 text-sm">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                   <span>Generation was stopped</span>
                 </div>
@@ -465,7 +480,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 MessageComponent.displayName = "MessageComponent";
 
