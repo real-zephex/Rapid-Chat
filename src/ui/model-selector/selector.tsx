@@ -49,7 +49,7 @@ const ModelSelector = () => {
 
       {isOpen && (
         <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#2f2f2f] border border-gray-700/50 rounded-xl shadow-xl overflow-hidden z-50 max-h-[300px] overflow-y-auto">
-          <div className="p-1 space-y-0.5">
+          <div className="p-1 space-y-0.5 ">
             {models.map((model) => {
               const isSelected = selectedModel === model.code;
               return (
@@ -65,7 +65,7 @@ const ModelSelector = () => {
                       : "text-gray-300 hover:bg-[#3f3f3f] hover:text-white"
                   }`}
                 >
-                  <span className="truncate mr-2">{model.name}</span>
+                  <span className="truncate text-sm mr-2">{model.name}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {model.image && (
                       <span title="Image support" className="flex items-center">

@@ -81,7 +81,7 @@ const MessagesContainer = memo(
         ))}
       </div>
     );
-  },
+  }
 );
 MessagesContainer.displayName = "MessagesContainer";
 
@@ -254,7 +254,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         updatedMessages,
         (updatedMessages) => {
           setMessages(updatedMessages);
-        },
+        }
       )
       .finally(() => {
         setIsLoading(false);
@@ -307,7 +307,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 mimeType: f.type,
                 data: new Uint8Array(buffer),
               };
-            }),
+            })
           );
           setImages(arraizedImages);
           event.target.value = "";
@@ -319,7 +319,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
       }
     },
-    [],
+    []
   );
 
   const handlePaste = useCallback(
@@ -366,7 +366,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          }),
+          })
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -375,7 +375,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling paste. Please try again.");
       }
     },
-    [checkFileSize],
+    [checkFileSize]
   );
 
   const handleDragAndDrop = useCallback(
@@ -408,7 +408,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          }),
+          })
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -417,7 +417,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling drag and drop. Please try again.");
       }
     },
-    [checkFileSize],
+    [checkFileSize]
   );
 
   const setAudio = async (file: Blob | null) => {
@@ -483,13 +483,10 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   return (
     <div
-      className="flex flex-col h-[calc(100dvh-10px)] overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent bg-[#212121] relative"
+      className="flex flex-col h-[calc(100dvh-10px)] overflow-y-hidden bg-dark relative"
       onDrop={handleDragAndDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-
-
-
       {/* Minimap */}
       {messages.length > 0 && (
         <div className="fixed right-4 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-2 bg-[#2f2f2f]/60 backdrop-blur-sm p-2 rounded-full max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
@@ -508,13 +505,15 @@ const ChatInterface = ({ id }: { id: string }) => {
       )}
 
       {/* Scroll Button */}
-      <button
-        className="fixed right-6 bottom-28 p-2 rounded-full bg-[#2f2f2f] text-gray-300 hover:bg-[#3f3f3f] transition-colors shadow-lg hidden md:block"
-        onClick={() => scrollToBottom()}
-        title="Scroll to bottom"
-      >
-        <FaArrowCircleDown size={20} />
-      </button>
+      {messages.length > 0 && (
+        <button
+          className="fixed right-6 bottom-28 p-2 rounded-full bg-[#2f2f2f] text-gray-300 hover:bg-[#3f3f3f] transition-colors shadow-lg hidden md:block"
+          onClick={() => scrollToBottom()}
+          title="Scroll to bottom"
+        >
+          <FaArrowCircleDown size={20} />
+        </button>
+      )}
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto">
@@ -569,11 +568,12 @@ const ChatInterface = ({ id }: { id: string }) => {
       <div className="w-full max-w-3xl mx-auto px-4 pb-2 pt-2 relative">
         <form onSubmit={handleSubmit} className="relative">
           <ImagePreview images={images} onRemove={removeImage} />
-          <div className="relative bg-[#2f2f2f] rounded-3xl shadow-lg border border-gray-700/50 p-2">
+          <div className="relative bg-textarea rounded-xl shadow-lg border border-gray-700/50 p-2">
             <textarea
               ref={inputRef}
-              className={`w-full bg-transparent text-white outline-none resize-none px-4 py-3 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${isLoading ? "animate-pulse" : ""
-                }`}
+              className={`w-full bg-transparent text-white outline-none resize-none px-4 py-3 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${
+                isLoading ? "animate-pulse" : ""
+              }`}
               rows={1}
               onInput={handleSize}
               disabled={isLoadingChats || voiceLoading || isLoading}
@@ -604,28 +604,29 @@ const ChatInterface = ({ id }: { id: string }) => {
                 </button>
                 <AudioRecord setAudio={setAudio} />
                 {models.find(
-                  (item) => item.image === true && item.code === selectedModel,
+                  (item) => item.image === true && item.code === selectedModel
                 ) && (
-                    <label
-                      className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
-                      title="Upload file"
-                      htmlFor="fileInput"
-                    >
-                      <input
-                        name="file"
-                        type="file"
-                        accept={`image/png, image/jpeg, image/jpg, ${models.find((i) => i.code === selectedModel)?.pdf
+                  <label
+                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
+                    title="Upload file"
+                    htmlFor="fileInput"
+                  >
+                    <input
+                      name="file"
+                      type="file"
+                      accept={`image/png, image/jpeg, image/jpg, ${
+                        models.find((i) => i.code === selectedModel)?.pdf
                           ? "application/pdf"
                           : ""
-                          }`}
-                        className="hidden"
-                        id="fileInput"
-                        onChange={handleFileChange}
-                        multiple
-                      />
-                      <FaUpload size={16} />
-                    </label>
-                  )}
+                      }`}
+                      className="hidden"
+                      id="fileInput"
+                      onChange={handleFileChange}
+                      multiple
+                    />
+                    <FaUpload size={16} />
+                  </label>
+                )}
                 {/* Stop button - separate from submit */}
                 {isLoading && (
                   <button
@@ -644,21 +645,22 @@ const ChatInterface = ({ id }: { id: string }) => {
                 {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={isLoading || isUploadingImages || !inputValue.trim()}
-                  className={`p-2 rounded-lg transition-colors ${isLoading ||
-                    isUploadingImages ||
-                    !inputValue.trim()
-                    ? "text-gray-600 cursor-not-allowed"
-                    : "text-white bg-white/10 hover:bg-white/20"
-                    }`}
+                  disabled={
+                    isLoading || isUploadingImages || !inputValue.trim()
+                  }
+                  className={`p-2 rounded-lg transition-colors ${
+                    isLoading || isUploadingImages || !inputValue.trim()
+                      ? "text-gray-600 cursor-not-allowed"
+                      : "text-white bg-white/10 hover:bg-white/20"
+                  }`}
                   title={
                     isUploadingImages
                       ? "Waiting for images to upload..."
                       : isLoading
-                        ? "Generation in progress..."
-                        : !inputValue.trim()
-                          ? "Type a message to send"
-                          : "Send message (Enter)"
+                      ? "Generation in progress..."
+                      : !inputValue.trim()
+                      ? "Type a message to send"
+                      : "Send message (Enter)"
                   }
                 >
                   {isUploadingImages ? (
@@ -678,7 +680,7 @@ const ChatInterface = ({ id }: { id: string }) => {
           )}
         </form>
         <p className="text-center text-xs text-gray-500 mt-2 px-4">
-          Rapid-Chat can make mistakes. Consider checking important information.
+          Rapid-Chat can make mistakes.
         </p>
       </div>
     </div>

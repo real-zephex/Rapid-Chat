@@ -6,8 +6,9 @@
   --color-tahiti: #3ab7bf;
   --color-bermuda: #78dcca;
 
-  --color-bg: #414141;
+  --color-bg: #18181B;
   --color-text: #ca3e47;
+  --color-textarea: #222225;
 }
 
 :root {
@@ -37,7 +38,7 @@
 
 
   /* Force dark theme */
-  --background: #202020;
+  --background: #18181B;
   --foreground: var(--surface-50);
   color-scheme: dark;
 }
@@ -155,7 +156,7 @@ code.hljs {
   text-align: center;
 }
 
-.katex-display > .katex {
+.katex-display>.katex {
   display: block;
   text-align: center;
 }
@@ -255,8 +256,10 @@ code.hljs {
 
 /* styles.css or inside your Tailwind @layer */
 .scrollbar-track-only {
-  scrollbar-width: thin; /* For Firefox */
-  scrollbar-color: rgba(175, 175, 175, 0.336) transparent; /* thumb and track both transparent */
+  scrollbar-width: thin;
+  /* For Firefox */
+  scrollbar-color: rgba(175, 175, 175, 0.336) transparent;
+  /* thumb and track both transparent */
 }
 
 .scrollbar-track-only::-webkit-scrollbar-button {

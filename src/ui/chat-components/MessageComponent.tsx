@@ -50,7 +50,7 @@ const MessageComponent = memo(
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(
       message.reasoning || "",
-      isStreaming,
+      isStreaming
     );
 
     const reasoningTokens = useMemo(() => {
@@ -65,7 +65,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content],
+      [message.content]
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -78,14 +78,14 @@ const MessageComponent = memo(
 
     if (isUser) {
       return (
-        <div className="w-full border-b border-gray-700/30 bg-[#212121]">
+        <div className="w-full border-b border-gray-700/30 bg-transparent">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="flex justify-end">
               <div className="max-w-[90%]">
                 {message.images && message.images.length > 0 && (
                   <ImageDisplay images={message.images} />
                 )}
-                <div className="bg-[#2f2f2f] rounded-3xl px-5 py-3 text-white whitespace-pre-wrap break-words leading-7">
+                <div className="bg-[#2f2f2f] rounded-xl px-4 py-3 text-white whitespace-pre-wrap wrap-break-word leading-7">
                   {message.content}
                 </div>
               </div>
@@ -184,7 +184,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className,
+                          element.props.className
                         );
                         return match ? match[1] : "";
                       }
@@ -480,7 +480,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  },
+  }
 );
 MessageComponent.displayName = "MessageComponent";
 

@@ -16,7 +16,7 @@ import DeleteModal from "./delete-modal";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
-  router: AppRouterInstance,
+  router: AppRouterInstance
 ) {
   event.preventDefault();
 
@@ -61,8 +61,9 @@ const Sidebar = () => {
         onConfirm={confirmDelete}
       />
       <div
-        className={`fixed top-0 left-0 h-full bg-[#171717] transition-all duration-300 ease-in-out z-30 ${isOpen ? "w-64" : "w-0"
-          } overflow-hidden border-r border-gray-800`}
+        className={`fixed top-0 left-0 h-full transition-all duration-75 ease-in-out z-30 ${
+          isOpen ? "w-64" : "w-0"
+        } overflow-hidden border-r border-gray-800`}
         ref={sidebarRef}
       >
         <div className="flex flex-col h-full">
@@ -106,22 +107,25 @@ const Sidebar = () => {
                   <Link href={`/chat/${id}`} prefetch={true} key={id}>
                     <div
                       id={id}
-                      className={`group px-3 py-2.5 rounded-lg cursor-pointer transition-all ${pathname === id ? "bg-[#2f2f2f]" : "hover:bg-[#212121]"
-                        }`}
+                      className={`group px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
+                        pathname === id ? "bg-[#2f2f2f]" : "hover:bg-[#212121]"
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <HiChatBubbleLeft
                           size={16}
-                          className={`flex-shrink-0 ${pathname === id
-                            ? "text-white"
-                            : "text-gray-500 group-hover:text-gray-400"
-                            }`}
+                          className={`shrink-0 ${
+                            pathname === id
+                              ? "text-white"
+                              : "text-gray-500 group-hover:text-gray-400"
+                          }`}
                         />
                         <span
-                          className={`text-sm truncate flex-1 ${pathname === id
-                            ? "text-white"
-                            : "text-gray-300 group-hover:text-gray-200"
-                            }`}
+                          className={`text-sm truncate flex-1 ${
+                            pathname === id
+                              ? "text-white"
+                              : "text-gray-300 group-hover:text-gray-200"
+                          }`}
                         >
                           {title}
                         </span>
