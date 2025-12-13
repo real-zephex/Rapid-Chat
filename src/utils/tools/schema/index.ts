@@ -1,4 +1,4 @@
-import { ChatCompletionTool } from "openai/resources/index.mjs";
+import { ChatCompletionTool } from "groq-sdk/resources/chat/completions";
 
 export const toolsSchema: ChatCompletionTool[] = [
   {
