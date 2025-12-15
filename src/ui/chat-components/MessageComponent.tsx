@@ -2,7 +2,7 @@
 import "./dracula.css";
 
 import { memo, useMemo } from "react";
-import { FaRegCopy, FaCheck, FaClock } from "react-icons/fa6";
+import { FaRegCopy, FaCheck, FaClock, FaCodeBranch } from "react-icons/fa6";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -38,11 +38,13 @@ const MessageComponent = memo(
     index,
     model,
     onCopyResponse,
+    onBranchFromMessage,
   }: {
     message: Message;
     index: number;
     model: string;
     onCopyResponse: (content: string) => void;
+    onBranchFromMessage: (index: number) => void;
   }) => {
     const isUser = message.role === "user";
     const isStreaming = !message.endTime && !message.cancelled && !isUser;
@@ -77,9 +79,15 @@ const MessageComponent = memo(
     }, [message.endTime, message.startTime, tokens]);
 
     if (isUser) {
-      // Format timestamp for display
-      const timestamp = message.startTime ? new Date(message.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-      
+      // Format timestamp for display using user's local timezone
+      const timestamp = message.startTime
+        ? new Date(message.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false, // Use 24-hour format by default
+          })
+        : "";
+
       return (
         <div className="w-full border-b border-gray-700/30 bg-transparent">
           <div className="max-w-4xl mx-auto px-4 py-6">
@@ -480,12 +488,27 @@ const MessageComponent = memo(
                 >
                   <FaRegCopy size={14} />
                 </button>
+                <button
+                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"
+                  title="Branch from this message"
+                  onClick={(e) => {
+                    onBranchFromMessage(index);
+                  }}
+                >
+                  <FaCodeBranch size={14} />
+                </button>
                 <div className="flex-1"></div>
                 <div className="flex flex-row items-center gap-2">
                   {message.startTime && (
                     <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
                       <FaClock size={12} />
-                      <span>{new Date(message.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>
+                        {new Date(message.startTime).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false, // Use 24-hour format by default
+                        })}
+                      </span>
                     </div>
                   )}
                   {tokens > 0 && (

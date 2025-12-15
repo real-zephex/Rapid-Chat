@@ -67,11 +67,31 @@ const performDBOperation = async <T>(
   }
 };
 
-export const saveChats = async (id: string, messages: Messages[]) => {
+interface ChatData {
+  id: string;
+  messages: Messages[];
+  parentId?: string;
+  branchFromIndex?: number;
+  createdAt?: number;
+}
+
+export const saveChats = async (
+  id: string,
+  messages: Messages[],
+  options?: { parentId?: string; branchFromIndex?: number }
+) => {
   try {
+    const chatData: ChatData = {
+      id,
+      messages,
+      parentId: options?.parentId,
+      branchFromIndex: options?.branchFromIndex,
+      createdAt: Date.now(),
+    };
+
     await performDBOperation(
       CHATS_STORE,
-      (store) => store.put({ id, messages }),
+      (store) => store.put(chatData),
       "readwrite"
     );
   } catch (error) {
@@ -87,10 +107,9 @@ export const saveChats = async (id: string, messages: Messages[]) => {
 
 export const retrieveChats = async (id: string): Promise<Messages[]> => {
   try {
-    const result = await performDBOperation<{
-      id: string;
-      messages: Messages[];
-    }>(CHATS_STORE, (store) => store.get(id));
+    const result = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
+      store.get(id)
+    );
     return result?.messages || [];
   } catch (error) {
     console.error("Error retrieving chats:", error);
@@ -159,13 +178,30 @@ export const retrieveTabs = async (): Promise<string[]> => {
     console.error("Error retrieving tabs:", error);
     // Fallback to localStorage if IndexedDB fails
     try {
-      const items = localStorage.getItem("chats") || "[]";
-      const parsed: string[] = JSON.parse(items);
+      const chats = localStorage.getItem("chats") || "[]";
+      const parsed: string[] = JSON.parse(chats);
       return parsed;
     } catch (fallbackError) {
       console.error("Fallback to localStorage also failed:", fallbackError);
       return [];
     }
+  }
+};
+
+export const getChatMetadata = async (
+  id: string
+): Promise<{ parentId?: string; branchFromIndex?: number }> => {
+  try {
+    const result = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
+      store.get(id)
+    );
+    return {
+      parentId: result?.parentId,
+      branchFromIndex: result?.branchFromIndex,
+    };
+  } catch (error) {
+    console.error("Error retrieving chat metadata:", error);
+    return {};
   }
 };
 

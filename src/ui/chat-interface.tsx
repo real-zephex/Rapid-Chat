@@ -51,12 +51,14 @@ const MessagesContainer = memo(
     messages,
     model,
     onCopyResponse,
+    onBranchFromMessage,
     messageRefs,
   }: {
     messages: Message[];
     model: string;
     onCopyResponse: (content: string) => void;
-    messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
+    onBranchFromMessage: (index: number) => void;
+    messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
   }) => {
     return (
       <div className="container mx-auto max-w-full lg:max-w-[60%]">
@@ -76,6 +78,7 @@ const MessagesContainer = memo(
               index={index}
               model={model}
               onCopyResponse={onCopyResponse}
+              onBranchFromMessage={onBranchFromMessage}
             />
           </div>
         ))}
@@ -258,6 +261,8 @@ const ChatInterface = ({ id }: { id: string }) => {
       )
       .finally(() => {
         setIsLoading(false);
+        // Refresh titles after response is complete to update with new conversation context
+        refreshTitles();
       });
   };
 
@@ -268,6 +273,27 @@ const ChatInterface = ({ id }: { id: string }) => {
       console.error("Error copying response:", error);
     }
   }, []);
+
+  const handleBranchFromMessage = useCallback(
+    async (messageIndex: number) => {
+      // Create a new chat ID for the branch
+      const branchId = uuidv4();
+
+      // Get messages up to and including the selected message
+      const branchMessages = messages.slice(0, messageIndex + 1);
+
+      // Save the branch messages
+      await saveChats(branchId, branchMessages);
+      await addTabs(branchId);
+
+      // Navigate to the new branch
+      router.push(`/chat/${branchId}`);
+
+      // Refresh sidebar titles
+      refreshTitles();
+    },
+    [messages, router, refreshTitles]
+  );
 
   const checkFileSize = useCallback((file: File) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -558,6 +584,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               "Unknown Model"
             }
             onCopyResponse={handleCopyResponse}
+            onBranchFromMessage={handleBranchFromMessage}
             messageRefs={messageRefs}
           />
         )}
