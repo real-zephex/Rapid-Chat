@@ -2,7 +2,7 @@
 import "./dracula.css";
 
 import { memo, useMemo } from "react";
-import { FaRegCopy, FaCheck } from "react-icons/fa6";
+import { FaRegCopy, FaCheck, FaClock } from "react-icons/fa6";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -77,6 +77,9 @@ const MessageComponent = memo(
     }, [message.endTime, message.startTime, tokens]);
 
     if (isUser) {
+      // Format timestamp for display
+      const timestamp = message.startTime ? new Date(message.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      
       return (
         <div className="w-full border-b border-gray-700/30 bg-transparent">
           <div className="max-w-4xl mx-auto px-4 py-6">
@@ -87,6 +90,23 @@ const MessageComponent = memo(
                 )}
                 <div className="bg-[#2f2f2f] rounded-xl px-4 py-3 text-white whitespace-pre-wrap wrap-break-word leading-7">
                   {message.content}
+                </div>
+                <div className="flex flex-row items-center gap-2 mt-2 justify-end">
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"
+                    title="Copy to clipboard"
+                    onClick={(e) => {
+                      onCopyResponse(message.content);
+                    }}
+                  >
+                    <FaRegCopy size={14} />
+                  </button>
+                  {timestamp && (
+                    <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
+                      <FaClock size={12} />
+                      <span>{timestamp}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -462,6 +482,12 @@ const MessageComponent = memo(
                 </button>
                 <div className="flex-1"></div>
                 <div className="flex flex-row items-center gap-2">
+                  {message.startTime && (
+                    <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
+                      <FaClock size={12} />
+                      <span>{new Date(message.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  )}
                   {tokens > 0 && (
                     <span className="text-xs text-gray-500 flex flex-row items-center gap-1.5 px-2 py-1 rounded">
                       <TbAlphabetLatin size={14} /> {tokens}
