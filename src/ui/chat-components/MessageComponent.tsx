@@ -52,7 +52,7 @@ const MessageComponent = memo(
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(
       message.reasoning || "",
-      isStreaming
+      isStreaming,
     );
 
     const reasoningTokens = useMemo(() => {
@@ -67,7 +67,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content]
+      [message.content],
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -212,7 +212,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className
+                          element.props.className,
                         );
                         return match ? match[1] : "";
                       }
@@ -503,11 +503,7 @@ const MessageComponent = memo(
                     <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
                       <FaClock size={12} />
                       <span>
-                        {new Date(message.startTime).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false, // Use 24-hour format by default
-                        })}
+                        {new Date(message.startTime).toLocaleTimeString()}
                       </span>
                     </div>
                   )}
@@ -529,7 +525,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 MessageComponent.displayName = "MessageComponent";
 

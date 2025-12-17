@@ -107,8 +107,7 @@ class GenerationManager {
       // Notify component if it's mounted
       onUpdate?.(currentMessages);
 
-      const startTime = performance.now();
-
+      const startTime = Date.now();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -135,7 +134,7 @@ class GenerationManager {
         }
       }
 
-      const endTime = performance.now();
+      const endTime = Date.now();
       const { displayContent, reasoning } =
         processMessageContent(assistantMessage);
 
@@ -158,7 +157,8 @@ class GenerationManager {
       console.error("Error in generation:", error);
 
       // Save partial response if we have any content
-      const { displayContent, reasoning } = processMessageContent(assistantMessage);
+      const { displayContent, reasoning } =
+        processMessageContent(assistantMessage);
 
       const partialMessages = [...currentMessages];
       if (currentMessages.length > 0) {
@@ -173,7 +173,9 @@ class GenerationManager {
         // Fallback: create new message if no currentMessages exist
         partialMessages.push({
           role: "assistant",
-          content: displayContent || "Sorry, there was an error processing your request.",
+          content:
+            displayContent ||
+            "Sorry, there was an error processing your request.",
           cancelled: true,
         });
       }

@@ -84,7 +84,7 @@ const MessagesContainer = memo(
         ))}
       </div>
     );
-  }
+  },
 );
 MessagesContainer.displayName = "MessagesContainer";
 
@@ -257,7 +257,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         updatedMessages,
         (updatedMessages) => {
           setMessages(updatedMessages);
-        }
+        },
       )
       .finally(() => {
         setIsLoading(false);
@@ -292,7 +292,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       // Refresh sidebar titles
       refreshTitles();
     },
-    [messages, router, refreshTitles]
+    [messages, router, refreshTitles],
   );
 
   const checkFileSize = useCallback((file: File) => {
@@ -333,7 +333,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 mimeType: f.type,
                 data: new Uint8Array(buffer),
               };
-            })
+            }),
           );
           setImages(arraizedImages);
           event.target.value = "";
@@ -345,7 +345,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
       }
     },
-    []
+    [],
   );
 
   const handlePaste = useCallback(
@@ -392,7 +392,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -401,7 +401,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling paste. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const handleDragAndDrop = useCallback(
@@ -434,7 +434,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -443,7 +443,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling drag and drop. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const setAudio = async (file: Blob | null) => {
@@ -470,6 +470,12 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   // Delete chat hotkey
   useHotkeys("ctrl+shift+backspace", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    deleteChatFunc();
+  });
+
+  useHotkeys("delete", (e) => {
     e.preventDefault();
     e.stopPropagation();
     deleteChatFunc();
@@ -631,7 +637,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 </button>
                 <AudioRecord setAudio={setAudio} />
                 {models.find(
-                  (item) => item.image === true && item.code === selectedModel
+                  (item) => item.image === true && item.code === selectedModel,
                 ) && (
                   <label
                     className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
@@ -684,10 +690,10 @@ const ChatInterface = ({ id }: { id: string }) => {
                     isUploadingImages
                       ? "Waiting for images to upload..."
                       : isLoading
-                      ? "Generation in progress..."
-                      : !inputValue.trim()
-                      ? "Type a message to send"
-                      : "Send message (Enter)"
+                        ? "Generation in progress..."
+                        : !inputValue.trim()
+                          ? "Type a message to send"
+                          : "Send message (Enter)"
                   }
                 >
                   {isUploadingImages ? (

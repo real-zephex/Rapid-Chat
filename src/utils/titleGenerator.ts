@@ -1,3 +1,5 @@
+"use server";
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize Google Generative AI client
@@ -7,7 +9,7 @@ export async function generateChatTitle(
   chatHistory: Array<{
     role: "user" | "assistant";
     content: string;
-  }>
+  }>,
 ): Promise<string> {
   try {
     // Use gemini-2.0-flash-lite for title generation
@@ -20,7 +22,6 @@ export async function generateChatTitle(
         temperature: 0.7,
       },
     });
-
     // Convert chat history to Google format
     const history = chatHistory.map((chat) => ({
       role: chat.role === "assistant" ? "model" : "user",
