@@ -49,7 +49,7 @@ const initDB = (): Promise<IDBDatabase> => {
 const performDBOperation = async <T>(
   storeName: string,
   operation: (store: IDBObjectStore) => IDBRequest,
-  mode: IDBTransactionMode = "readonly"
+  mode: IDBTransactionMode = "readonly",
 ): Promise<T> => {
   try {
     const db = await initDB();
@@ -92,7 +92,7 @@ export const saveChats = async (
     await performDBOperation(
       CHATS_STORE,
       (store) => store.put(chatData),
-      "readwrite"
+      "readwrite",
     );
   } catch (error) {
     console.error("Error saving chats:", error);
@@ -108,7 +108,7 @@ export const saveChats = async (
 export const retrieveChats = async (id: string): Promise<Messages[]> => {
   try {
     const result = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
-      store.get(id)
+      store.get(id),
     );
     return result?.messages || [];
   } catch (error) {
@@ -132,7 +132,7 @@ export const addTabs = async (id: string) => {
     try {
       const result = await performDBOperation<{ key: string; tabs: string[] }>(
         TABS_STORE,
-        (store) => store.get("chatTabs")
+        (store) => store.get("chatTabs"),
       );
       existingTabs = result?.tabs || [];
     } catch (getError) {
@@ -149,7 +149,7 @@ export const addTabs = async (id: string) => {
     await performDBOperation(
       TABS_STORE,
       (store) => store.put({ key: "chatTabs", tabs: existingTabs }),
-      "readwrite"
+      "readwrite",
     );
   } catch (error) {
     console.error("Error adding tab:", error);
@@ -171,7 +171,7 @@ export const retrieveTabs = async (): Promise<string[]> => {
   try {
     const result = await performDBOperation<{ key: string; tabs: string[] }>(
       TABS_STORE,
-      (store) => store.get("chatTabs")
+      (store) => store.get("chatTabs"),
     );
     return result?.tabs || [];
   } catch (error) {
@@ -189,11 +189,11 @@ export const retrieveTabs = async (): Promise<string[]> => {
 };
 
 export const getChatMetadata = async (
-  id: string
+  id: string,
 ): Promise<{ parentId?: string; branchFromIndex?: number }> => {
   try {
     const result = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
-      store.get(id)
+      store.get(id),
     );
     return {
       parentId: result?.parentId,
@@ -225,7 +225,7 @@ export const migrateFromLocalStorage = async (): Promise<void> => {
           await performDBOperation(
             TABS_STORE,
             (store) => store.put({ key: "chatTabs", tabs }),
-            "readwrite"
+            "readwrite",
           );
           console.log(`Migrated ${tabs.length} tabs to IndexedDB`);
 
@@ -238,12 +238,12 @@ export const migrateFromLocalStorage = async (): Promise<void> => {
                 await performDBOperation(
                   CHATS_STORE,
                   (store) => store.put({ id: tabId, messages }),
-                  "readwrite"
+                  "readwrite",
                 );
               } catch (error) {
                 console.error(
                   `Failed to migrate chat data for ${tabId}:`,
-                  error
+                  error,
                 );
               }
             }
@@ -257,7 +257,7 @@ export const migrateFromLocalStorage = async (): Promise<void> => {
     // Mark migration as completed
     localStorage.setItem(migrationKey, "true");
     console.log(
-      "Migration from localStorage to IndexedDB completed successfully"
+      "Migration from localStorage to IndexedDB completed successfully",
     );
   } catch (error) {
     console.error("Migration from localStorage to IndexedDB failed:", error);
@@ -275,7 +275,7 @@ export const deleteChat = async (id: string): Promise<void> => {
     await performDBOperation(
       CHATS_STORE,
       (store) => store.delete(id),
-      "readwrite"
+      "readwrite",
     );
   } catch (error) {
     console.error("Error deleting chat from IndexedDB:", error);
@@ -295,7 +295,7 @@ export const deleteTab = async (id: string): Promise<void> => {
     try {
       const result = await performDBOperation<{ key: string; tabs: string[] }>(
         TABS_STORE,
-        (store) => store.get("chatTabs")
+        (store) => store.get("chatTabs"),
       );
       existingTabs = result?.tabs || [];
     } catch (getError) {
@@ -309,7 +309,7 @@ export const deleteTab = async (id: string): Promise<void> => {
     await performDBOperation(
       TABS_STORE,
       (store) => store.put({ key: "chatTabs", tabs: updatedTabs }),
-      "readwrite"
+      "readwrite",
     );
 
     // Also delete the associated chat data
@@ -335,14 +335,14 @@ export const deleteAllChats = async (): Promise<void> => {
     await performDBOperation(
       CHATS_STORE,
       (store) => store.clear(),
-      "readwrite"
+      "readwrite",
     );
 
     // Clear tabs store (or reset to empty array)
     await performDBOperation(
       TABS_STORE,
       (store) => store.put({ key: "chatTabs", tabs: [] }),
-      "readwrite"
+      "readwrite",
     );
   } catch (error) {
     console.error("Error deleting all chats:", error);
