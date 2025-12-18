@@ -67,6 +67,7 @@ class GenerationManager {
     // Declare variables at function scope so they're accessible in catch block
     let assistantMessage = "";
     let currentMessages: Message[] = [];
+    let ac: AbortController | null = null;
 
     try {
       const prevChats = await retrieveChats(chatId);
@@ -82,6 +83,10 @@ class GenerationManager {
         runId: abortId,
         imageData: images,
       });
+
+      // Create an AbortController to handle cancellation
+      ac = new AbortController();
+      const { signal } = ac;
 
       if (!(response instanceof ReadableStream)) {
         throw new Error("Expected a ReadableStream response");
@@ -107,9 +112,38 @@ class GenerationManager {
       // Notify component if it's mounted
       onUpdate?.(currentMessages);
 
-      const startTime = performance.now();
-
+      const startTime = Date.now();
       while (true) {
+        if (signal.aborted) {
+          // Handle cancellation
+          const { displayContent, reasoning } =
+            processMessageContent(assistantMessage);
+
+          const partialMessages = [...currentMessages];
+          if (currentMessages.length > 0) {
+            // Update the last message with partial content and cancelled flag
+            partialMessages[partialMessages.length - 1] = {
+              role: "assistant",
+              content: displayContent || "Generation was interrupted.",
+              reasoning: reasoning || "",
+              cancelled: true,
+            };
+          } else {
+            // Fallback: create new message if no currentMessages exist
+            partialMessages.push({
+              role: "assistant",
+              content:
+                displayContent ||
+                "Sorry, there was an error processing your request.",
+              cancelled: true,
+            });
+          }
+
+          await saveChats(chatId, partialMessages);
+          onUpdate?.(partialMessages);
+          return;
+        }
+
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -135,7 +169,7 @@ class GenerationManager {
         }
       }
 
-      const endTime = performance.now();
+      const endTime = Date.now();
       const { displayContent, reasoning } =
         processMessageContent(assistantMessage);
 
@@ -158,7 +192,8 @@ class GenerationManager {
       console.error("Error in generation:", error);
 
       // Save partial response if we have any content
-      const { displayContent, reasoning } = processMessageContent(assistantMessage);
+      const { displayContent, reasoning } =
+        processMessageContent(assistantMessage);
 
       const partialMessages = [...currentMessages];
       if (currentMessages.length > 0) {
@@ -173,13 +208,20 @@ class GenerationManager {
         // Fallback: create new message if no currentMessages exist
         partialMessages.push({
           role: "assistant",
-          content: displayContent || "Sorry, there was an error processing your request.",
+          content:
+            displayContent ||
+            "Sorry, there was an error processing your request.",
           cancelled: true,
         });
       }
 
       await saveChats(chatId, partialMessages);
       onUpdate?.(partialMessages);
+    } finally {
+      // Clean up the AbortController
+      if (ac) {
+        ac.abort();
+      }
     }
   }
 

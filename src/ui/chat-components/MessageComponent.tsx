@@ -2,7 +2,7 @@
 import "./dracula.css";
 
 import { memo, useMemo } from "react";
-import { FaRegCopy, FaCheck } from "react-icons/fa6";
+import { FaRegCopy, FaCheck, FaClock, FaCodeBranch } from "react-icons/fa6";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -38,11 +38,13 @@ const MessageComponent = memo(
     index,
     model,
     onCopyResponse,
+    onBranchFromMessage,
   }: {
     message: Message;
     index: number;
     model: string;
     onCopyResponse: (content: string) => void;
+    onBranchFromMessage: (index: number) => void;
   }) => {
     const isUser = message.role === "user";
     const isStreaming = !message.endTime && !message.cancelled && !isUser;
@@ -50,7 +52,7 @@ const MessageComponent = memo(
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(
       message.reasoning || "",
-      isStreaming
+      isStreaming,
     );
 
     const reasoningTokens = useMemo(() => {
@@ -65,7 +67,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content]
+      [message.content],
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -77,6 +79,15 @@ const MessageComponent = memo(
     }, [message.endTime, message.startTime, tokens]);
 
     if (isUser) {
+      // Format timestamp for display using user's local timezone
+      const timestamp = message.startTime
+        ? new Date(message.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false, // Use 24-hour format by default
+          })
+        : "";
+
       return (
         <div className="w-full border-b border-gray-700/30 bg-transparent">
           <div className="max-w-4xl mx-auto px-4 py-6">
@@ -87,6 +98,23 @@ const MessageComponent = memo(
                 )}
                 <div className="bg-[#2f2f2f] rounded-xl px-4 py-3 text-white whitespace-pre-wrap wrap-break-word leading-7">
                   {message.content}
+                </div>
+                <div className="flex flex-row items-center gap-2 mt-2 justify-end">
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"
+                    title="Copy to clipboard"
+                    onClick={(e) => {
+                      onCopyResponse(message.content);
+                    }}
+                  >
+                    <FaRegCopy size={14} />
+                  </button>
+                  {timestamp && (
+                    <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
+                      <FaClock size={12} />
+                      <span>{timestamp}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -184,7 +212,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className
+                          element.props.className,
                         );
                         return match ? match[1] : "";
                       }
@@ -423,7 +451,7 @@ const MessageComponent = memo(
 
                   hr: ({ children, ...props }) => (
                     <hr
-                      className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-400/60 to-transparent"
+                      className="my-8 border-0 h-px bg-linear-to-r from-transparent via-gray-400/60 to-transparent"
                       {...props}
                     />
                   ),
@@ -460,8 +488,25 @@ const MessageComponent = memo(
                 >
                   <FaRegCopy size={14} />
                 </button>
+                <button
+                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] hover:text-white transition-colors"
+                  title="Branch from this message"
+                  onClick={(e) => {
+                    onBranchFromMessage(index);
+                  }}
+                >
+                  <FaCodeBranch size={14} />
+                </button>
                 <div className="flex-1"></div>
                 <div className="flex flex-row items-center gap-2">
+                  {message.startTime && (
+                    <div className="text-xs text-gray-500 flex flex-row items-center gap-1 px-2 py-1 rounded">
+                      <FaClock size={12} />
+                      <span>
+                        {new Date(message.startTime).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  )}
                   {tokens > 0 && (
                     <span className="text-xs text-gray-500 flex flex-row items-center gap-1.5 px-2 py-1 rounded">
                       <TbAlphabetLatin size={14} /> {tokens}
@@ -480,7 +525,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 MessageComponent.displayName = "MessageComponent";
 

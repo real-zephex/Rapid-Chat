@@ -11,7 +11,7 @@ export interface Database {
           top_p: number;
           stream: boolean;
           stop: string | null;
-          provider: "groq" | "openrouter";
+          provider: "groq" | "openrouter" | "google";
           image_support: boolean;
           pdf_support: boolean;
           active: boolean; // you'll need this column since your query filters on it
@@ -25,7 +25,7 @@ export interface Database {
           top_p?: number;
           stream?: boolean;
           stop?: string | null;
-          provider: "groq" | "openrouter";
+          provider: "groq" | "openrouter" | "google";
           image_support?: boolean;
           pdf_support?: boolean;
           active?: boolean;

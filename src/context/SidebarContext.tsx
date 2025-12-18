@@ -1,6 +1,7 @@
 "use client";
 
 import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
+import { generateChatTitle } from "@/utils/titleGenerator";
 import React, {
   createContext,
   useContext,
@@ -38,12 +39,24 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       if (chats.length === 0) {
         newTitles[tab] = "New Chat";
       } else {
-        const lastMessage = chats[chats.length - 1];
-        newTitles[tab] =
-          lastMessage.role === "user"
-            ? lastMessage.content.slice(0, 50) +
-              (lastMessage.content.length > 50 ? "..." : "")
-            : lastMessage.content.slice(0, 50) + "...";
+        // Use intelligent title generation for chats with conversation history
+        try {
+          const generatedTitle = await generateChatTitle(chats);
+          newTitles[tab] = generatedTitle;
+        } catch (error) {
+          console.error(
+            "Fallback to simple title generation for tab:",
+            tab,
+            error
+          );
+          // Fallback to simple title generation if AI fails
+          const lastMessage = chats[chats.length - 1];
+          newTitles[tab] =
+            lastMessage.role === "user"
+              ? lastMessage.content.slice(0, 50) +
+                (lastMessage.content.length > 50 ? "..." : "")
+              : lastMessage.content.slice(0, 50) + "...";
+        }
       }
     }
     setTitles(newTitles);

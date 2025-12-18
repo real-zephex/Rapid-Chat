@@ -51,12 +51,14 @@ const MessagesContainer = memo(
     messages,
     model,
     onCopyResponse,
+    onBranchFromMessage,
     messageRefs,
   }: {
     messages: Message[];
     model: string;
     onCopyResponse: (content: string) => void;
-    messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
+    onBranchFromMessage: (index: number) => void;
+    messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
   }) => {
     return (
       <div className="container mx-auto max-w-full lg:max-w-[60%]">
@@ -76,12 +78,13 @@ const MessagesContainer = memo(
               index={index}
               model={model}
               onCopyResponse={onCopyResponse}
+              onBranchFromMessage={onBranchFromMessage}
             />
           </div>
         ))}
       </div>
     );
-  }
+  },
 );
 MessagesContainer.displayName = "MessagesContainer";
 
@@ -201,8 +204,12 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       // Clear cancel ID
       setCancelId("");
+
+      // Fetch the latest messages to ensure the UI is updated
+      const updatedMessages = await retrieveChats(id);
+      setMessages(updatedMessages);
     }
-  }, [cancelId]);
+  }, [cancelId, id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,7 +261,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         updatedMessages,
         (updatedMessages) => {
           setMessages(updatedMessages);
-        }
+        },
       )
       .finally(() => {
         setIsLoading(false);
@@ -268,6 +275,27 @@ const ChatInterface = ({ id }: { id: string }) => {
       console.error("Error copying response:", error);
     }
   }, []);
+
+  const handleBranchFromMessage = useCallback(
+    async (messageIndex: number) => {
+      // Create a new chat ID for the branch
+      const branchId = uuidv4();
+
+      // Get messages up to and including the selected message
+      const branchMessages = messages.slice(0, messageIndex + 1);
+
+      // Save the branch messages
+      await saveChats(branchId, branchMessages);
+      await addTabs(branchId);
+
+      // Navigate to the new branch
+      router.push(`/chat/${branchId}`);
+
+      // Refresh sidebar titles
+      refreshTitles();
+    },
+    [messages, router, refreshTitles],
+  );
 
   const checkFileSize = useCallback((file: File) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -307,7 +335,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 mimeType: f.type,
                 data: new Uint8Array(buffer),
               };
-            })
+            }),
           );
           setImages(arraizedImages);
           event.target.value = "";
@@ -319,7 +347,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         }
       }
     },
-    []
+    [],
   );
 
   const handlePaste = useCallback(
@@ -366,7 +394,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -375,7 +403,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling paste. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const handleDragAndDrop = useCallback(
@@ -408,7 +436,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               mimeType: file.type,
               data: new Uint8Array(buffer),
             };
-          })
+          }),
         );
 
         setImages((prev) => [...prev, ...arraizedImages]);
@@ -417,7 +445,7 @@ const ChatInterface = ({ id }: { id: string }) => {
         alert("Error handling drag and drop. Please try again.");
       }
     },
-    [checkFileSize]
+    [checkFileSize],
   );
 
   const setAudio = async (file: Blob | null) => {
@@ -444,6 +472,12 @@ const ChatInterface = ({ id }: { id: string }) => {
 
   // Delete chat hotkey
   useHotkeys("ctrl+shift+backspace", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    deleteChatFunc();
+  });
+
+  useHotkeys("delete", (e) => {
     e.preventDefault();
     e.stopPropagation();
     deleteChatFunc();
@@ -558,6 +592,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               "Unknown Model"
             }
             onCopyResponse={handleCopyResponse}
+            onBranchFromMessage={handleBranchFromMessage}
             messageRefs={messageRefs}
           />
         )}
@@ -604,7 +639,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 </button>
                 <AudioRecord setAudio={setAudio} />
                 {models.find(
-                  (item) => item.image === true && item.code === selectedModel
+                  (item) => item.image === true && item.code === selectedModel,
                 ) && (
                   <label
                     className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
@@ -657,10 +692,10 @@ const ChatInterface = ({ id }: { id: string }) => {
                     isUploadingImages
                       ? "Waiting for images to upload..."
                       : isLoading
-                      ? "Generation in progress..."
-                      : !inputValue.trim()
-                      ? "Type a message to send"
-                      : "Send message (Enter)"
+                        ? "Generation in progress..."
+                        : !inputValue.trim()
+                          ? "Type a message to send"
+                          : "Send message (Enter)"
                   }
                 >
                   {isUploadingImages ? (

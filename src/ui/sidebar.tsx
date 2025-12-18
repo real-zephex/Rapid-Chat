@@ -16,7 +16,7 @@ import DeleteModal from "./delete-modal";
 
 export async function handlePress(
   event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
-  router: AppRouterInstance
+  router: AppRouterInstance,
 ) {
   event.preventDefault();
 
