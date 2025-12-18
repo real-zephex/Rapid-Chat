@@ -204,8 +204,12 @@ const ChatInterface = ({ id }: { id: string }) => {
 
       // Clear cancel ID
       setCancelId("");
+
+      // Fetch the latest messages to ensure the UI is updated
+      const updatedMessages = await retrieveChats(id);
+      setMessages(updatedMessages);
     }
-  }, [cancelId]);
+  }, [cancelId, id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,8 +265,6 @@ const ChatInterface = ({ id }: { id: string }) => {
       )
       .finally(() => {
         setIsLoading(false);
-        // Refresh titles after response is complete to update with new conversation context
-        refreshTitles();
       });
   };
 

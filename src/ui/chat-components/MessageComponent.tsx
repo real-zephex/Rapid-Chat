@@ -52,7 +52,7 @@ const MessageComponent = memo(
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(
       message.reasoning || "",
-      isStreaming
+      isStreaming,
     );
 
     const reasoningTokens = useMemo(() => {
@@ -67,7 +67,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content]
+      [message.content],
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -212,7 +212,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className
+                          element.props.className,
                         );
                         return match ? match[1] : "";
                       }
@@ -451,7 +451,7 @@ const MessageComponent = memo(
 
                   hr: ({ children, ...props }) => (
                     <hr
-                      className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-400/60 to-transparent"
+                      className="my-8 border-0 h-px bg-linear-to-r from-transparent via-gray-400/60 to-transparent"
                       {...props}
                     />
                   ),
@@ -525,7 +525,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 MessageComponent.displayName = "MessageComponent";
 
