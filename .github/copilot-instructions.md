@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Rapid Chat** is a privacy-focused, multi-model AI chat application built with Next.js 15, React 19, and TypeScript. It supports streaming responses from multiple AI providers (Google Gemini, Groq, OpenRouter, OpenAI), features local-first data persistence via IndexedDB, and includes built-in tools for web browsing, code execution, weather data, calculations, and YouTube transcription.
+**Rapid Chat** is a privacy-focused, multi-model AI chat application built with Next.js 15, React 19, and TypeScript. It supports streaming responses from multiple AI providers (Groq, OpenRouter, OpenAI), features local-first data persistence via IndexedDB, and includes built-in tools for web browsing, code execution, weather data, calculations, and YouTube transcription.
 
 **Key Architecture Principle**: Client-side data persistence (IndexedDB) + Server-side streaming via Server Actions + Multi-provider abstraction layer.
 
@@ -12,7 +12,7 @@
 
 ### 1. **Multi-Provider AI Handler** (`src/models/handler/generator.ts`)
 
-- Abstracts three providers behind unified OpenAI SDK interface (Groq, OpenRouter, Google)
+- Abstracts two providers behind unified OpenAI SDK interface (Groq, OpenRouter)
 - **Provider Mapping**: Maps environment-specific API keys to appropriate base URLs
 - **Key Pattern**: Async generator function `ModelHandler()` yields streaming text chunks
 - **Multimodal Support**: Conditional image/PDF parsing via `ImageParser()` and `DocumentParse()`
@@ -117,7 +117,6 @@ npm start  # Serve production build
 Create `.env.local` in project root:
 
 ```
-GEMINI_API_KEY=your_key
 GROQ_API_KEY=your_key
 OPENROUTER_API_KEY=your_key
 OPENAI_API_KEY=optional_key
@@ -140,7 +139,6 @@ OPENAI_API_KEY=optional_key
 ### Testing Multimodal
 
 - Image support varies by model (check `ModelData.image_support`)
-- PDFs require Gemini models (`pdf_support: true` on Google provider only)
 - Image parsing happens in `ImageParser()` before being sent to LLM
 
 ---
@@ -149,7 +147,6 @@ OPENAI_API_KEY=optional_key
 
 ### AI Provider SDKs
 
-- **Google Gemini**: `@google/genai` (uses OpenAI-compatible endpoint)
 - **Groq**: `groq-sdk` (OpenAI-compatible; includes Whisper for transcription)
 - **OpenRouter/OpenAI**: `openai` SDK directly
 

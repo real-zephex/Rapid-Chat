@@ -2,55 +2,57 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-midnight: #121063;
-  --color-tahiti: #3ab7bf;
-  --color-bermuda: #78dcca;
+  --color-background: #0A0A0A;
+  --color-surface: #171717;
+  --color-surface-hover: #262626;
+  --color-border: #2A2A2A;
+  --color-text-primary: #FAFAFA;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #71717A;
+  --color-accent: #3B82F6;
+  --color-success: #22C55E;
+  --color-error: #EF4444;
 
-  --color-bg: #18181B;
-  --color-text: #ca3e47;
-  --color-textarea: #222225;
+  --font-inter: var(--font-inter);
+  --font-space-grotesk: var(--font-space-grotesk);
+  --font-jetbrains-mono: var(--font-jetbrains-mono);
 }
 
 :root {
-  /* Core colors */
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --secondary: #4f46e5;
-  --accent: #8b5cf6;
+  /* Core colors from palette */
+  --background: #0A0A0A;
+  --foreground: #FAFAFA;
+  --surface: #171717;
+  --surface-hover: #262626;
+  --border: #2A2A2A;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --accent: #3B82F6;
+  --success: #22C55E;
+  --error: #EF4444;
 
-  /* Surface colors */
-  --surface-0: #ffffff;
-  --surface-50: #fafafa;
-  --surface-100: #f4f4f5;
-  --surface-200: #e4e4e7;
-
-  /* Dark mode colors */
-  --dark-surface-0: #0b0b0c;
-  --dark-surface-50: #27272a;
-  --dark-surface-100: #3f3f46;
-  --dark-surface-200: #52525b;
-
-  /* Semantic colors */
-  --success: #22c55e;
-  --warning: #eab308;
-  --error: #ef4444;
-  --info: #3b82f6;
-
-
-  /* Force dark theme */
-  --background: #18181B;
-  --foreground: var(--surface-50);
   color-scheme: dark;
 }
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
+  color: var(--text-primary);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
   transition:
     background-color 0.3s,
     color 0.3s;
   scrollbar-width: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  color: var(--text-primary);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 /* Modern scrollbar */
@@ -63,20 +65,20 @@ body {
 .hljs {
   display: block;
   overflow-x: auto;
-  background: #1f2937;
-  color: #f3f4f6;
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .hljs-comment,
 .hljs-quote {
-  color: #6b7280;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .hljs-doctag,
 .hljs-keyword,
 .hljs-formula {
-  color: #a78bfa;
+  color: #c678dd; /* Soft purple */
 }
 
 .hljs-section,
@@ -84,11 +86,11 @@ body {
 .hljs-selector-tag,
 .hljs-deletion,
 .hljs-subst {
-  color: #f87171;
+  color: #e06c75; /* Soft red */
 }
 
 .hljs-literal {
-  color: #34d399;
+  color: #56b6c2; /* Cyan */
 }
 
 .hljs-string,
@@ -96,12 +98,12 @@ body {
 .hljs-addition,
 .hljs-attribute,
 .hljs-meta-string {
-  color: #fbbf24;
+  color: #98c379; /* Green */
 }
 
 .hljs-built_in,
 .hljs-class .hljs-title {
-  color: #60a5fa;
+  color: #e5c07b; /* Yellow/Orange */
 }
 
 .hljs-attr,
@@ -112,7 +114,7 @@ body {
 .hljs-selector-attr,
 .hljs-selector-pseudo,
 .hljs-number {
-  color: #fb7185;
+  color: #d19a66; /* Orange */
 }
 
 .hljs-symbol,
@@ -121,7 +123,7 @@ body {
 .hljs-meta,
 .hljs-selector-id,
 .hljs-title {
-  color: #a78bfa;
+  color: #61afef; /* Blue */
 }
 
 .hljs-emphasis {
@@ -224,34 +226,34 @@ code.hljs {
 
 /* Always-on dark mode overrides */
 .message.user {
-  background-color: var(--dark-surface-50);
+  background-color: transparent;
 }
 
 .message.assistant {
-  background-color: var(--dark-surface-100);
+  background-color: transparent;
 }
 
 .chat-input {
-  background-color: var(--dark-surface-50);
-  border-color: var(--dark-surface-200);
+  background-color: var(--surface);
+  border-color: var(--border);
 }
 
 .btn-secondary {
-  background-color: var(--dark-surface-100);
+  background-color: var(--surface);
 }
 
 .btn-secondary:hover {
-  background-color: var(--dark-surface-200);
+  background-color: var(--surface-hover);
 }
 
 .prose code {
-  background-color: var(--dark-surface-100);
-  border-color: var(--dark-surface-200);
+  background-color: var(--surface);
+  border-color: var(--border);
 }
 
 .prose pre {
-  background-color: var(--dark-surface-50);
-  border-color: var(--dark-surface-200);
+  background-color: var(--surface);
+  border-color: var(--border);
 }
 
 /* styles.css or inside your Tailwind @layer */

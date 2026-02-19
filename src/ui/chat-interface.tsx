@@ -58,7 +58,7 @@ const MessagesContainer = memo(
     model: string;
     onCopyResponse: (content: string) => void;
     onBranchFromMessage: (index: number) => void;
-    messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
+    messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
   }) => {
     return (
       <div className="container mx-auto max-w-full lg:max-w-[60%]">
@@ -89,7 +89,7 @@ const MessagesContainer = memo(
 MessagesContainer.displayName = "MessagesContainer";
 
 const ChatInterface = ({ id }: { id: string }) => {
-  const { refreshTitles } = useSidebar();
+  const { refreshTitles, isOpen } = useSidebar();
   const { selectedModel, models } = useModel();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -495,6 +495,7 @@ const ChatInterface = ({ id }: { id: string }) => {
     if (input) {
       input.value = text;
       input.focus();
+      setInputValue(text);
     }
   }
 
@@ -510,20 +511,20 @@ const ChatInterface = ({ id }: { id: string }) => {
   if (!id) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-300">No chat ID provided</p>
+        <p className="text-text-secondary">No chat ID provided</p>
       </div>
     );
   }
 
   return (
     <div
-      className="flex flex-col h-[calc(100dvh-10px)] overflow-y-hidden bg-dark relative"
+      className="flex flex-col h-dvh overflow-y-hidden bg-background relative"
       onDrop={handleDragAndDrop}
       onDragOver={(e) => e.preventDefault()}
     >
       {/* Minimap */}
       {messages.length > 0 && (
-        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-2 bg-[#2f2f2f]/60 backdrop-blur-sm p-2 rounded-full max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-2 bg-surface/60 backdrop-blur-sm p-2 rounded-full max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-text-muted scrollbar-track-transparent">
           {messages
             .map((message, index) => ({ message, index }))
             .filter(({ message }) => message.role === "user")
@@ -531,7 +532,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               <button
                 key={index}
                 onClick={() => scrollToMessage(index)}
-                className="w-2 h-2 rounded-full bg-gray-500 hover:bg-gray-300 transition-all duration-200 cursor-pointer"
+                className="w-2 h-2 rounded-full bg-text-muted hover:bg-text-secondary transition-all duration-200 cursor-pointer"
                 title={`Jump to query ${Math.floor(index / 2) + 1}`}
               />
             ))}
@@ -541,7 +542,7 @@ const ChatInterface = ({ id }: { id: string }) => {
       {/* Scroll Button */}
       {messages.length > 0 && (
         <button
-          className="fixed right-6 bottom-28 p-2 rounded-full bg-[#2f2f2f] text-gray-300 hover:bg-[#3f3f3f] transition-colors shadow-lg hidden md:block"
+          className="fixed right-6 bottom-28 p-2 rounded-full bg-surface text-text-secondary hover:bg-surface-hover transition-colors shadow-lg hidden md:block"
           onClick={() => scrollToBottom()}
           title="Scroll to bottom"
         >
@@ -550,18 +551,20 @@ const ChatInterface = ({ id }: { id: string }) => {
       )}
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scroll-smooth">
         {isLoadingChats ? (
           <div className="flex items-center justify-center h-full gap-3">
-            <div className="animate-spin rounded-full size-5 border-2 border-gray-500 border-t-white"></div>
-            <p className="text-gray-400 text-sm">
+            <div className="animate-spin rounded-full size-5 border-2 border-text-muted border-t-text-primary"></div>
+            <p className="text-text-muted text-sm">
               Loading your conversation...
             </p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full px-4">
+          <div
+            className={`flex flex-col items-center justify-center h-full w-full px-4 `}
+          >
             <div className="w-full max-w-3xl mx-auto mb-8">
-              <h1 className="text-4xl font-semibold text-center text-white/90 mb-12">
+              <h1 className="text-4xl font-semibold text-center text-text-primary mb-12">
                 What can I help with?
               </h1>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
@@ -596,17 +599,17 @@ const ChatInterface = ({ id }: { id: string }) => {
             messageRefs={messageRefs}
           />
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="mb-40" />
       </div>
 
       {/* Chat Input Form */}
-      <div className="w-full max-w-3xl mx-auto px-4 pb-2 pt-2 relative">
+      <div className="absolute bottom-0 inset-x-0 mx-auto w-full max-w-4xl px-4 pb-4 pt-2 z-20">
         <form onSubmit={handleSubmit} className="relative">
           <ImagePreview images={images} onRemove={removeImage} />
-          <div className="relative bg-textarea rounded-xl shadow-lg border border-gray-700/50 p-2">
+          <div className="relative bg-surface rounded-2xl shadow-2xl border border-border p-2">
             <textarea
               ref={inputRef}
-              className={`w-full bg-transparent text-white outline-none resize-none px-4 py-3 placeholder-gray-500 text-base disabled:opacity-50 max-h-60 ${
+              className={`w-full bg-transparent text-text-primary outline-none resize-none px-4 py-3 placeholder-text-muted text-base disabled:opacity-50 max-h-60 ${
                 isLoading ? "animate-pulse" : ""
               }`}
               rows={1}
@@ -630,7 +633,7 @@ const ChatInterface = ({ id }: { id: string }) => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors"
+                  className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors"
                   onClick={() => deleteChatFunc()}
                   title="Delete chat"
                   type="button"
@@ -642,7 +645,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                   (item) => item.image === true && item.code === selectedModel,
                 ) && (
                   <label
-                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
+                    className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors cursor-pointer"
                     title="Upload file"
                     htmlFor="fileInput"
                   >
@@ -666,7 +669,7 @@ const ChatInterface = ({ id }: { id: string }) => {
                 {isLoading && (
                   <button
                     type="button"
-                    className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors"
+                    className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors"
                     title="Stop generation (Esc)"
                     onClick={(e) => {
                       e.preventDefault();
@@ -683,10 +686,10 @@ const ChatInterface = ({ id }: { id: string }) => {
                   disabled={
                     isLoading || isUploadingImages || !inputValue.trim()
                   }
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-2 rounded-xl transition-all ${
                     isLoading || isUploadingImages || !inputValue.trim()
-                      ? "text-gray-600 cursor-not-allowed"
-                      : "text-white bg-white/10 hover:bg-white/20"
+                      ? "text-text-muted cursor-not-allowed"
+                      : "text-text-primary bg-accent hover:bg-accent/90"
                   }`}
                   title={
                     isUploadingImages
@@ -708,15 +711,15 @@ const ChatInterface = ({ id }: { id: string }) => {
             </div>
           </div>
           {isLoading && (
-            <div className="absolute -top-10 left-4 flex items-center gap-2 text-xs text-gray-400 bg-[#2f2f2f] px-3 py-1.5 rounded-lg">
-              <div className="animate-spin rounded-full size-3 border-2 border-gray-500 border-t-white"></div>
+            <div className="absolute -top-10 left-4 flex items-center gap-2 text-xs text-text-muted bg-surface border border-border px-3 py-1.5 rounded-lg shadow-lg">
+              <div className="animate-spin rounded-full size-3 border-2 border-text-muted border-t-text-primary"></div>
               <p>Generating...</p>
             </div>
           )}
         </form>
-        <p className="text-center text-xs text-gray-500 mt-2 px-4">
+        {/*<p className="text-center text-xs text-text-muted mt-2 px-4">
           Rapid-Chat can make mistakes.
-        </p>
+        </p>*/}
       </div>
     </div>
   );

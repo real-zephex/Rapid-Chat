@@ -15,9 +15,9 @@ const Homepage = () => {
   }, []);
 
   return (
-    <main className="min-h-[calc(100dvh-8px)] flex items-center justify-center gap-2 bg-neutral-900 rounded-xl">
-      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-white"></div>
-      <p>Loading content, please wait...</p>
+    <main className="min-h-[calc(100dvh-8px)] flex items-center justify-center gap-3 bg-background rounded-xl border border-border">
+      <div className="animate-spin rounded-full h-5 w-5 border-2 border-text-muted border-t-text-primary"></div>
+      <p className="text-text-secondary text-sm font-medium">Entering workspace...</p>
     </main>
   );
 };

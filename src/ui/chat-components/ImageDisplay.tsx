@@ -48,18 +48,18 @@ const ImageDisplay = memo(
                 alt={`File ${file.index + 1}`}
                 width={160}
                 height={160}
-                className="w-40 h-40 object-cover rounded-lg border border-gray-600 bg-neutral-900"
+                className="w-40 h-40 object-cover rounded-lg border border-border bg-surface"
                 unoptimized={true}
               />
             ) : (
-              <div className="w-40 h-40 rounded-lg border border-gray-600 bg-neutral-900 flex items-center justify-center text-neutral-300">
+              <div className="w-40 h-40 rounded-lg border border-border bg-surface flex items-center justify-center text-text-secondary">
                 <MdOutlineDocumentScanner size={28} />
               </div>
             )}
             <a
               href={file.url}
               download
-              className="absolute bottom-2 left-2 bg-neutral-700/80 hover:bg-neutral-600 text-white rounded p-1 text-[10px] flex items-center gap-1"
+              className="absolute bottom-2 left-2 bg-background/80 hover:bg-background text-text-primary rounded p-1 text-[10px] flex items-center gap-1 border border-border"
               title="Download file"
             >
               <FiDownload size={12} />

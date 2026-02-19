@@ -11,14 +11,14 @@ const Toast = () => {
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out ${
+      className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border transition-all duration-300 ease-in-out bg-surface ${
         type === "success"
-          ? "bg-green-500 text-white"
+          ? "border-success/50 text-success"
           : type === "error"
-            ? "bg-red-500 text-white"
+            ? "border-error/50 text-error"
             : type === "warning"
-              ? "bg-yellow-500 text-black"
-              : "bg-blue-500 text-white"
+              ? "border-yellow-500/50 text-yellow-500"
+              : "border-accent/50 text-accent"
       }`}
     >
       <div className="flex items-center">

@@ -10,7 +10,7 @@ interface AudioRecordProps {
 const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null
+    null,
   );
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -99,28 +99,42 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
 
   return (
     <div
-      className="p-2 rounded-lg text-gray-400 hover:bg-[#3f3f3f] transition-colors cursor-pointer"
+      className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors cursor-pointer"
       onClick={handleClick}
     >
       <AiFillAudio
-        color={isRecording ? "#ef4444" : "currentColor"}
+        color={isRecording ? "var(--error)" : "currentColor"}
         title="Click to record audio. Click again to stop."
         size={16}
       />
 
       {isRecording && (
-        <div>
-          <div className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-sm flex items-center justify-center flex-col gap-3 z-[10000]">
-            <div className="bg-[#2f2f2f] rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
-              <span className="text-white text-xl font-semibold block text-center mb-2">
-                Recording...
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-100">
+          <div className="bg-surface rounded-3xl p-10 border border-border shadow-2xl flex flex-col items-center gap-6 max-w-lg mx-4">
+            <div className="size-20 rounded-full bg-error/20 flex items-center justify-center animate-pulse">
+              <AiFillAudio className="text-error size-10" />
+            </div>
+            <div className="text-center">
+              <span className="text-text-primary text-2xl font-bold block mb-2 font-space-grotesk">
+                Voice Recording
               </span>
-              <p className="text-sm text-gray-400 text-center max-w-md mb-4">
-                Press again to stop recording. Audio must be between 2 seconds
-                and 3 minutes long.
+              <p className="text-text-muted text-base leading-relaxed">
+                Recording your message. Speak clearly and press anywhere to stop.
               </p>
+            </div>
+            <div className="bg-background/50 px-6 py-3 rounded-2xl border border-border">
               <MyStopwatch />
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (mediaRecorder) mediaRecorder.stop();
+                setIsRecording(false);
+              }}
+              className="mt-4 px-8 py-3 bg-error text-white font-bold rounded-xl hover:bg-error/90 transition-all uppercase tracking-widest text-xs"
+            >
+              Stop Recording
+            </button>
           </div>
         </div>
       )}

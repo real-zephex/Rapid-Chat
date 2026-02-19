@@ -12,8 +12,8 @@ export default function MainContent({ children }: MainContentProps) {
 
   return (
     <div
-      className={`transition-all duration-75 ease-in-out ${
-        isOpen ? "ml-64" : "ml-0"
+      className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        isOpen ? "md:ml-72" : "ml-0"
       }`}
     >
       {children}

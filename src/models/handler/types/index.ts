@@ -7,7 +7,7 @@ export interface ModelData {
   top_p: number;
   stream: boolean;
   stop: string | null;
-  provider: "groq" | "openrouter" | "google";
+  provider: "groq" | "openrouter";
   image_support: boolean;
   pdf_support: boolean;
   reasoning: boolean;

@@ -61,70 +61,76 @@ const Sidebar = () => {
         onConfirm={confirmDelete}
       />
       <div
-        className={`fixed top-0 left-0 h-full transition-all duration-75 ease-in-out z-30 ${
-          isOpen ? "w-64" : "w-0"
-        } overflow-hidden border-r border-gray-800`}
+        className={`fixed top-0 left-0 h-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-30 ${
+          isOpen ? "w-72" : "w-0"
+        } overflow-hidden border-r border-border bg-background`}
         ref={sidebarRef}
       >
-        <div className="flex flex-col h-full">
-          <div className="p-3">
-            <div className="flex items-center justify-between mb-3">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsOpen(false);
-                }}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                title="Close sidebar (Ctrl+B)"
-              >
-                <BsLayoutSidebarInsetReverse
-                  size={18}
-                  className="text-gray-400"
-                />
-              </button>
-              <button
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                onClick={(e) => handlePress(e, router)}
-                title="New chat (Ctrl+Shift+O)"
-              >
-                <HiPlus size={18} className="text-gray-400" />
-              </button>
-            </div>
-          </div>{" "}
+        <div className="flex flex-col h-full w-72">
+          {/* Sidebar Header */}
+          <div className="p-4 flex items-center justify-between">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 rounded-xl hover:bg-surface transition-all duration-200 text-text-muted hover:text-text-primary"
+              title="Close sidebar (Ctrl+B)"
+            >
+              <BsLayoutSidebarInsetReverse size={18} />
+            </button>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-text-primary text-background hover:opacity-90 transition-all duration-200 font-bold text-xs uppercase tracking-widest"
+              onClick={(e) => handlePress(e, router)}
+              title="New chat (Ctrl+Shift+O)"
+            >
+              <HiPlus size={14} />
+              <span>New</span>
+            </button>
+          </div>
+
+          <div className="px-4 py-2">
+            <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-4">
+              Conversations
+            </h2>
+          </div>
+
           {/* Chat List */}
-          <div className="flex-1 overflow-y-auto px-2">
+          <div className="flex-1 overflow-y-auto px-2 space-y-1 custom-scrollbar">
             {Object.entries(titles).length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <HiChatBubbleLeft
-                  size={28}
-                  className="mx-auto mb-3 opacity-30"
-                />
-                <p className="text-xs">No chats yet</p>
+              <div className="flex flex-col items-center justify-center py-20 text-text-muted/40">
+                <HiChatBubbleLeft size={32} className="mb-4" />
+                <p className="text-[11px] font-medium uppercase tracking-wider">
+                  Empty space
+                </p>
               </div>
             ) : (
-              <div className="space-y-0.5">
-                {Object.entries(titles).map(([id, title]) => (
-                  <Link href={`/chat/${id}`} prefetch={true} key={id}>
+              Object.entries(titles)
+                .reverse()
+                .map(([id, title]) => (
+                  <Link
+                    href={`/chat/${id}`}
+                    prefetch={true}
+                    key={id}
+                    className="block"
+                  >
                     <div
-                      id={id}
-                      className={`group px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
-                        pathname === id ? "bg-[#2f2f2f]" : "hover:bg-[#212121]"
+                      className={`group px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                        pathname === id
+                          ? "bg-surface shadow-sm"
+                          : "hover:bg-surface/50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <HiChatBubbleLeft
-                          size={16}
-                          className={`shrink-0 ${
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                             pathname === id
-                              ? "text-white"
-                              : "text-gray-500 group-hover:text-gray-400"
+                              ? "bg-accent scale-100"
+                              : "bg-transparent scale-0 group-hover:bg-text-muted/30 group-hover:scale-100"
                           }`}
                         />
                         <span
-                          className={`text-sm truncate flex-1 ${
+                          className={`text-sm truncate flex-1 transition-colors duration-200 ${
                             pathname === id
-                              ? "text-white"
-                              : "text-gray-300 group-hover:text-gray-200"
+                              ? "text-text-primary font-semibold"
+                              : "text-text-secondary group-hover:text-text-primary"
                           }`}
                         >
                           {title}
@@ -132,42 +138,53 @@ const Sidebar = () => {
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
+                ))
             )}
-          </div>{" "}
-          <div className="p-3 border-t border-gray-800 flex items-center justify-between">
-            <div className="text-[11px] text-gray-600">
-              {titles && Object.keys(titles).length} conversation
-              {titles && Object.keys(titles).length !== 1 ? "s" : ""}
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 mt-auto border-t border-border bg-background/50 backdrop-blur-md">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                {Object.keys(titles).length} Active
+              </span>
+              {Object.keys(titles).length > 0 && (
+                <button
+                  onClick={handleDeleteAll}
+                  className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-all duration-200"
+                  title="Clear all history"
+                >
+                  <RiDeleteBin2Fill size={14} />
+                </button>
+              )}
             </div>
-            {Object.keys(titles).length > 0 && (
-              <button
-                onClick={handleDeleteAll}
-                className="p-1.5 rounded-md hover:bg-red-900/30 text-gray-500 hover:text-red-400 transition-colors"
-                title="Delete all chats"
-              >
-                <RiDeleteBin2Fill size={14} />
-              </button>
-            )}
-            <Link
-              href="/about"
-              className="p-1.5 rounded-md hover:bg-white/10 text-gray-500 hover:text-gray-300 transition-colors ml-auto"
-              title="About Rapid Chat"
-            >
-              <HiInformationCircle size={16} />
-            </Link>
+            <div className="flex flex-row items-center gap-4 active:scale-95 transition-all select-none">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                <HiInformationCircle size={18} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                  Rapid Chat
+                </span>
+                <span className="text-[10px] text-text-muted">
+                  v2.0.0 "Neutral"
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       {/* Toggle Button - only visible when sidebar is closed */}
       {!isOpen && (
         <button
-          className="fixed top-3 left-3 z-40 p-2 rounded-lg bg-[#2f2f2f] hover:bg-[#3f3f3f] border border-gray-700/50 hover:border-gray-600 transition-all"
+          className="fixed top-3 left-3 z-40 p-2 rounded-lg bg-surface hover:bg-surface-hover border border-border transition-all"
           onClick={() => setIsOpen(true)}
           title="Open sidebar (Ctrl+B)"
         >
-          <BsLayoutSidebarInsetReverse size={16} className="text-gray-400" />
+          <BsLayoutSidebarInsetReverse
+            size={16}
+            className="text-text-secondary"
+          />
         </button>
       )}{" "}
       {/* Overlay for mobile */}

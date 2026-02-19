@@ -56,11 +56,11 @@ const ImagePreview = memo(
                 alt={`File ${file.originalIndex + 1}`}
                 width={100}
                 height={100}
-                className="w-24 h-24 object-cover rounded-lg border border-gray-600 bg-[#2f2f2f]"
+                className="w-24 h-24 object-cover rounded-lg border border-border bg-surface"
                 unoptimized={true}
               />
             ) : (
-              <div className="w-24 h-24 rounded-lg border border-gray-600 bg-[#2f2f2f] flex items-center justify-center text-gray-400">
+              <div className="w-24 h-24 rounded-lg border border-border bg-surface flex items-center justify-center text-text-muted">
                 <MdOutlineDocumentScanner size={28} />
               </div>
             )}

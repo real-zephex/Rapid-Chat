@@ -6,8 +6,8 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
 
 - **Privacy Focused**: Local storage using IndexedDB for chats and media. Bring your own API keys for direct calls to AI providers. No tracking on conversation content, but analytics for app usage and external API dependencies may involve data transmission.
 - **Performance**: Real-time streaming token-by-token responses. Instant model switching mid-conversation. Optimized UI with Next.js 15, React 19, and Tailwind CSS 4.
-- **AI Capabilities**: Support for multiple models from Google AI (Gemini), Groq (Llama, Qwen), OpenRouter, and OpenAI. Function calling with built-in tools. Reasoning display with <think> tag extraction. Real-time token metrics (count and tokens/second).
-- **Rich Media**: Image support (PNG/JPEG/JPG) via upload, paste, or drag-drop, stored locally. PDF support up to 10MB with Gemini Flash models. Audio recording and transcription via Groq Whisper (desktop only). Inline previews with automatic cleanup.
+- **AI Capabilities**: Support for multiple models from Groq (Llama, Qwen), OpenRouter, and OpenAI. Function calling with built-in tools. Reasoning display with <think> tag extraction. Real-time token metrics (count and tokens/second).
+- **Rich Media**: Image support (PNG/JPEG/JPG) via upload, paste, or drag-drop, stored locally. Audio recording and transcription via Groq Whisper (desktop only). Inline previews with automatic cleanup.
 - **Built-in Tools**:
   - Web Content Reader: Fetch and parse webpage content via Jina AI.
   - Calculator: Mathematical expressions with support for π, e, √, exponents, etc.
@@ -19,7 +19,7 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
 ## Tech Stack
 
 - **Framework**: Next.js 15.4.6 (App Router, Server Actions), React 19.2, TypeScript 5.9.
-- **AI SDKs**: @google/genai (Gemini), groq-sdk (Llama, Qwen, Whisper), openai (OpenAI & OpenRouter).
+- **AI SDKs**: groq-sdk (Llama, Qwen, Whisper), openai (OpenAI & OpenRouter).
 - **Storage & State**: IndexedDB for local persistence with auto-migration from localStorage.
 - **UI & Styling**: Tailwind CSS 4, react-markdown with remark/rehype, KaTeX for math, react-icons, react-hotkeys-hook.
 - **Other Dependencies**: @supabase/supabase-js for model information, cheerio for web parsing, youtube-transcript-plus for YouTube, @vercel/analytics and nextjs-google-analytics for analytics, nextjs-toploader for loading indicators.
@@ -30,7 +30,7 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
 
 - Node.js 18+
 - npm or Bun
-- API keys for AI providers (Google AI, Groq, OpenRouter, OpenAI optional)
+- API keys for AI providers (Groq, OpenRouter, OpenAI optional)
 
 ### Installation
 
@@ -49,7 +49,6 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
 
 3. Set up environment variables: Create `.env.local` in the project root with:
    ```
-   GEMINI_API_KEY=your_google_ai_key
    GROQ_API_KEY=your_groq_key
    OPENROUTER_API_KEY=your_openrouter_key
    OPENAI_API_KEY=your_openai_key  # optional
@@ -93,7 +92,6 @@ The AI automatically uses built-in tools based on queries:
 ### Media Support
 
 - Images: Drag-drop, paste, or upload PNG/JPEG/JPG files.
-- PDFs: Upload documents up to 10MB (Gemini models only).
 - Audio: Click the microphone icon to record and transcribe voice messages (desktop only, requires MediaRecorder API).
 
 ### Advanced Features
@@ -115,7 +113,6 @@ src/
 ├── models/                  # AI integrations
 │   ├── handler/
 │   │   └── generator.ts     # Function calling handler
-│   ├── google/              # Gemini models
 │   ├── groq/                # Groq models + Whisper
 │   ├── openrouter/          # OpenRouter providers
 │   └── index.ts             # Model router

@@ -27,7 +27,7 @@ const CopyButton = memo(
         onClick={handleCopy}
         className={`absolute ${
           hasLanguageLabel ? "top-14" : "top-2"
-        } right-2 p-2 rounded-md bg-gray-700/80 hover:bg-gray-600/90 transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
+        } right-2 p-2 rounded-md bg-surface border border-border text-text-muted hover:text-text-primary transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
         title={copied ? "Copied!" : "Copy code"}
       >
         {copied ? (

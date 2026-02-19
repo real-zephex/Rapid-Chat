@@ -29,8 +29,8 @@ function GetStarted() {
     <button
       disabled={loading}
       className="px-4 py-2 lg:py-2
-        bg-white text-black rounded-full
-        hover:bg-gray-100 
+        bg-text-primary text-background rounded-full
+        hover:opacity-90 
         transition-all duration-200 ease-out
         disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed text-center"
       onClick={(e) => handlePress(e, router, setLoading)}

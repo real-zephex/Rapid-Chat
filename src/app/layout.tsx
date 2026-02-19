@@ -1,20 +1,37 @@
-import type { Metadata } from "next";
-import { Inter, Noto_Sans } from "next/font/google";
 import "./globals.css";
-import "katex/dist/katex.min.css";
-import Sidebar from "@/ui/sidebar";
-import { Analytics } from "@vercel/analytics/next";
-import { GoogleAnalytics } from "@next/third-parties/google";
-import { SidebarProvider } from "@/context/SidebarContext";
+
 import { ModelProvider } from "@/context/ModelContext";
-import MainContent from "@/ui/main-content";
+import { SidebarProvider } from "@/context/SidebarContext";
 import { ToastProvider } from "@/context/ToastContext";
+import MainContent from "@/ui/main-content";
+import Sidebar from "@/ui/sidebar";
 import Toast from "@/ui/toast";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/react";
+import type { Metadata } from "next";
+import {
+  Inter,
+  Space_Grotesk,
+  JetBrains_Mono,
+  Noto_Sans,
+} from "next/font/google";
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-space-grotesk",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains-mono",
 });
 
 const notoSans = Noto_Sans({
@@ -37,7 +54,6 @@ export const metadata: Metadata = {
     "chatbot",
     "GPT",
     "Claude",
-    "Gemini",
     "machine learning",
     "conversational AI",
     "fast AI",
@@ -56,7 +72,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "Rapid Chat",
     description:
-      "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with Gemini, GPT, Llama, and more.",
+      "Experience lightning-fast conversations with multiple AI models in one unified interface. Chat with GPT, Llama, and more.",
     siteName: "Rapid Chat",
     images: [
       {
@@ -156,7 +172,7 @@ export default function RootLayout({
       "Privacy-first local storage",
       "Image and PDF processing",
       "Audio transcription",
-      "Multiple AI providers (Google, Groq, OpenAI, OpenRouter)",
+      "Multiple AI providers (Groq, OpenAI, OpenRouter)",
     ],
     author: {
       "@type": "Organization",
@@ -181,7 +197,7 @@ export default function RootLayout({
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${notoSans.className} ${inter.className} font-sans antialiased m-1 h-full`}
+        className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased m-0 h-full overflow-hidden`}
       >
         <ToastProvider>
           <SidebarProvider>
