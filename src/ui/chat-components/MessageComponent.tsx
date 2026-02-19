@@ -50,7 +50,7 @@ const MessageComponent = memo(
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(
       message.reasoning || "",
-      isStreaming
+      isStreaming,
     );
 
     const reasoningTokens = useMemo(() => {
@@ -65,7 +65,7 @@ const MessageComponent = memo(
         message.content
           .split(/[ \t\n\r\f.,!?;:"'’“”(){}\[\]-]+/)
           .filter(Boolean).length + reasoningTokens,
-      [message.content, reasoningTokens]
+      [message.content, reasoningTokens],
     );
 
     const tokensPerSecond = useMemo(() => {
@@ -86,7 +86,7 @@ const MessageComponent = memo(
                   <ImageDisplay images={message.images} />
                 </div>
               )}
-              <div className="text-text-primary text-lg whitespace-pre-wrap break-words leading-relaxed text-right">
+              <div className="text-text-primary text-lg whitespace-pre-wrap wrap-break-word leading-relaxed">
                 {message.content}
               </div>
               <div className="flex flex-row items-center gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -139,7 +139,9 @@ const MessageComponent = memo(
                       >
                         <path d="M9 18l6-6-6-6" />
                       </svg>
-                      <span className="font-semibold text-xs tracking-wider uppercase">Thought Process</span>
+                      <span className="font-semibold text-xs tracking-wider uppercase">
+                        Thought Process
+                      </span>
                     </div>
                   </button>
                   <div
@@ -189,7 +191,7 @@ const MessageComponent = memo(
                     const getLanguage = (element: any): string => {
                       if (element?.props?.className) {
                         const match = /language-(\w+)/.exec(
-                          element.props.className
+                          element.props.className,
                         );
                         return match ? match[1] : "";
                       }
@@ -216,7 +218,9 @@ const MessageComponent = memo(
                         )}
                         <pre
                           className={`bg-surface border border-border p-5 overflow-x-auto mt-0 ${
-                            language ? "rounded-t-none rounded-b-lg" : "rounded-lg"
+                            language
+                              ? "rounded-t-none rounded-b-lg"
+                              : "rounded-lg"
                           }`}
                           {...props}
                         >
@@ -232,34 +236,54 @@ const MessageComponent = memo(
                     );
                   },
                   h1: ({ children, ...props }) => (
-                    <h1 className="text-2xl font-bold text-text-primary mb-6 mt-10 tracking-tight" {...props}>
+                    <h1
+                      className="text-2xl font-bold text-text-primary mb-6 mt-10 tracking-tight"
+                      {...props}
+                    >
                       {children}
                     </h1>
                   ),
                   h2: ({ children, ...props }) => (
-                    <h2 className="text-xl font-bold text-text-primary mb-4 mt-8 tracking-tight" {...props}>
+                    <h2
+                      className="text-xl font-bold text-text-primary mb-4 mt-8 tracking-tight"
+                      {...props}
+                    >
                       {children}
                     </h2>
                   ),
                   h3: ({ children, ...props }) => (
-                    <h3 className="text-lg font-semibold text-text-primary mb-3 mt-6" {...props}>
+                    <h3
+                      className="text-lg font-semibold text-text-primary mb-3 mt-6"
+                      {...props}
+                    >
                       {children}
                     </h3>
                   ),
                   p: ({ children, ...props }) => (
-                    <p className="mb-5 last:mb-0" {...props}>{children}</p>
+                    <p className="mb-5 last:mb-0" {...props}>
+                      {children}
+                    </p>
                   ),
                   ul: ({ children, ...props }) => (
-                    <ul className="my-5 space-y-2 list-disc pl-5" {...props}>{children}</ul>
+                    <ul className="my-5 space-y-2 list-disc pl-5" {...props}>
+                      {children}
+                    </ul>
                   ),
                   ol: ({ children, ...props }) => (
-                    <ol className="my-5 space-y-2 list-decimal pl-5" {...props}>{children}</ol>
+                    <ol className="my-5 space-y-2 list-decimal pl-5" {...props}>
+                      {children}
+                    </ol>
                   ),
                   li: ({ children, ...props }) => (
-                    <li className="text-text-primary pl-1" {...props}>{children}</li>
+                    <li className="text-text-primary pl-1" {...props}>
+                      {children}
+                    </li>
                   ),
                   blockquote: ({ children, ...props }) => (
-                    <blockquote className="border-l-4 border-border pl-6 my-6 italic text-text-secondary" {...props}>
+                    <blockquote
+                      className="border-l-4 border-border pl-6 my-6 italic text-text-secondary"
+                      {...props}
+                    >
                       {children}
                     </blockquote>
                   ),
@@ -267,7 +291,13 @@ const MessageComponent = memo(
                     <hr className="my-10 border-border" {...props} />
                   ),
                   a: ({ children, href, ...props }) => (
-                    <a href={href} className="text-accent hover:underline underline-offset-4 font-medium" target="_blank" rel="noopener noreferrer" {...props}>
+                    <a
+                      href={href}
+                      className="text-accent hover:underline underline-offset-4 font-medium"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    >
                       {children}
                     </a>
                   ),
@@ -310,7 +340,10 @@ const MessageComponent = memo(
                 <div className="text-[9px] text-text-muted font-bold uppercase tracking-widest flex items-center gap-4">
                   {tokens > 0 && (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-surface/50 border border-border/30">
-                      <TbAlphabetLatin size={12} className="text-text-muted/60" />
+                      <TbAlphabetLatin
+                        size={12}
+                        className="text-text-muted/60"
+                      />
                       <span>{tokens}</span>
                     </div>
                   )}
@@ -327,7 +360,7 @@ const MessageComponent = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 MessageComponent.displayName = "MessageComponent";
 
