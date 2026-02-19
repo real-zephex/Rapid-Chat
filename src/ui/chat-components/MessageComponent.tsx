@@ -271,6 +271,14 @@ const MessageComponent = memo(
                       {children}
                     </a>
                   ),
+                  div: ({ children, ...props }) => {
+                    if (props["aria-hidden"] === "true") return null;
+                    return <div {...props}>{children}</div>;
+                  },
+                  span: ({ children, ...props }) => {
+                    if (props["aria-hidden"] === "true") return null;
+                    return <span {...props}>{children}</span>;
+                  },
                 }}
               >
                 {displayedContent}
