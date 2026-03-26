@@ -341,6 +341,16 @@ pre code.hljs {
 .chat-markdown .katex-display > .katex {
   display: block;
   text-align: center;
+  line-height: 1.45;
+}
+
+.chat-markdown .katex-display .base + .base {
+  margin-top: 0.34em;
+}
+
+.chat-markdown .katex-display .mtable .mtr > .mtd {
+  padding-top: 0.12em;
+  padding-bottom: 0.12em;
 }
 
 [data-theme="dark"] .chat-markdown .katex-display {
