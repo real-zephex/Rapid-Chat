@@ -47,35 +47,38 @@ const ImagePreview = memo(
     if (files.length === 0) return null;
 
     return (
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="mb-3 flex flex-wrap gap-2">
         {files.map((file) => (
-          <div key={file.originalIndex} className="relative group">
+          <div key={file.originalIndex} className="group relative">
             {file.kind === "image" ? (
               <Image
                 src={file.url}
                 alt={`File ${file.originalIndex + 1}`}
                 width={100}
                 height={100}
-                className="w-24 h-24 object-cover rounded-lg border border-border bg-surface"
+                className="h-20 w-20 rounded-lg border border-border bg-surface object-cover"
                 unoptimized={true}
               />
             ) : (
-              <div className="w-24 h-24 rounded-lg border border-border bg-surface flex items-center justify-center text-text-muted">
-                <MdOutlineDocumentScanner size={28} />
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-surface text-text-muted">
+                <MdOutlineDocumentScanner size={22} />
               </div>
             )}
             <a
               href={file.url}
               download
-              className="absolute bottom-1 left-1 bg-black/70 hover:bg-black/90 text-white rounded p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute bottom-1 left-1 rounded border border-border bg-background/95 p-1 opacity-0 transition-opacity group-hover:opacity-100"
               title="Download file"
+              aria-label={`Download file ${file.originalIndex + 1}`}
             >
               <FiDownload size={12} />
             </a>
             <button
               onClick={() => onRemove(file.originalIndex)}
-              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-lg"
+              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-sm font-bold text-error shadow-sm transition-colors hover:bg-surface"
               title="Remove"
+              aria-label={`Remove file ${file.originalIndex + 1}`}
+              type="button"
             >
               ×
             </button>

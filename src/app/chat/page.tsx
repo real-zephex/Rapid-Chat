@@ -27,10 +27,10 @@ export const metadata: Metadata = {
 
 export default async function ChatPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-      <div className="text-center max-w-md">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background p-4">
+      <div className="max-w-md rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
         <svg
-          className="w-16 h-16 mx-auto mb-4 text-text-muted"
+          className="mx-auto mb-4 h-16 w-16 text-text-muted"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -43,17 +43,15 @@ export default async function ChatPage() {
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <h1 className="text-2xl font-bold text-text-primary mb-2 font-space-grotesk">
+        <h1 className="mb-2 text-2xl font-semibold text-text-primary">
           No Chat Selected
         </h1>
-        <p className="text-text-secondary mb-6">
+        <p className="mb-6 text-text-secondary">
           Create a new conversation or select an existing one from the sidebar
           to get started.
         </p>
-        <div className="bg-surface border border-border p-4 rounded-xl">
-          <p className="text-text-muted text-sm">
-            Tip: Use the sidebar navigation to manage your conversations
-          </p>
+        <div className="rounded-xl border border-border bg-background p-4 text-left">
+          <p className="text-sm text-text-muted">Tip: Press Ctrl+B to toggle the sidebar quickly.</p>
         </div>
       </div>
     </div>

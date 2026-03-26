@@ -22,7 +22,11 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
     };
   }, [stream]);
 
-  const handleClick = async (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = async (
+    e:
+      | React.MouseEvent<HTMLDivElement>
+      | React.KeyboardEvent<HTMLDivElement>,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -99,8 +103,17 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
 
   return (
     <div
-      className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors cursor-pointer"
+      className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
       onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void handleClick(event);
+        }
+      }}
+      aria-label="Record audio"
     >
       <AiFillAudio
         color={isRecording ? "var(--error)" : "currentColor"}
@@ -109,20 +122,20 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       />
 
       {isRecording && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-100">
-          <div className="bg-surface rounded-3xl p-10 border border-border shadow-2xl flex flex-col items-center gap-6 max-w-lg mx-4">
-            <div className="size-20 rounded-full bg-error/20 flex items-center justify-center animate-pulse">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md">
+          <div className="mx-4 flex max-w-lg flex-col items-center gap-6 rounded-3xl border border-border bg-surface p-10 shadow-2xl">
+            <div className="flex size-20 items-center justify-center rounded-full bg-error/20 animate-pulse">
               <AiFillAudio className="text-error size-10" />
             </div>
             <div className="text-center">
-              <span className="text-text-primary text-2xl font-bold block mb-2 font-space-grotesk">
+              <span className="mb-2 block text-2xl font-semibold text-text-primary">
                 Voice Recording
               </span>
               <p className="text-text-muted text-base leading-relaxed">
                 Recording your message. Speak clearly and press anywhere to stop.
               </p>
             </div>
-            <div className="bg-background/50 px-6 py-3 rounded-2xl border border-border">
+            <div className="rounded-2xl border border-border bg-background/50 px-6 py-3">
               <MyStopwatch />
             </div>
             <button
@@ -131,7 +144,8 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
                 if (mediaRecorder) mediaRecorder.stop();
                 setIsRecording(false);
               }}
-              className="mt-4 px-8 py-3 bg-error text-white font-bold rounded-xl hover:bg-error/90 transition-all uppercase tracking-widest text-xs"
+              className="mt-4 rounded-xl bg-error px-8 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-all hover:bg-error/90"
+              type="button"
             >
               Stop Recording
             </button>

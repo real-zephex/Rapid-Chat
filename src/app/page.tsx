@@ -9,15 +9,23 @@ const Homepage = () => {
 
   useEffect(() => {
     const uuid = uuidv4();
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       router.push("/chat/" + uuid);
-    }, 200);
-  }, []);
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [router]);
 
   return (
-    <main className="min-h-[calc(100dvh-8px)] flex items-center justify-center gap-3 bg-background rounded-xl border border-border">
-      <div className="animate-spin rounded-full h-5 w-5 border-2 border-text-muted border-t-text-primary"></div>
-      <p className="text-text-secondary text-sm font-medium">Entering workspace...</p>
+    <main className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <div className="rounded-2xl border border-border bg-surface px-6 py-5 shadow-sm" role="status" aria-live="polite">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-text-muted border-t-accent" />
+          <p className="text-sm font-medium text-text-secondary">Entering workspace...</p>
+        </div>
+      </div>
     </main>
   );
 };

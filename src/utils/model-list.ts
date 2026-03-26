@@ -8,6 +8,7 @@ interface modelDescription {
   pdf_support: boolean;
   type: "reasoning" | "conversational" | "general";
   active: boolean;
+  usage_count?: number;
 }
 
 export interface ModelInfo {
@@ -17,6 +18,7 @@ export interface ModelInfo {
   pdf: boolean;
   description: string;
   type: "reasoning" | "conversational" | "general";
+  usageCount: number;
 }
 
 export class ModelInformation {
@@ -56,6 +58,7 @@ export class ModelInformation {
         pdf: model.pdf_support,
         description: model.description || "No description available.",
         type: model.type,
+        usageCount: model.usage_count ?? 0,
       }));
     } catch (err) {
       console.error("Failed to fetch model information:", err);

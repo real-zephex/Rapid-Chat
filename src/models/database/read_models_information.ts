@@ -1,19 +1,16 @@
-"use server";
-
-import supabaseInstance from "./instance";
+import {
+  listActiveModelInformationFromConvex,
+} from "./convex";
 
 export async function get_model_information() {
-  const { data, error } = await supabaseInstance()
-    .from("models_information")
-    .select("*")
-    .eq("active", true);
+  try {
+    const data = await listActiveModelInformationFromConvex();
 
-  if (error) {
-    console.error("Error fetching model information:", error);
+    return data;
+  } catch (error) {
+    console.error("Error fetching model information from Convex:", error);
     return [];
   }
-
-  return data;
 }
 
 export default get_model_information;

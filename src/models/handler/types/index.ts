@@ -11,5 +11,4 @@ export interface ModelData {
   image_support: boolean;
   pdf_support: boolean;
   reasoning: boolean;
-  tools: boolean;
 }

@@ -1,16 +1,15 @@
-import Groq from "groq-sdk";
 import { OpenRouter } from "@openrouter/sdk";
+import Groq from "groq-sdk";
+import {
+  ChatCompletionCreateParamsStreaming,
+  ChatCompletionContentPart,
+  ChatCompletionMessageParam,
+} from "groq-sdk/resources/chat/completions";
+
+import { fileUploads } from "..";
 import { incomingData } from "../types";
 import { DocumentParse, ImageParser } from "./helper/attachments-parser";
 import { ModelData } from "./types";
-import { fileUploads } from "..";
-import { toolsSchema } from "@/utils/tools/schema";
-import { functionMaps } from "@/utils/tools/schema/maps";
-import {
-  ChatCompletionMessageParam,
-  ChatCompletionContentPart,
-  ChatCompletionMessageToolCall,
-} from "groq-sdk/resources/chat/completions";
 
 const groqClient = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -24,22 +23,68 @@ type ProviderHandler = (params: {
   inc: incomingData;
   model_data: ModelData;
   signal?: AbortSignal;
-}) => AsyncGenerator<string>;
+}) => AsyncGenerator<ModelStreamChunk>;
 
-type ToolCall = {
-  id: string;
-  type: string;
-  function: {
-    name: string;
-    arguments: string;
-  };
+type OpenRouterDelta = {
+  choices?: Array<{
+    delta?: {
+      content?: string;
+      reasoning?: string;
+    };
+  }>;
 };
 
-type ChatMessage = {
-  role: "system" | "user" | "assistant" | "tool";
-  content: string;
-  tool_calls?: ToolCall[];
-  tool_call_id?: string;
+type OpenRouterMessage = {
+  role: "system" | "user" | "assistant";
+  content: unknown;
+};
+
+export type ModelStreamChunk =
+  | { type: "content"; delta: string }
+  | { type: "reasoning"; delta: string };
+
+const splitAttachments = (attachments?: fileUploads[]) => {
+  if (!attachments || attachments.length === 0) {
+    return { images: [] as fileUploads[], documents: [] as fileUploads[] };
+  }
+
+  const images = attachments.filter(
+    (item) =>
+      item.mimeType === "image/png" ||
+      item.mimeType === "image/jpeg" ||
+      item.mimeType === "image/jpg",
+  );
+
+  const documents = attachments.filter(
+    (item) => item.mimeType === "application/pdf",
+  );
+
+  return { images, documents };
+};
+
+const buildUserContent = ({
+  message,
+  image_support,
+  pdf_support,
+  attachments,
+}: {
+  message: string;
+  image_support: boolean;
+  pdf_support: boolean;
+  attachments?: fileUploads[];
+}): string | ChatCompletionContentPart[] => {
+  const multimodal = Boolean(image_support || pdf_support);
+  if (!multimodal) {
+    return message;
+  }
+
+  const { images, documents } = splitAttachments(attachments);
+
+  return [
+    { type: "text", text: message },
+    ...ImageParser({ inc: images }),
+    ...DocumentParse({ inc: documents }),
+  ];
 };
 
 async function* handleGroq({
@@ -50,7 +95,7 @@ async function* handleGroq({
   inc: incomingData;
   model_data: ModelData;
   signal?: AbortSignal;
-}): AsyncGenerator<string> {
+}): AsyncGenerator<ModelStreamChunk> {
   const {
     provider_code,
     system_prompt,
@@ -59,29 +104,15 @@ async function* handleGroq({
     temperature,
     image_support,
     pdf_support,
-    tools,
+    stop,
   } = model_data;
 
-  let images: fileUploads[] = [];
-  let documents: fileUploads[] = [];
-  if (inc.imageData) {
-    images = inc.imageData.filter(
-      (i) =>
-        i.mimeType === "image/png" ||
-        i.mimeType === "image/jpeg" ||
-        i.mimeType === "image/jpg",
-    );
-    documents = inc.imageData.filter((i) => i.mimeType === "application/pdf");
-  }
-
-  const multimodal = Boolean(image_support || pdf_support);
-  const userContent: string | ChatCompletionContentPart[] = multimodal
-    ? [
-        { type: "text", text: inc.message },
-        ...ImageParser({ inc: images }),
-        ...DocumentParse({ inc: documents }),
-      ]
-    : inc.message;
+  const userContent = buildUserContent({
+    message: inc.message,
+    image_support,
+    pdf_support,
+    attachments: inc.imageData,
+  });
 
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: system_prompt },
@@ -90,100 +121,35 @@ async function* handleGroq({
   ];
 
   try {
-    if (!tools) {
-      const streamResponse = await groqClient.chat.completions.create(
-        {
-          model: provider_code,
-          messages,
-          stream: true,
-          temperature,
-          max_completion_tokens,
-          top_p,
-        },
-        { signal },
-      );
+    const request: ChatCompletionCreateParamsStreaming = {
+      model: provider_code,
+      messages,
+      stream: true,
+      temperature,
+      max_completion_tokens,
+      top_p,
+      ...(stop ? { stop } : {}),
+    };
 
-      for await (const chunk of streamResponse) {
-        if (signal?.aborted) break;
+    const streamResponse = await groqClient.chat.completions.create(
+      request,
+      { signal },
+    );
 
-        const token = chunk.choices[0]?.delta?.content ?? "";
-        if (token) {
-          yield token;
-        }
+    for await (const chunk of streamResponse) {
+      if (signal?.aborted) {
+        break;
       }
-    } else {
-      console.info("===Groq: Checking for tools===");
-      const modelResponse = await groqClient.chat.completions.create({
-        model: provider_code,
-        messages: [
-          { role: "system", content: system_prompt },
-          ...inc.chats.slice(-3),
-          { role: "user", content: userContent },
-        ],
-        stream: false,
-        tools: toolsSchema,
-      });
 
-      const responseMessage = modelResponse.choices[0].message;
-      const toolCalls = responseMessage.tool_calls ?? [];
-
-      if (toolCalls.length > 0) {
-        if (responseMessage.content) {
-          yield responseMessage.content;
-        }
-
-        console.info("===Groq: Using Tools===");
-        const toolResponses = await processToolCalls(toolCalls);
-
-        const finalMessageArray: ChatCompletionMessageParam[] = [
-          ...messages,
-          {
-            role: "assistant",
-            content: responseMessage.content ?? "",
-            tool_calls: toolCalls,
-          },
-          ...toolResponses,
-        ];
-
-        const finalResponse = await groqClient.chat.completions.create(
-          {
-            model: provider_code,
-            messages: finalMessageArray,
-            stream: true,
-            temperature,
-            max_completion_tokens,
-            top_p,
-          },
-          { signal },
-        );
-
-        for await (const chunk of finalResponse) {
-          if (signal?.aborted) break;
-          const token = chunk.choices[0]?.delta?.content ?? "";
-          if (token) yield token;
-        }
-      } else {
-        const streamResponse = await groqClient.chat.completions.create(
-          {
-            model: provider_code,
-            messages,
-            stream: true,
-            temperature,
-            max_completion_tokens,
-            top_p,
-          },
-          { signal },
-        );
-
-        for await (const chunk of streamResponse) {
-          if (signal?.aborted) break;
-          const token = chunk.choices[0]?.delta?.content ?? "";
-          if (token) yield token;
-        }
+      const token = chunk.choices[0]?.delta?.content ?? "";
+      if (token) {
+        yield { type: "content", delta: token };
       }
     }
   } catch (error) {
-    if (signal?.aborted) return;
+    if (signal?.aborted) {
+      return;
+    }
     throw error;
   }
 }
@@ -196,7 +162,7 @@ async function* handleOpenRouter({
   inc: incomingData;
   model_data: ModelData;
   signal?: AbortSignal;
-}): AsyncGenerator<string> {
+}): AsyncGenerator<ModelStreamChunk> {
   const {
     provider_code,
     system_prompt,
@@ -206,179 +172,67 @@ async function* handleOpenRouter({
     image_support,
     pdf_support,
     reasoning,
-    tools,
+    stop,
   } = model_data;
 
-  let images: fileUploads[] = [];
-  let documents: fileUploads[] = [];
-  if (inc.imageData) {
-    images = inc.imageData.filter(
-      (i) =>
-        i.mimeType === "image/png" ||
-        i.mimeType === "image/jpeg" ||
-        i.mimeType === "image/jpg",
-    );
-    documents = inc.imageData.filter((i) => i.mimeType === "application/pdf");
-  }
+  const userContent = buildUserContent({
+    message: inc.message,
+    image_support,
+    pdf_support,
+    attachments: inc.imageData,
+  });
 
-  const multimodal = Boolean(image_support || pdf_support);
-  const userContent = multimodal
-    ? [
-        { type: "text", text: inc.message },
-        ...ImageParser({ inc: images }),
-        ...DocumentParse({ inc: documents }),
-      ]
-    : inc.message;
-
-  const messages: ChatMessage[] = [
+  const messages: OpenRouterMessage[] = [
     { role: "system", content: system_prompt },
     ...inc.chats,
-    { role: "user", content: userContent as string },
+    { role: "user", content: userContent },
   ];
 
   try {
-    if (!tools) {
-      const params: Record<string, unknown> = {
-        model: provider_code,
-        messages,
-        temperature,
-        maxTokens: max_completion_tokens,
-        top_p,
-        stream: true,
-      };
+    const params: Record<string, unknown> = {
+      model: provider_code,
+      messages,
+      temperature,
+      maxTokens: max_completion_tokens,
+      topP: top_p,
+      stream: true,
+    };
 
-      if (reasoning) {
-        params.include_reasoning = true;
+    if (reasoning) {
+      params.include_reasoning = true;
+    }
+
+    if (stop) {
+      params.stop = stop;
+    }
+
+    const result = await openrouterClient.chat.send(
+      params as never,
+      signal ? { signal } : undefined,
+    );
+    const streamIterable = result as unknown as AsyncIterable<OpenRouterDelta>;
+
+    for await (const chunk of streamIterable) {
+      if (signal?.aborted) {
+        break;
       }
 
-      const result = await openrouterClient.chat.send(
-        params as never,
-      );
-
-      const streamIterable = result as unknown as AsyncIterable<{ choices: { delta: { content?: string; reasoning?: string } }[] }>;
-      for await (const chunk of streamIterable) {
-        if (signal?.aborted) break;
-
-        const reasoningToken = chunk.choices[0]?.delta?.reasoning ?? "";
-        if (reasoningToken) {
-          yield `<think>${reasoningToken}
-</think>
-
-`;
-        }
-
-        const token = chunk.choices[0]?.delta?.content ?? "";
-        if (token) {
-          yield token;
-        }
+      const reasoningToken = chunk.choices?.[0]?.delta?.reasoning ?? "";
+      if (reasoningToken) {
+        yield { type: "reasoning", delta: reasoningToken };
       }
-    } else {
-      console.info("===OpenRouter: Checking for tools===");
-      const modelResponse = await openrouterClient.chat.send({
-        model: provider_code,
-        messages: [
-          { role: "system", content: system_prompt },
-          ...inc.chats.slice(-3),
-          { role: "user", content: userContent as string },
-        ],
-        stream: false,
-        tools: toolsSchema as never,
-      });
 
-      const responseMessage = (modelResponse as { choices?: { message: ChatMessage }[] }).choices?.[0]?.message;
-      const toolCalls: ToolCall[] = responseMessage?.tool_calls ?? [];
-
-      if (toolCalls.length > 0) {
-        if (responseMessage?.content) {
-          yield responseMessage.content;
-        }
-
-        console.info("===OpenRouter: Using Tools===");
-        const toolResponses = await processToolCalls(toolCalls as ChatCompletionMessageToolCall[]);
-
-        const finalMessageArray: ChatMessage[] = [
-          ...messages,
-          {
-            role: "assistant",
-            content: responseMessage?.content ?? "",
-            tool_calls: toolCalls,
-          },
-          ...toolResponses as unknown as ChatMessage[],
-        ];
-
-        const finalResult = await openrouterClient.chat.send({
-          model: provider_code,
-          messages: finalMessageArray as never[],
-          stream: true,
-          temperature,
-          maxTokens: max_completion_tokens,
-          topP: top_p,
-        });
-
-        const finalStream = finalResult as unknown as AsyncIterable<{ choices: { delta: { content?: string } }[] }>;
-        for await (const chunk of finalStream) {
-          if (signal?.aborted) break;
-          const token = chunk.choices[0]?.delta?.content ?? "";
-          if (token) yield token;
-        }
-      } else {
-        const streamResult = await openrouterClient.chat.send({
-          model: provider_code,
-          messages: messages as never[],
-          stream: true,
-          temperature,
-          maxTokens: max_completion_tokens,
-          topP: top_p,
-        });
-
-        const streamIter = streamResult as unknown as AsyncIterable<{ choices: { delta: { content?: string } }[] }>;
-        for await (const chunk of streamIter) {
-          if (signal?.aborted) break;
-          const token = chunk.choices[0]?.delta?.content ?? "";
-          if (token) yield token;
-        }
+      const token = chunk.choices?.[0]?.delta?.content ?? "";
+      if (token) {
+        yield { type: "content", delta: token };
       }
     }
   } catch (error) {
-    if (signal?.aborted) return;
+    if (signal?.aborted) {
+      return;
+    }
     throw error;
   }
-}
-
-async function processToolCalls(
-  toolCalls: ChatCompletionMessageToolCall[],
-): Promise<ChatCompletionMessageParam[]> {
-  const toolResponses: ChatCompletionMessageParam[] = [];
-
-  for (const toolCall of toolCalls) {
-    const { id, type } = toolCall;
-
-    if (type === "function" && "function" in toolCall) {
-      const functionName = toolCall.function.name;
-      const functionArguments = toolCall.function.arguments;
-      const toolFunction = functionMaps[functionName as keyof typeof functionMaps];
-
-      try {
-        const functionArgs = JSON.parse(functionArguments);
-        const output = await toolFunction(functionArgs);
-        toolResponses.push({
-          role: "tool" as const,
-          tool_call_id: id,
-          content: output || "No output found.",
-        });
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        toolResponses.push({
-          role: "tool" as const,
-          tool_call_id: id,
-          content: `Tool '${functionName}' failed: ${errorMessage}`,
-        });
-        console.error(`Tool execution error [${functionName}]:`, err);
-      }
-    }
-  }
-
-  return toolResponses;
 }
 
 const providerHandlers: Record<string, ProviderHandler> = {
@@ -394,7 +248,7 @@ async function* ModelHandler({
   inc: incomingData;
   model_data: ModelData;
   signal?: AbortSignal;
-}): AsyncGenerator<string> {
+}): AsyncGenerator<ModelStreamChunk> {
   const handler = providerHandlers[model_data.provider];
 
   if (!handler) {
@@ -406,7 +260,9 @@ async function* ModelHandler({
   try {
     yield* handler({ inc, model_data, signal });
   } catch (error: unknown) {
-    if (signal?.aborted) return;
+    if (signal?.aborted) {
+      return;
+    }
 
     console.error("Model generation error:", {
       provider: model_data.provider,
@@ -415,7 +271,10 @@ async function* ModelHandler({
       timestamp: new Date().toISOString(),
     });
 
-    yield `Sorry, we ran into an issue. Please try sending that prompt again!\n\n`;
+    yield {
+      type: "content",
+      delta: "Sorry, we ran into an issue. Please try sending that prompt again!\n\n",
+    };
   }
 }
 

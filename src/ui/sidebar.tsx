@@ -1,54 +1,109 @@
 "use client";
-import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
-import { HiPlus, HiChatBubbleLeft, HiInformationCircle } from "react-icons/hi2";
 
-import { useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { useHotkeys } from "react-hotkeys-hook";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { v4 as uuidv4 } from "uuid";
 import { useSidebar } from "@/context/SidebarContext";
-import Link from "next/link";
-import { deleteAllChats } from "@/utils/indexedDB";
+import { useTheme } from "@/context/ThemeContext";
+import { addTabs, deleteAllChats } from "@/utils/indexedDB";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { MouseEvent, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import {
+  HiChatBubbleLeft,
+  HiInformationCircle,
+  HiMoon,
+  HiOutlineRectangleGroup,
+  HiSun,
+  HiOutlineViewColumns,
+  HiPlus,
+} from "react-icons/hi2";
 import { RiDeleteBin2Fill } from "react-icons/ri";
-import { useState } from "react";
+import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
+import { v4 as uuidv4 } from "uuid";
+
 import DeleteModal from "./delete-modal";
 
 export async function handlePress(
-  event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
+  event: MouseEvent<HTMLButtonElement> | KeyboardEvent,
   router: AppRouterInstance,
 ) {
   event.preventDefault();
 
   const uuid = uuidv4();
-  router.push("/chat/" + uuid);
+  router.push(`/chat/${uuid}`);
 }
 
 const Sidebar = () => {
   const { isOpen, titles, setIsOpen, refreshTitles } = useSidebar();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { theme, toggleTheme, isHydrated } = useTheme();
 
   const router = useRouter();
-  const pathname = usePathname().split("/")[2];
-  const sidebarRef = useRef(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  useHotkeys("ctrl+shift+o", (e) => {
-    e.preventDefault();
-    handlePress(e, router);
+  const activeChatId = pathname.startsWith("/chat/")
+    ? pathname.split("/")[2] || ""
+    : "";
+  const splitChatId = searchParams.get("split") || "";
+  const conversations = Object.entries(titles).reverse();
+
+  useHotkeys("ctrl+shift+o", (event) => {
+    event.preventDefault();
+    void handlePress(event, router);
   });
 
-  useHotkeys("ctrl+b", (e) => {
-    e.preventDefault();
+  useHotkeys("ctrl+b", (event) => {
+    event.preventDefault();
     setIsOpen(!isOpen);
   });
 
-  const handleDeleteAll = () => {
-    setShowDeleteModal(true);
+  const closeOnMobile = () => {
+    if (window.innerWidth < 768) {
+      setIsOpen(false);
+    }
+  };
+
+  const openChat = (chatId: string) => {
+    router.push(`/chat/${chatId}`);
+    closeOnMobile();
+  };
+
+  const openInSplit = async (chatId: string) => {
+    if (!activeChatId || activeChatId === chatId) {
+      if (!activeChatId) {
+        openChat(chatId);
+        return;
+      }
+
+      const fallbackSplitId = conversations.find(([id]) => id !== chatId)?.[0];
+
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (fallbackSplitId) {
+        params.set("split", fallbackSplitId);
+        router.push(`/chat/${chatId}?${params.toString()}`);
+        closeOnMobile();
+        return;
+      }
+
+      const generatedSplitId = uuidv4();
+      await addTabs(generatedSplitId);
+      await refreshTitles();
+      params.set("split", generatedSplitId);
+      router.push(`/chat/${chatId}?${params.toString()}`);
+      closeOnMobile();
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("split", chatId);
+    router.push(`/chat/${activeChatId}?${params.toString()}`);
+    closeOnMobile();
   };
 
   const confirmDelete = async () => {
     await deleteAllChats();
-    refreshTitles();
+    await refreshTitles();
     setShowDeleteModal(false);
     router.push("/chat");
   };
@@ -60,138 +115,203 @@ const Sidebar = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
       />
-      <div
-        className={`fixed top-0 left-0 h-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-30 ${
-          isOpen ? "w-72" : "w-0"
-        } overflow-hidden border-r border-border bg-background`}
-        ref={sidebarRef}
+
+      <aside
+        className={`fixed left-0 top-0 z-30 h-full overflow-hidden border-r border-border bg-background transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isOpen ? "w-80" : "w-0"
+        }`}
+        aria-label="Sidebar"
       >
-        <div className="flex flex-col h-full w-72">
-          {/* Sidebar Header */}
-          <div className="p-4 flex items-center justify-between">
+        <div className="flex h-full w-80 max-w-[85vw] flex-col">
+          <div className="flex items-center justify-between border-b border-border px-4 py-4">
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="p-2 rounded-xl hover:bg-surface transition-all duration-200 text-text-muted hover:text-text-primary"
+              className="rounded-xl p-2 text-text-muted transition-colors hover:bg-surface hover:text-text-primary"
               title="Close sidebar (Ctrl+B)"
+              aria-label="Close sidebar"
             >
               <BsLayoutSidebarInsetReverse size={18} />
             </button>
+
             <button
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-text-primary text-background hover:opacity-90 transition-all duration-200 font-bold text-xs uppercase tracking-widest"
-              onClick={(e) => handlePress(e, router)}
+              type="button"
+              className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-accent-strong"
+              onClick={(event) => {
+                void handlePress(event, router);
+              }}
               title="New chat (Ctrl+Shift+O)"
+              aria-label="Create new chat"
             >
               <HiPlus size={14} />
-              <span>New</span>
+              <span>New Chat</span>
             </button>
           </div>
 
-          <div className="px-4 py-2">
-            <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-4">
+          <div className="px-4 pb-2 pt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
               Conversations
-            </h2>
+            </p>
           </div>
 
-          {/* Chat List */}
-          <div className="flex-1 overflow-y-auto px-2 space-y-1 custom-scrollbar">
-            {Object.entries(titles).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-text-muted/40">
-                <HiChatBubbleLeft size={32} className="mb-4" />
-                <p className="text-[11px] font-medium uppercase tracking-wider">
-                  Empty space
+          <nav
+            className="scrollbar-track-only min-h-0 flex-1 overflow-y-auto px-2 pb-3"
+            aria-label="Conversation history"
+          >
+            {conversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-text-muted/70">
+                <HiChatBubbleLeft size={28} className="mb-3" />
+                <p className="text-xs font-medium uppercase tracking-[0.14em]">
+                  No chats yet
                 </p>
               </div>
             ) : (
-              Object.entries(titles)
-                .reverse()
-                .map(([id, title]) => (
-                  <Link
-                    href={`/chat/${id}`}
-                    prefetch={true}
-                    key={id}
-                    className="block"
-                  >
-                    <div
-                      className={`group px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                        pathname === id
-                          ? "bg-surface shadow-sm"
-                          : "hover:bg-surface/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                            pathname === id
-                              ? "bg-accent scale-100"
-                              : "bg-transparent scale-0 group-hover:bg-text-muted/30 group-hover:scale-100"
-                          }`}
-                        />
-                        <span
-                          className={`text-sm truncate flex-1 transition-colors duration-200 ${
-                            pathname === id
-                              ? "text-text-primary font-semibold"
-                              : "text-text-secondary group-hover:text-text-primary"
-                          }`}
-                        >
-                          {title}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-            )}
-          </div>
+              <ul className="space-y-1">
+                {conversations.map(([chatId, title]) => {
+                  const isPrimary = activeChatId === chatId;
+                  const isSecondary = splitChatId === chatId;
 
-          {/* Sidebar Footer */}
-          <div className="p-4 mt-auto border-t border-border bg-background/50 backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                {Object.keys(titles).length} Active
+                  return (
+                    <li key={chatId}>
+                      <div
+                        className={`group flex items-center gap-1 rounded-xl border px-1 py-1 transition-colors ${
+                          isPrimary
+                            ? "border-accent/35 bg-accent/10"
+                            : isSecondary
+                              ? "border-border bg-surface"
+                              : "border-transparent hover:border-border hover:bg-surface"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+                          onClick={() => openChat(chatId)}
+                        >
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${
+                              isPrimary
+                                ? "bg-accent"
+                                : isSecondary
+                                  ? "bg-text-secondary"
+                                  : "bg-border"
+                            }`}
+                          />
+                          <span
+                            className={`truncate text-sm ${
+                              isPrimary
+                                ? "font-semibold text-text-primary"
+                                : "text-text-secondary"
+                            }`}
+                          >
+                            {title}
+                          </span>
+                        </button>
+
+                        <div className="flex items-center gap-1 pr-1">
+                          {isPrimary && (
+                            <span className="rounded-md border border-accent/35 bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-accent">
+                              A
+                            </span>
+                          )}
+                          {isSecondary && (
+                            <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
+                              B
+                            </span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void openInSplit(chatId);
+                            }}
+                            className="rounded-md p-1.5 text-text-muted opacity-0 transition-opacity hover:bg-background hover:text-text-primary group-hover:opacity-100"
+                            aria-label={`Open ${title} in split view`}
+                            title="Open in split view"
+                          >
+                            <HiOutlineViewColumns size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </nav>
+
+          <div className="mt-auto border-t border-border bg-surface px-4 py-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+                {Object.keys(titles).length} Chats
               </span>
-              {Object.keys(titles).length > 0 && (
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={handleDeleteAll}
-                  className="p-2 rounded-lg hover:bg-error/10 text-text-muted hover:text-error transition-all duration-200"
-                  title="Clear all history"
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  title={
+                    theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                  }
+                  aria-label={
+                    theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                  }
                 >
-                  <RiDeleteBin2Fill size={14} />
+                  {theme === "dark" ? <HiSun size={12} /> : <HiMoon size={12} />}
+                  <span>{isHydrated ? theme : "Theme"}</span>
                 </button>
-              )}
+
+                {Object.keys(titles).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="rounded-lg p-2 text-text-muted transition-colors hover:bg-background hover:text-error"
+                    title="Clear all history"
+                    aria-label="Clear all chat history"
+                  >
+                    <RiDeleteBin2Fill size={14} />
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex flex-row items-center gap-4 active:scale-95 transition-all select-none">
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300">
-                <HiInformationCircle size={18} />
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-accent">
+                <HiInformationCircle size={17} />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-primary">
                   Rapid Chat
                 </span>
-                <span className="text-[10px] text-text-muted">
-                  v2.0.0 "Neutral"
-                </span>
+                <span className="text-[10px] text-text-muted">v3.0 split-ready</span>
               </div>
+              {splitChatId && (
+                <span className="ml-auto inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
+                  <HiOutlineRectangleGroup size={11} />
+                  Split
+                </span>
+              )}
             </div>
           </div>
         </div>
-      </div>
-      {/* Toggle Button - only visible when sidebar is closed */}
+      </aside>
+
       {!isOpen && (
         <button
-          className="fixed top-3 left-3 z-40 p-2 rounded-lg bg-surface hover:bg-surface-hover border border-border transition-all"
+          type="button"
+          className="fixed left-3 top-3 z-40 rounded-lg border border-border bg-surface p-2 text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
           onClick={() => setIsOpen(true)}
           title="Open sidebar (Ctrl+B)"
+          aria-label="Open sidebar"
         >
-          <BsLayoutSidebarInsetReverse
-            size={16}
-            className="text-text-secondary"
-          />
+          <BsLayoutSidebarInsetReverse size={16} />
         </button>
-      )}{" "}
-      {/* Overlay for mobile */}
+      )}
+
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
     </>

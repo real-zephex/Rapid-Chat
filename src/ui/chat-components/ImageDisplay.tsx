@@ -39,7 +39,7 @@ const ImageDisplay = memo(
     }, [files]);
 
     return (
-      <div className="flex flex-row overflow-x-auto items-center gap-2 mt-2 mb-2 w-full">
+      <div className="mt-2 mb-2 flex w-full flex-row items-center gap-2 overflow-x-auto">
         {files.map((file) => (
           <div key={file.index} className="relative">
             {file.kind === "image" ? (
@@ -48,19 +48,20 @@ const ImageDisplay = memo(
                 alt={`File ${file.index + 1}`}
                 width={160}
                 height={160}
-                className="w-40 h-40 object-cover rounded-lg border border-border bg-surface"
+                className="h-32 w-32 rounded-lg border border-border bg-surface object-cover"
                 unoptimized={true}
               />
             ) : (
-              <div className="w-40 h-40 rounded-lg border border-border bg-surface flex items-center justify-center text-text-secondary">
-                <MdOutlineDocumentScanner size={28} />
+              <div className="flex h-32 w-32 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary">
+                <MdOutlineDocumentScanner size={24} />
               </div>
             )}
             <a
               href={file.url}
               download
-              className="absolute bottom-2 left-2 bg-background/80 hover:bg-background text-text-primary rounded p-1 text-[10px] flex items-center gap-1 border border-border"
+              className="absolute bottom-2 left-2 flex items-center gap-1 rounded border border-border bg-background/90 p-1 text-[10px] text-text-primary"
               title="Download file"
+              aria-label={`Download file ${file.index + 1}`}
             >
               <FiDownload size={12} />
             </a>

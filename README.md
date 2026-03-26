@@ -22,7 +22,7 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
 - **AI SDKs**: groq-sdk (Llama, Qwen, Whisper), openai (OpenAI & OpenRouter).
 - **Storage & State**: IndexedDB for local persistence with auto-migration from localStorage.
 - **UI & Styling**: Tailwind CSS 4, react-markdown with remark/rehype, KaTeX for math, react-icons, react-hotkeys-hook.
-- **Other Dependencies**: @supabase/supabase-js for model information, cheerio for web parsing, youtube-transcript-plus for YouTube, @vercel/analytics and nextjs-google-analytics for analytics, nextjs-toploader for loading indicators.
+- **Other Dependencies**: Convex for model configuration and model usage trends, cheerio for web parsing, youtube-transcript-plus for YouTube, @vercel/analytics and nextjs-google-analytics for analytics, nextjs-toploader for loading indicators.
 
 ## Quick Start
 
@@ -52,6 +52,7 @@ Privacy-focused AI chat application with multi-model support, real-time streamin
    GROQ_API_KEY=your_groq_key
    OPENROUTER_API_KEY=your_openrouter_key
    OPENAI_API_KEY=your_openai_key  # optional
+   NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
    ```
 
 4. Start the development server:
@@ -142,6 +143,10 @@ User Input → Chat Interface → Model Selection + Tool Schema → Server Actio
 
 Tools are defined in `src/utils/tools/schema/index.ts` with OpenAI-compatible schemas. Each tool returns `{ status: boolean, content?: string }`. Implementations are in respective folders, mapped in `src/utils/tools/schema/maps.ts`.
 
+### Convex Model Records
+
+The app reads model configuration from Convex table `models` and increments `usage_count` every time a model is used for generation. Each document should include fields such as `model_code`, `display_name`, `provider`, `provider_code`, `system_prompt`, `max_completion_tokens`, `temperature`, `top_p`, `reasoning`, `tools`, `image_support`, `pdf_support`, `active`, and `usage_count`.
+
 ## Development
 
 ### Adding a New Tool
@@ -171,7 +176,7 @@ Tools are defined in `src/utils/tools/schema/index.ts` with OpenAI-compatible sc
 - No tracking on conversation content; analytics libraries (@vercel/analytics, nextjs-google-analytics) track general app usage (e.g., page views, interactions) but not chat data.
 - Media files processed and stored locally; never uploaded without user intent.
 - Direct API calls to AI providers using user-provided keys; however, prompts and media may be sent to providers' servers per their policies.
-- External dependencies: Model information fetched from Supabase; tools (e.g., weather via Open-Meteo, web reader via Jina AI, code executor via Piston) transmit queries to third-party APIs.
+- External dependencies: Model configuration and model usage counters are stored in Convex; tools (e.g., weather via Open-Meteo, web reader via Jina AI, code executor via Piston) transmit queries to third-party APIs.
 - Open source for auditing; not fully zero-knowledge due to internet-required features.
 
 ### Browser Requirements

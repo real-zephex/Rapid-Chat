@@ -1,6 +1,5 @@
-import ModelProvider from "@/models";
-import { retrieveChats, saveChats } from "@/utils/indexedDB";
-import { processMessageContent } from "@/utils/responseCleaner";
+import ModelProvider, { cancelModelRun, type GenerationEvent } from "@/models";
+import { saveChats } from "@/utils/indexedDB";
 
 type Message = {
   role: "user" | "assistant";
@@ -9,18 +8,26 @@ type Message = {
   reasoning?: string;
   startTime?: number;
   endTime?: number;
-  cancelled?: boolean; // Flag to indicate if generation was cancelled
+  cancelled?: boolean;
 };
+
+type UpdateCallback = (messages: Message[]) => void;
 
 type GenerationTask = {
   chatId: string;
   abortId: string;
   promise: Promise<void>;
-  onUpdate?: (messages: Message[]) => void;
+  cancelRequested: boolean;
+  latestMessages: Message[];
 };
+
+const HISTORY_WINDOW_SIZE = 24;
+const UPDATE_INTERVAL_MS = 90;
+const PERSIST_INTERVAL_MS = 1200;
 
 class GenerationManager {
   private activeTasks = new Map<string, GenerationTask>();
+  private listeners = new Map<string, Set<UpdateCallback>>();
 
   async startGeneration(
     chatId: string,
@@ -29,199 +36,317 @@ class GenerationManager {
     images: { mimeType: string; data: Uint8Array }[],
     abortId: string,
     initialMessages: Message[],
-    onUpdate?: (messages: Message[]) => void,
   ) {
-    // Cancel any existing generation for this chat (if resubmitting)
-    if (this.activeTasks.has(chatId)) {
-      // Don't log in production, just handle it
+    const existingTask = this.activeTasks.get(chatId);
+    if (existingTask) {
+      await this.stopGeneration(chatId);
+      try {
+        await existingTask.promise;
+      } catch {
+        // Existing task already handled its own error state.
+      }
     }
 
-    const promise = this.runGeneration(
+    const task: GenerationTask = {
+      chatId,
+      abortId,
+      promise: Promise.resolve(),
+      cancelRequested: false,
+      latestMessages: initialMessages,
+    };
+
+    this.activeTasks.set(chatId, task);
+    task.promise = this.runGeneration({
       chatId,
       input,
       selectedModel,
       images,
       abortId,
       initialMessages,
-      onUpdate,
-    );
-
-    this.activeTasks.set(chatId, { chatId, abortId, promise, onUpdate });
+      task,
+    });
 
     try {
-      await promise;
+      await task.promise;
     } finally {
-      this.activeTasks.delete(chatId);
+      if (this.activeTasks.get(chatId) === task) {
+        this.activeTasks.delete(chatId);
+      }
     }
   }
 
-  private async runGeneration(
-    chatId: string,
-    input: string,
-    selectedModel: string,
-    images: { mimeType: string; data: Uint8Array }[],
-    abortId: string,
-    initialMessages: Message[],
-    onUpdate?: (messages: Message[]) => void,
-  ) {
-    // Declare variables at function scope so they're accessible in catch block
-    let assistantMessage = "";
-    let currentMessages: Message[] = [];
-    let ac: AbortController | null = null;
+  async stopGeneration(chatId: string) {
+    const task = this.activeTasks.get(chatId);
+    if (!task) {
+      return false;
+    }
+
+    task.cancelRequested = true;
+    await cancelModelRun(task.abortId);
+    return true;
+  }
+
+  private async runGeneration({
+    chatId,
+    input,
+    selectedModel,
+    images,
+    abortId,
+    initialMessages,
+    task,
+  }: {
+    chatId: string;
+    input: string;
+    selectedModel: string;
+    images: { mimeType: string; data: Uint8Array }[];
+    abortId: string;
+    initialMessages: Message[];
+    task: GenerationTask;
+  }) {
+    let assistantContent = "";
+    let assistantReasoning = "";
+    let currentMessages: Message[] = [
+      ...initialMessages,
+      { role: "assistant", content: "", reasoning: "" },
+    ];
+    let pendingEventBuffer = "";
+    let hasDoneEvent = false;
+    const decoder = new TextDecoder();
+    const startTime = Date.now();
+
+    const updateAssistantMessage = (
+      overrides?: Partial<Omit<Message, "role">>,
+    ) => {
+      const nextMessages = [...currentMessages];
+
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: assistantContent,
+        reasoning: assistantReasoning,
+        ...overrides,
+      };
+
+      if (
+        nextMessages.length > 0 &&
+        nextMessages[nextMessages.length - 1].role === "assistant"
+      ) {
+        nextMessages[nextMessages.length - 1] = assistantMessage;
+      } else {
+        nextMessages.push(assistantMessage);
+      }
+
+      currentMessages = nextMessages;
+    };
+
+    const flushMessages = async ({ force }: { force: boolean }) => {
+      updateAssistantMessage();
+      this.publishUpdate(task, currentMessages);
+
+      if (force) {
+        await this.safePersist(chatId, currentMessages);
+      }
+    };
 
     try {
-      const prevChats = await retrieveChats(chatId);
-      // Get chat history excluding the last message - bro, this caused me so much confusion.
-      const chatHistory = prevChats.slice(0, -1).slice(-10);
+      const chatHistory = initialMessages
+        .slice(0, -1)
+        .slice(-HISTORY_WINDOW_SIZE)
+        .map((message) => ({
+          role: message.role,
+          content: message.content,
+        }));
+
       const response = await ModelProvider({
         type: selectedModel,
         query: input,
-        chats: chatHistory.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
+        chats: chatHistory,
         runId: abortId,
         imageData: images,
       });
-
-      // Create an AbortController to handle cancellation
-      ac = new AbortController();
-      const { signal } = ac;
 
       if (!(response instanceof ReadableStream)) {
         throw new Error("Expected a ReadableStream response");
       }
 
       const reader = response.getReader();
-      let updateCounter = 0;
-      const UPDATE_THROTTLE = 1;
+      let lastUpdateAt = 0;
+      let lastPersistAt = Date.now();
 
-      // Get current messages from DB (they might have changed)
-      currentMessages = await retrieveChats(chatId);
-
-      // Add placeholder assistant message
-      currentMessages = [
-        ...currentMessages,
-        {
-          role: "assistant",
-          content: "Waiting for first tokens, please wait!",
-          reasoning: "Thinking, please wait...",
-        },
-      ];
-
-      // Notify component if it's mounted
-      onUpdate?.(currentMessages);
-
-      const startTime = Date.now();
       while (true) {
-        if (signal.aborted) {
-          // Handle cancellation
-          const { displayContent, reasoning } =
-            processMessageContent(assistantMessage);
-
-          const partialMessages = [...currentMessages];
-          if (currentMessages.length > 0) {
-            // Update the last message with partial content and cancelled flag
-            partialMessages[partialMessages.length - 1] = {
-              role: "assistant",
-              content: displayContent || "Generation was interrupted.",
-              reasoning: reasoning || "",
-              cancelled: true,
-            };
-          } else {
-            // Fallback: create new message if no currentMessages exist
-            partialMessages.push({
-              role: "assistant",
-              content:
-                displayContent ||
-                "Sorry, there was an error processing your request.",
-              cancelled: true,
-            });
-          }
-
-          await saveChats(chatId, partialMessages);
-          onUpdate?.(partialMessages);
-          return;
+        if (task.cancelRequested) {
+          break;
         }
 
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          break;
+        }
 
-        const text =
-          typeof value === "string" ? value : new TextDecoder().decode(value);
-        assistantMessage += text;
-        updateCounter++;
+        const chunkText =
+          typeof value === "string"
+            ? value
+            : decoder.decode(value, { stream: true });
 
-        const { displayContent, reasoning } =
-          processMessageContent(assistantMessage);
+        if (!chunkText) {
+          continue;
+        }
 
-        if (updateCounter % UPDATE_THROTTLE === 0 || done) {
-          // Update messages array
-          const updatedMessages = [...currentMessages];
-          updatedMessages[updatedMessages.length - 1] = {
-            role: "assistant",
-            content: displayContent,
-            reasoning: reasoning || "",
-          };
-          currentMessages = updatedMessages;
+        pendingEventBuffer += chunkText;
 
-          onUpdate?.(currentMessages);
+        let newlineIndex = pendingEventBuffer.indexOf("\n");
+        while (newlineIndex !== -1) {
+          const rawEvent = pendingEventBuffer.slice(0, newlineIndex).trim();
+          pendingEventBuffer = pendingEventBuffer.slice(newlineIndex + 1);
+
+          if (rawEvent) {
+            const event = this.parseEvent(rawEvent);
+            if (event.type === "content") {
+              assistantContent += event.delta;
+            } else if (event.type === "reasoning") {
+              assistantReasoning += event.delta;
+            } else if (event.type === "error") {
+              assistantContent += assistantContent
+                ? `\n\n${event.message}`
+                : event.message;
+            } else if (event.type === "done") {
+              hasDoneEvent = true;
+            }
+          }
+
+          newlineIndex = pendingEventBuffer.indexOf("\n");
+        }
+
+        const now = Date.now();
+        if (now - lastUpdateAt >= UPDATE_INTERVAL_MS) {
+          await flushMessages({ force: false });
+          lastUpdateAt = now;
+        }
+
+        if (now - lastPersistAt >= PERSIST_INTERVAL_MS) {
+          await this.safePersist(chatId, currentMessages);
+          lastPersistAt = now;
+        }
+      }
+
+      if (pendingEventBuffer.trim()) {
+        const event = this.parseEvent(pendingEventBuffer.trim());
+        if (event.type === "content") {
+          assistantContent += event.delta;
+        } else if (event.type === "reasoning") {
+          assistantReasoning += event.delta;
+        } else if (event.type === "error") {
+          assistantContent += assistantContent
+            ? `\n\n${event.message}`
+            : event.message;
+        } else if (event.type === "done") {
+          hasDoneEvent = true;
         }
       }
 
       const endTime = Date.now();
-      const { displayContent, reasoning } =
-        processMessageContent(assistantMessage);
 
-      // Final update
-      const finalMessages = [...currentMessages];
-      finalMessages[finalMessages.length - 1] = {
-        role: "assistant",
-        content: displayContent,
-        reasoning: reasoning || "",
-        startTime: startTime,
-        endTime: endTime,
-      };
+      if (task.cancelRequested) {
+        assistantContent = assistantContent.trim() || "Generation was interrupted.";
+        assistantReasoning = assistantReasoning.trim();
 
-      // Save to DB
-      await saveChats(chatId, finalMessages);
-
-      // Notify component
-      onUpdate?.(finalMessages);
-    } catch (error) {
-      console.error("Error in generation:", error);
-
-      // Save partial response if we have any content
-      const { displayContent, reasoning } =
-        processMessageContent(assistantMessage);
-
-      const partialMessages = [...currentMessages];
-      if (currentMessages.length > 0) {
-        // Update the last message with partial content and cancelled flag
-        partialMessages[partialMessages.length - 1] = {
-          role: "assistant",
-          content: displayContent || "Generation was interrupted.",
-          reasoning: reasoning || "",
+        updateAssistantMessage({
+          content: assistantContent,
+          reasoning: assistantReasoning || "",
+          startTime,
+          endTime,
           cancelled: true,
-        };
+        });
       } else {
-        // Fallback: create new message if no currentMessages exist
-        partialMessages.push({
-          role: "assistant",
-          content:
-            displayContent ||
-            "Sorry, there was an error processing your request.",
-          cancelled: true,
+        assistantContent = assistantContent.trim();
+        assistantReasoning = assistantReasoning.trim();
+
+        if (!assistantContent && !assistantReasoning && !hasDoneEvent) {
+          assistantContent =
+            "Sorry, we ran into an issue. Please try sending that prompt again!";
+        }
+
+        updateAssistantMessage({
+          content: assistantContent,
+          reasoning: assistantReasoning || "",
+          startTime,
+          endTime,
         });
       }
 
-      await saveChats(chatId, partialMessages);
-      onUpdate?.(partialMessages);
-    } finally {
-      // Clean up the AbortController
-      if (ac) {
-        ac.abort();
+      await this.safePersist(chatId, currentMessages);
+      this.publishUpdate(task, currentMessages);
+    } catch (error) {
+      console.error("Error in generation:", error);
+
+      const endTime = Date.now();
+      assistantContent =
+        assistantContent.trim() ||
+        (task.cancelRequested
+          ? "Generation was interrupted."
+          : "Sorry, we ran into an issue. Please try sending that prompt again!");
+      assistantReasoning = assistantReasoning.trim();
+
+      updateAssistantMessage({
+        content: assistantContent,
+        reasoning: assistantReasoning || "",
+        startTime,
+        endTime,
+        cancelled: task.cancelRequested,
+      });
+
+      await this.safePersist(chatId, currentMessages);
+      this.publishUpdate(task, currentMessages);
+    }
+  }
+
+  private parseEvent(rawEvent: string): GenerationEvent {
+    try {
+      const parsed = JSON.parse(rawEvent) as Partial<GenerationEvent>;
+
+      if (parsed.type === "content" && typeof parsed.delta === "string") {
+        return { type: "content", delta: parsed.delta };
       }
+
+      if (parsed.type === "reasoning" && typeof parsed.delta === "string") {
+        return { type: "reasoning", delta: parsed.delta };
+      }
+
+      if (parsed.type === "done") {
+        return { type: "done" };
+      }
+
+      if (parsed.type === "error" && typeof parsed.message === "string") {
+        return { type: "error", message: parsed.message };
+      }
+    } catch {
+      // Fall through to legacy plain-text handling.
+    }
+
+    return { type: "content", delta: rawEvent };
+  }
+
+  private publishUpdate(task: GenerationTask, messages: Message[]) {
+    task.latestMessages = messages;
+
+    const callbacks = this.listeners.get(task.chatId);
+    if (!callbacks || callbacks.size === 0) {
+      return;
+    }
+
+    for (const callback of callbacks) {
+      try {
+        callback(messages);
+      } catch (error) {
+        console.error("Error notifying generation subscriber:", error);
+      }
+    }
+  }
+
+  private async safePersist(chatId: string, messages: Message[]) {
+    try {
+      await saveChats(chatId, messages);
+    } catch (error) {
+      console.error("Failed to persist chat during generation:", error);
     }
   }
 
@@ -233,18 +358,33 @@ class GenerationManager {
     return this.activeTasks.get(chatId)?.abortId;
   }
 
-  subscribeToUpdates(chatId: string, onUpdate: (messages: Message[]) => void) {
+  subscribeToUpdates(chatId: string, onUpdate: UpdateCallback) {
+    const listenersForChat = this.listeners.get(chatId) ?? new Set<UpdateCallback>();
+    listenersForChat.add(onUpdate);
+    this.listeners.set(chatId, listenersForChat);
+
     const task = this.activeTasks.get(chatId);
-    if (task) {
-      task.onUpdate = onUpdate;
+    if (task && task.latestMessages.length > 0) {
+      onUpdate(task.latestMessages);
     }
   }
 
-  unsubscribeFromUpdates(chatId: string) {
-    const task = this.activeTasks.get(chatId);
-    if (task) {
-      task.onUpdate = undefined;
+  unsubscribeFromUpdates(chatId: string, onUpdate?: UpdateCallback) {
+    const listenersForChat = this.listeners.get(chatId);
+    if (!listenersForChat) {
+      return;
     }
+
+    if (onUpdate) {
+      listenersForChat.delete(onUpdate);
+
+      if (listenersForChat.size === 0) {
+        this.listeners.delete(chatId);
+      }
+      return;
+    }
+
+    this.listeners.delete(chatId);
   }
 }
 

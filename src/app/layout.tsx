@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { ModelProvider } from "@/context/ModelContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
 import MainContent from "@/ui/main-content";
 import Sidebar from "@/ui/sidebar";
@@ -9,36 +10,27 @@ import Toast from "@/ui/toast";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
-import {
-  Inter,
-  Space_Grotesk,
-  JetBrains_Mono,
-  Noto_Sans,
-} from "next/font/google";
+import { IBM_Plex_Mono, Public_Sans, Syne } from "next/font/google";
+import { Suspense } from "react";
 
-const inter = Inter({
+const publicSans = Public_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-public-sans",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const syne = Syne({
+  weight: ["500", "600", "700", "800"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-space-grotesk",
+  variable: "--font-syne",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const plexMono = IBM_Plex_Mono({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-jetbrains-mono",
-});
-
-const notoSans = Noto_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-noto-sans",
-  display: "swap",
+  variable: "--font-plex-mono",
 });
 
 export const metadata: Metadata = {
@@ -185,7 +177,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         <script
           type="application/ld+json"
@@ -193,21 +185,49 @@ export default function RootLayout({
             __html: JSON.stringify(structuredData),
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+  try {
+    const storedTheme = localStorage.getItem("rapid-chat-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = storedTheme === "light" || storedTheme === "dark"
+      ? storedTheme
+      : (prefersDark ? "dark" : "light");
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  } catch {
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.style.colorScheme = "light";
+  }
+})();`,
+          }}
+        />
       </head>
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased m-0 h-full overflow-hidden`}
+        className={`${publicSans.variable} ${syne.variable} ${plexMono.variable} m-0 h-full overflow-hidden bg-background font-sans text-text-primary antialiased`}
       >
-        <ToastProvider>
-          <SidebarProvider>
-            <ModelProvider>
-              <Sidebar />
-              <MainContent>{children}</MainContent>
-              <Toast />
-            </ModelProvider>
-          </SidebarProvider>
-        </ToastProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        >
+          Skip to main content
+        </a>
+        <ThemeProvider>
+          <ToastProvider>
+            <SidebarProvider>
+              <ModelProvider>
+                <Suspense fallback={null}>
+                  <Sidebar />
+                </Suspense>
+                <MainContent>{children}</MainContent>
+                <Toast />
+              </ModelProvider>
+            </SidebarProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

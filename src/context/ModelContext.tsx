@@ -47,6 +47,17 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     await modelInfo.refresh();
     const refreshedModels = await modelInfo.retrieveFromLocal();
     setModels(refreshedModels);
+
+    if (refreshedModels.length > 0) {
+      const selectedStillExists = refreshedModels.some(
+        (model) => model.code === selectedModel,
+      );
+
+      if (!selectedStillExists) {
+        changeModel(refreshedModels[0].code);
+      }
+    }
+
     setTimeout(() => {
       sM("Models refreshed successfully!");
       setType("info");

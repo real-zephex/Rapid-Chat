@@ -1,7 +1,7 @@
 "use client";
+
 import { useModel } from "@/context/ModelContext";
 import { useSidebar } from "@/context/SidebarContext";
-import { cancelModelRun } from "@/models";
 import Whisper from "@/models/groq/whisper";
 import { generationManager } from "@/utils/generationManager";
 import {
@@ -17,6 +17,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -30,6 +31,7 @@ import {
 import { ImCloudUpload } from "react-icons/im";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { v4 as uuidv4 } from "uuid";
+
 import AudioRecord from "./chat-components/AudioRecord";
 import ImagePreview from "./chat-components/ImagePreview";
 import MessageComponent from "./chat-components/MessageComponent";
@@ -46,6 +48,32 @@ type Message = {
   cancelled?: boolean;
 };
 
+type Pane = "primary" | "secondary";
+
+interface ChatInterfaceProps {
+  id: string;
+  pane?: Pane;
+  isSplitView?: boolean;
+  isActivePane?: boolean;
+  onActivatePane?: () => void;
+  onDeleteChat?: () => void;
+}
+
+const CHAT_MODEL_PREFERENCES_KEY = "rapid-chat-model-preferences";
+
+const isEditableTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+};
+
 const MessagesContainer = memo(
   ({
     messages,
@@ -53,21 +81,27 @@ const MessagesContainer = memo(
     onCopyResponse,
     onBranchFromMessage,
     messageRefs,
+    isSplitView,
   }: {
     messages: Message[];
     model: string;
     onCopyResponse: (content: string) => void;
     onBranchFromMessage: (index: number) => void;
-    messageRefs: React.RefObject<Map<number, HTMLDivElement>>;
+    messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
+    isSplitView: boolean;
   }) => {
     return (
-      <div className="container mx-auto max-w-full lg:max-w-[60%]">
+      <div
+        className={`mx-auto w-full ${
+          isSplitView ? "max-w-none" : "max-w-5xl"
+        }`}
+      >
         {messages.map((message, index) => (
           <div
             key={index}
-            ref={(el) => {
-              if (el) {
-                messageRefs.current.set(index, el);
+            ref={(element) => {
+              if (element) {
+                messageRefs.current.set(index, element);
               } else {
                 messageRefs.current.delete(index);
               }
@@ -79,6 +113,7 @@ const MessagesContainer = memo(
               model={model}
               onCopyResponse={onCopyResponse}
               onBranchFromMessage={onBranchFromMessage}
+              isSplitView={isSplitView}
             />
           </div>
         ))}
@@ -88,46 +123,131 @@ const MessagesContainer = memo(
 );
 MessagesContainer.displayName = "MessagesContainer";
 
-const ChatInterface = ({ id }: { id: string }) => {
-  const { refreshTitles, isOpen } = useSidebar();
-  const { selectedModel, models } = useModel();
+const ChatInterface = ({
+  id,
+  pane = "primary",
+  isSplitView = false,
+  isActivePane = true,
+  onActivatePane,
+  onDeleteChat,
+}: ChatInterfaceProps) => {
+  const { refreshTitles } = useSidebar();
+  const { selectedModel: defaultSelectedModel, models } = useModel();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
-  const [cancelId, setCancelId] = useState<string>("");
-  const [voiceLoading, setVoiceLoading] = useState<boolean>(false);
-  const [inputValue, setInputValue] = useState<string>("");
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [images, setImages] = useState<{ mimeType: string; data: Uint8Array }[]>(
+    [],
+  );
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-
-  // Use ref for input to prevent re-renders on every keystroke
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus textarea shortcut
-  useHotkeys("shift+esc", (e) => {
-    e.preventDefault();
-    inputRef.current?.focus();
-  });
-
-  // Stop generation shortcut
-  useHotkeys("esc", (e) => {
-    if (isLoading) {
-      e.preventDefault();
-      handleStopGeneration();
-    }
-  });
-
-  // Images
-  const [images, setImages] = useState<
-    { mimeType: string; data: Uint8Array }[]
-  >([]);
-
   const router = useRouter();
+  const paneLabel = pane === "primary" ? "Left" : "Right";
+  const fileInputId = `chat-file-input-${pane}-${id}`;
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const persistModelPreference = useCallback(
+    (modelCode: string) => {
+      try {
+        const raw = localStorage.getItem(CHAT_MODEL_PREFERENCES_KEY);
+        const parsed = raw
+          ? (JSON.parse(raw) as Record<string, string>)
+          : ({} as Record<string, string>);
+
+        parsed[id] = modelCode;
+        localStorage.setItem(CHAT_MODEL_PREFERENCES_KEY, JSON.stringify(parsed));
+      } catch (error) {
+        console.error("Failed to persist model preference:", error);
+      }
+    },
+    [id],
+  );
+
+  const handleModelChange = useCallback(
+    (modelCode: string) => {
+      setSelectedModel(modelCode);
+      persistModelPreference(modelCode);
+    },
+    [persistModelPreference],
+  );
+
+  useEffect(() => {
+    if (models.length === 0) {
+      return;
+    }
+
+    const fallbackModelCode = models.some(
+      (model) => model.code === defaultSelectedModel,
+    )
+      ? defaultSelectedModel
+      : models[0].code;
+
+    let preferredModelCode = fallbackModelCode;
+
+    try {
+      const raw = localStorage.getItem(CHAT_MODEL_PREFERENCES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, string>;
+        const savedModelCode = parsed[id];
+
+        if (
+          savedModelCode &&
+          models.some((model) => model.code === savedModelCode)
+        ) {
+          preferredModelCode = savedModelCode;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to read model preference:", error);
+    }
+
+    setSelectedModel(preferredModelCode);
+  }, [defaultSelectedModel, id, models]);
+
+  const selectedModelInfo = useMemo(
+    () => models.find((item) => item.code === selectedModel),
+    [models, selectedModel],
+  );
+  const supportsImageUploads = Boolean(selectedModelInfo?.image);
+  const supportsPdfUploads = Boolean(selectedModelInfo?.pdf);
+  const uploadAccept = [
+    supportsImageUploads ? "image/png,image/jpeg,image/jpg" : "",
+    supportsPdfUploads ? "application/pdf" : "",
+  ]
+    .filter(Boolean)
+    .join(",");
+
+  useEffect(() => {
+    if (images.length === 0) {
+      return;
+    }
+
+    const filteredImages = images.filter((file) => {
+      if (file.mimeType.startsWith("image/")) {
+        return supportsImageUploads;
+      }
+
+      if (file.mimeType === "application/pdf") {
+        return supportsPdfUploads;
+      }
+
+      return false;
+    });
+
+    if (filteredImages.length !== images.length) {
+      setImages(filteredImages);
+    }
+  }, [images, supportsImageUploads, supportsPdfUploads]);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
 
   const scrollToMessage = useCallback((index: number) => {
@@ -138,83 +258,306 @@ const ChatInterface = ({ id }: { id: string }) => {
   }, []);
 
   const removeImage = useCallback((index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((previous) => previous.filter((_, current) => current !== index));
   }, []);
 
-  // Fetching models here
-  useEffect(() => {
-    const loadChats = async () => {
-      setIsLoadingChats(true);
-      try {
-        const chats = await retrieveChats(id);
-        setMessages(chats);
+  const checkFileSize = useCallback((file: File) => {
+    return file.size <= 10 * 1024 * 1024;
+  }, []);
 
-        // Check if there's an ongoing generation for this chat
-        if (generationManager.isGenerating(id)) {
-          setIsLoading(true);
-          const abortId = generationManager.getAbortId(id);
-          if (abortId) {
-            setCancelId(abortId);
+  const isAttachmentSupported = useCallback(
+    (file: File) => {
+      if (file.type.startsWith("image/")) {
+        return supportsImageUploads;
+      }
+
+      if (file.type === "application/pdf") {
+        return supportsPdfUploads;
+      }
+
+      return false;
+    },
+    [supportsImageUploads, supportsPdfUploads],
+  );
+
+  const handleFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      if (!event.target.files) {
+        return;
+      }
+
+      if (!supportsImageUploads && !supportsPdfUploads) {
+        alert("The selected model does not support image or PDF uploads.");
+        event.target.value = "";
+        return;
+      }
+
+      setIsUploadingImages(true);
+      try {
+        const files = Array.from(event.target.files);
+
+        if (files.length > 5) {
+          alert("You can only upload a maximum of 5 files at a time.");
+          event.target.value = "";
+          return;
+        }
+
+        const validFiles = files.filter(
+          (file) => isAttachmentSupported(file) && checkFileSize(file),
+        );
+
+        if (validFiles.length === 0) {
+          if (supportsImageUploads && !supportsPdfUploads) {
+            alert("The selected model supports image uploads only.");
+          } else if (!supportsImageUploads && supportsPdfUploads) {
+            alert("The selected model supports PDF uploads only.");
+          } else {
+            alert("No valid files selected for this model.");
+          }
+          event.target.value = "";
+          return;
+        }
+
+        const loadedFiles = await Promise.all(
+          validFiles.map(async (file) => {
+            const buffer = await file.arrayBuffer();
+            return {
+              mimeType: file.type,
+              data: new Uint8Array(buffer),
+            };
+          }),
+        );
+
+        setImages(loadedFiles);
+        event.target.value = "";
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        alert("Error uploading files. Please try again.");
+      } finally {
+        setIsUploadingImages(false);
+      }
+    },
+    [
+      checkFileSize,
+      isAttachmentSupported,
+      supportsImageUploads,
+      supportsPdfUploads,
+    ],
+  );
+
+  const handlePaste = useCallback(
+    async (event: ClipboardEvent) => {
+      if (!isActivePane) {
+        return;
+      }
+
+      try {
+        if (event.target === inputRef.current || isEditableTarget(event.target)) {
+          return;
+        }
+
+        if (!event.clipboardData) {
+          return;
+        }
+
+        if (!supportsImageUploads) {
+          return;
+        }
+
+        const files: File[] = [];
+        const items = event.clipboardData.items;
+
+        for (const item of items) {
+          if (!item.type.startsWith("image/")) {
+            continue;
+          }
+
+          const file = item.getAsFile();
+          if (file && checkFileSize(file)) {
+            files.push(file);
           }
         }
+
+        if (files.length === 0) {
+          return;
+        }
+
+        event.preventDefault();
+        const pastedFiles = await Promise.all(
+          files.map(async (file) => {
+            const buffer = await file.arrayBuffer();
+            return {
+              mimeType: file.type,
+              data: new Uint8Array(buffer),
+            };
+          }),
+        );
+
+        setImages((previous) => [...previous, ...pastedFiles]);
       } catch (error) {
-        console.error("Error loading chats:", error);
-      } finally {
-        setIsLoadingChats(false);
+        console.error("Error handling paste:", error);
       }
-    };
-    loadChats();
-  }, [id]);
+    },
+    [checkFileSize, isActivePane, supportsImageUploads],
+  );
 
-  // Subscribe to generation updates when component mounts
-  useEffect(() => {
-    if (generationManager.isGenerating(id)) {
-      generationManager.subscribeToUpdates(id, (updatedMessages) => {
-        setMessages(updatedMessages);
-        setIsLoading(true);
-      });
-    }
-
-    return () => {
-      // Unsubscribe and cancel generation when component unmounts (user switches tabs)
-      generationManager.unsubscribeFromUpdates(id);
-      if (isLoading && cancelId) {
-        cancelModelRun(cancelId);
+  const handleDragAndDrop = useCallback(
+    async (event: React.DragEvent<HTMLElement>) => {
+      if (!isActivePane) {
+        return;
       }
-    };
-  }, [id]);
 
-  // Removed problematic offline/online handlers - they set isLoading incorrectly
-  // The app handles network errors through the ModelProvider error handling
+      try {
+        event.preventDefault();
 
-  useEffect(() => {
-    window.addEventListener("paste", handlePaste);
-    return () => {
-      window.removeEventListener("paste", handlePaste);
-    };
-  }, []);
+        if (!supportsImageUploads && !supportsPdfUploads) {
+          return;
+        }
+
+        const droppedFiles = event.dataTransfer.files;
+        if (!droppedFiles || droppedFiles.length === 0) {
+          return;
+        }
+
+        const uploads: File[] = [];
+        for (const file of droppedFiles) {
+          if (isAttachmentSupported(file) && checkFileSize(file)) {
+            uploads.push(file);
+          }
+        }
+
+        if (uploads.length === 0) {
+          return;
+        }
+
+        const loadedUploads = await Promise.all(
+          uploads.map(async (file) => {
+            const buffer = await file.arrayBuffer();
+            return {
+              mimeType: file.type,
+              data: new Uint8Array(buffer),
+            };
+          }),
+        );
+
+        setImages((previous) => [...previous, ...loadedUploads]);
+      } catch (error) {
+        console.error("Error handling drag and drop:", error);
+      }
+    },
+    [
+      checkFileSize,
+      isActivePane,
+      isAttachmentSupported,
+      supportsImageUploads,
+      supportsPdfUploads,
+    ],
+  );
 
   const handleStopGeneration = useCallback(async () => {
-    if (cancelId) {
-      // Immediately update UI state
+    if (!generationManager.isGenerating(id)) {
       setIsLoading(false);
-
-      // Cancel the model run
-      await cancelModelRun(cancelId);
-
-      // Clear cancel ID
-      setCancelId("");
-
-      // Fetch the latest messages to ensure the UI is updated
-      const updatedMessages = await retrieveChats(id);
-      setMessages(updatedMessages);
+      return;
     }
-  }, [cancelId, id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    await generationManager.stopGeneration(id);
+    setIsLoading(false);
+
+    const updatedMessages = await retrieveChats(id);
+    setMessages(updatedMessages);
+  }, [id]);
+
+  const handleCopyResponse = useCallback(async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch (error) {
+      console.error("Error copying response:", error);
+    }
+  }, []);
+
+  const handleBranchFromMessage = useCallback(
+    async (messageIndex: number) => {
+      const branchId = uuidv4();
+      const branchMessages = messages.slice(0, messageIndex + 1);
+
+      await saveChats(branchId, branchMessages);
+      await addTabs(branchId);
+      refreshTitles();
+      router.push(`/chat/${branchId}`);
+    },
+    [messages, refreshTitles, router],
+  );
+
+  const deleteChatFunc = useCallback(async () => {
+    await deleteChat(id);
+    await deleteTab(id);
+    await refreshTitles();
+
+    if (onDeleteChat) {
+      onDeleteChat();
+      return;
+    }
+
+    router.push("/chat");
+  }, [id, onDeleteChat, refreshTitles, router]);
+
+  const setAudio = async (file: Blob | null) => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    setVoiceLoading(true);
+
+    try {
+      if (file === null) {
+        input.value =
+          "Please record at least 2 seconds and less than 3 minutes of audio.";
+        handleSize();
+      } else {
+        input.value = "Transcribing audio...";
+        const text = await Whisper(file);
+        input.value = text.toString();
+        handleSize();
+      }
+    } catch (error) {
+      console.error("Error while transcribing audio.", error);
+      input.value = "";
+    } finally {
+      setVoiceLoading(false);
+    }
+  };
+
+  const onClickExample = (text: string) => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.value = text;
+    input.focus();
+    setInputValue(text);
+    handleSize();
+  };
+
+  function handleSize() {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.style.height = "0px";
+    input.style.height = `${input.scrollHeight}px`;
+    setInputValue(input.value);
+  }
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     const input = inputRef.current?.value.trim() || "";
-    if (!input || isLoading || isUploadingImages) return;
+    if (!input || isLoading || isUploadingImages || !selectedModel) {
+      return;
+    }
 
     if (images.length > 5) {
       alert("You can only upload a maximum of 5 files at a time.");
@@ -244,13 +587,11 @@ const ChatInterface = ({ id }: { id: string }) => {
     setInputValue("");
 
     setIsLoading(true);
-    const abortId = uuidv4(); // Generate unique ID for each message
-    setCancelId(abortId);
+    const abortId = uuidv4();
 
     const imagesToSend = [...images];
     setImages([]);
 
-    // Start generation in background
     generationManager
       .startGeneration(
         id,
@@ -259,469 +600,378 @@ const ChatInterface = ({ id }: { id: string }) => {
         imagesToSend,
         abortId,
         updatedMessages,
-        (updatedMessages) => {
-          setMessages(updatedMessages);
-        },
       )
       .finally(() => {
         setIsLoading(false);
       });
   };
 
-  const handleCopyResponse = useCallback(async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch (error) {
-      console.error("Error copying response:", error);
-    }
-  }, []);
+  useEffect(() => {
+    const loadChats = async () => {
+      setIsLoadingChats(true);
 
-  const handleBranchFromMessage = useCallback(
-    async (messageIndex: number) => {
-      // Create a new chat ID for the branch
-      const branchId = uuidv4();
-
-      // Get messages up to and including the selected message
-      const branchMessages = messages.slice(0, messageIndex + 1);
-
-      // Save the branch messages
-      await saveChats(branchId, branchMessages);
-      await addTabs(branchId);
-
-      // Navigate to the new branch
-      router.push(`/chat/${branchId}`);
-
-      // Refresh sidebar titles
-      refreshTitles();
-    },
-    [messages, router, refreshTitles],
-  );
-
-  const checkFileSize = useCallback((file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      return false;
-    }
-    return true;
-  }, []);
-
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.target.files) {
-        setIsUploadingImages(true);
-        try {
-          const file = event.target.files;
-          const fileArray = Array.from(file);
-
-          if (fileArray.length > 5) {
-            alert("You can only upload a maximum of 5 files at a time.");
-            event.target.value = "";
-            return;
-          }
-          const validFiles = fileArray.filter((f) => {
-            return (
-              (f.type.startsWith("image/") || f.type === "application/pdf") &&
-              checkFileSize(f)
-            );
-          });
-          if (validFiles.length == 0) {
-            alert("No valid image files selected.");
-            event.target.value = "";
-            return;
-          }
-          const arraizedImages = await Promise.all(
-            validFiles.map(async (f) => {
-              const buffer = await f.arrayBuffer();
-              return {
-                mimeType: f.type,
-                data: new Uint8Array(buffer),
-              };
-            }),
-          );
-          setImages(arraizedImages);
-          event.target.value = "";
-        } catch (error) {
-          console.error("Error uploading images:", error);
-          alert("Error uploading images. Please try again.");
-        } finally {
-          setIsUploadingImages(false);
-        }
-      }
-    },
-    [],
-  );
-
-  const handlePaste = useCallback(
-    async (e: ClipboardEvent) => {
       try {
-        if (e.target === inputRef.current) {
-          return;
+        const chats = await retrieveChats(id);
+        setMessages(chats);
+
+        if (generationManager.isGenerating(id)) {
+          setIsLoading(true);
+        } else {
+          setIsLoading(false);
         }
-
-        console.info("Pasting content from clipboard...");
-        e.preventDefault();
-
-        if (!e.clipboardData) {
-          console.warn("No clipboard data available.");
-          return;
-        }
-
-        const files: File[] = [];
-        const items = e.clipboardData.items;
-        if (!items) {
-          console.warn("No items in clipboard data.");
-          return;
-        }
-        console.info(`${items.length} items found in clipboard`);
-        for (const item of items) {
-          if (item.type.startsWith("image/")) {
-            const file = item.getAsFile();
-            if (file && checkFileSize(file)) {
-              files.push(file);
-            }
-          }
-        }
-
-        if (files.length === 0) {
-          console.warn("No valid image files found in clipboard.");
-          return;
-        }
-
-        console.info(`Processing ${files.length} valid images...`);
-        const arraizedImages = await Promise.all(
-          files.map(async (file) => {
-            const buffer = await file.arrayBuffer();
-            return {
-              mimeType: file.type,
-              data: new Uint8Array(buffer),
-            };
-          }),
-        );
-
-        setImages((prev) => [...prev, ...arraizedImages]);
       } catch (error) {
-        console.error("Error handling paste:", error);
-        alert("Error handling paste. Please try again.");
+        console.error("Error loading chats:", error);
+      } finally {
+        setIsLoadingChats(false);
       }
+    };
+
+    loadChats();
+  }, [id]);
+
+  useEffect(() => {
+    const handleGenerationUpdate = (updatedMessages: Message[]) => {
+      setMessages(updatedMessages);
+      setIsLoading(generationManager.isGenerating(id));
+    };
+
+    generationManager.subscribeToUpdates(id, handleGenerationUpdate);
+
+    return () => {
+      generationManager.unsubscribeFromUpdates(id, handleGenerationUpdate);
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!isActivePane) {
+      return;
+    }
+
+    const listener = (event: ClipboardEvent) => {
+      void handlePaste(event);
+    };
+
+    window.addEventListener("paste", listener);
+    return () => {
+      window.removeEventListener("paste", listener);
+    };
+  }, [handlePaste, isActivePane]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      return;
+    }
+
+    scrollToBottom(isLoading ? "auto" : "smooth");
+  }, [isLoading, messages, scrollToBottom]);
+
+  useHotkeys(
+    "shift+esc",
+    (event) => {
+      event.preventDefault();
+      inputRef.current?.focus();
     },
-    [checkFileSize],
+    { enabled: isActivePane },
+    [isActivePane],
   );
 
-  const handleDragAndDrop = useCallback(
-    async (e: React.DragEvent<HTMLDivElement>) => {
-      try {
-        console.info("Drag and Drop detected.");
-        e.preventDefault();
-
-        const files = e.dataTransfer.files;
-        if (!files || files.length === 0) {
-          console.warn("No files dropped.");
-          return;
-        }
-
-        const uploads: File[] = [];
-        for (const file of files) {
-          if (
-            (file.type.startsWith("image/") ||
-              file.type === "application/pdf") &&
-            checkFileSize(file)
-          ) {
-            uploads.push(file);
-          }
-        }
-
-        const arraizedImages = await Promise.all(
-          uploads.map(async (file) => {
-            const buffer = await file.arrayBuffer();
-            return {
-              mimeType: file.type,
-              data: new Uint8Array(buffer),
-            };
-          }),
-        );
-
-        setImages((prev) => [...prev, ...arraizedImages]);
-      } catch (error) {
-        console.error("Error handling drag and drop:", error);
-        alert("Error handling drag and drop. Please try again.");
+  useHotkeys(
+    "esc",
+    (event) => {
+      if (!isLoading) {
+        return;
       }
+
+      event.preventDefault();
+      void handleStopGeneration();
     },
-    [checkFileSize],
+    { enabled: isActivePane },
+    [handleStopGeneration, isActivePane, isLoading],
   );
 
-  const setAudio = async (file: Blob | null) => {
-    const input = inputRef.current!;
-    setVoiceLoading(true);
-    try {
-      if (file === null) {
-        input.value =
-          "Please make sure that the audio is larger than 2 seconds and less than 3 minutes long. This feature costs significantly more so please use it responsibly.";
-        handleSize();
-      } else {
-        input.value = "Transcribing audio...";
-        const text = await Whisper(file);
-        input.value = text.toString();
-        handleSize();
+  useHotkeys(
+    "ctrl+shift+backspace",
+    (event) => {
+      if (isEditableTarget(event.target)) {
+        return;
       }
-    } catch (error) {
-      console.error("Error occured while trying to transcribe audio.");
-      input.value = "";
-    } finally {
-      setVoiceLoading(false);
-    }
-  };
 
-  // Delete chat hotkey
-  useHotkeys("ctrl+shift+backspace", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    deleteChatFunc();
-  });
+      event.preventDefault();
+      event.stopPropagation();
+      void deleteChatFunc();
+    },
+    { enabled: isActivePane },
+    [deleteChatFunc, isActivePane],
+  );
 
-  useHotkeys("delete", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    deleteChatFunc();
-  });
+  useHotkeys(
+    "delete",
+    (event) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
 
-  function deleteChatFunc() {
-    deleteChat(id);
-    deleteTab(id);
-    refreshTitles();
-    router.push("/chat");
-  }
-
-  function onClickExample(text: string) {
-    const input = inputRef.current;
-    if (input) {
-      input.value = text;
-      input.focus();
-      setInputValue(text);
-    }
-  }
-
-  function handleSize(): void {
-    const ref = inputRef.current;
-    if (ref) {
-      ref.style.height = "0px";
-      ref.style.height = ref.scrollHeight + "px";
-      setInputValue(ref.value);
-    }
-  }
+      event.preventDefault();
+      event.stopPropagation();
+      void deleteChatFunc();
+    },
+    { enabled: isActivePane && !isLoading },
+    [deleteChatFunc, isActivePane, isLoading],
+  );
 
   if (!id) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-text-secondary">No chat ID provided</p>
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-text-secondary">No chat ID provided.</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="flex flex-col h-dvh overflow-y-hidden bg-background relative"
-      onDrop={handleDragAndDrop}
-      onDragOver={(e) => e.preventDefault()}
+    <section
+      className={`relative flex h-full min-h-0 flex-col overflow-hidden border-l border-transparent transition-colors ${
+        isActivePane ? "bg-background" : "bg-background/70"
+      }`}
+      onMouseDown={() => onActivatePane?.()}
+      onFocusCapture={() => onActivatePane?.()}
+      onDrop={(event) => {
+        void handleDragAndDrop(event);
+      }}
+      onDragOver={(event) => {
+        if (!isActivePane) {
+          return;
+        }
+        event.preventDefault();
+      }}
+      aria-label={isSplitView ? `${paneLabel} chat panel` : "Chat panel"}
     >
-      {/* Minimap */}
-      {messages.length > 0 && (
-        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-2 bg-surface/60 backdrop-blur-sm p-2 rounded-full max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-text-muted scrollbar-track-transparent">
-          {messages
-            .map((message, index) => ({ message, index }))
-            .filter(({ message }) => message.role === "user")
-            .map(({ index }) => (
-              <button
-                key={index}
-                onClick={() => scrollToMessage(index)}
-                className="w-2 h-2 rounded-full bg-text-muted hover:bg-text-secondary transition-all duration-200 cursor-pointer"
-                title={`Jump to query ${Math.floor(index / 2) + 1}`}
-              />
-            ))}
+      {isSplitView && (
+        <div
+          className={`flex items-center justify-between border-b border-border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+            isActivePane
+              ? "bg-accent text-white"
+              : "bg-surface text-text-secondary"
+          }`}
+        >
+          <span>{paneLabel} Pane</span>
+          <span className="font-mono text-[10px] opacity-80">{id.slice(0, 8)}</span>
         </div>
       )}
 
-      {/* Scroll Button */}
-      {messages.length > 0 && (
-        <button
-          className="fixed right-6 bottom-28 p-2 rounded-full bg-surface text-text-secondary hover:bg-surface-hover transition-colors shadow-lg hidden md:block"
-          onClick={() => scrollToBottom()}
-          title="Scroll to bottom"
-        >
-          <FaArrowCircleDown size={20} />
-        </button>
-      )}
-
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto scroll-smooth">
-        {isLoadingChats ? (
-          <div className="flex items-center justify-center h-full gap-3">
-            <div className="animate-spin rounded-full size-5 border-2 border-text-muted border-t-text-primary"></div>
-            <p className="text-text-muted text-sm">
-              Loading your conversation...
-            </p>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        {messages.length > 0 && !isSplitView && (
+          <div className="absolute right-3 top-1/2 z-10 hidden max-h-[55%] -translate-y-1/2 flex-col gap-2 overflow-y-auto rounded-full border border-border bg-surface/85 p-2 backdrop-blur-sm lg:flex">
+            {messages
+              .map((message, index) => ({ message, index }))
+              .filter(({ message }) => message.role === "user")
+              .map(({ index }) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => scrollToMessage(index)}
+                  className="h-2 w-2 rounded-full bg-text-muted transition-colors hover:bg-accent"
+                  aria-label={`Jump to prompt ${Math.floor(index / 2) + 1}`}
+                />
+              ))}
           </div>
-        ) : messages.length === 0 ? (
-          <div
-            className={`flex flex-col items-center justify-center h-full w-full px-4 `}
+        )}
+
+        {messages.length > 0 && (
+          <button
+            type="button"
+            className="absolute bottom-40 right-4 z-10 rounded-full border border-border bg-surface p-2 text-text-secondary shadow-sm transition-colors hover:bg-surface-hover hover:text-text-primary"
+            onClick={() => scrollToBottom("smooth")}
+            aria-label="Scroll to latest message"
           >
-            <div className="w-full max-w-3xl mx-auto mb-8">
-              <h1 className="text-4xl font-semibold text-center text-text-primary mb-12">
-                What can I help with?
+            <FaArrowCircleDown size={18} />
+          </button>
+        )}
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {isLoadingChats ? (
+            <div className="flex h-full items-center justify-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-text-muted border-t-accent" />
+              <p className="text-sm text-text-secondary">Loading conversation...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="mx-auto flex h-full w-full max-w-5xl flex-col items-center justify-center px-5 py-10">
+              <h1 className="mb-8 text-center text-3xl font-semibold text-text-primary md:text-4xl">
+                Ask anything. Compare fast.
               </h1>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+              <div className="grid w-full max-w-3xl grid-cols-1 gap-3 md:grid-cols-2">
                 <ExamplePromptsConstructors
-                  text="Write a short story about a robot discovering emotions."
+                  text="Summarize this architecture and list bottlenecks for performance."
                   onClick={onClickExample}
                 />
                 <ExamplePromptsConstructors
-                  text="Help me outline a sci-fi novel set in a post-apocalyptic world."
+                  text="Draft a migration plan from REST polling to SSE streaming."
                   onClick={onClickExample}
                 />
                 <ExamplePromptsConstructors
-                  text="Create a character profile for a complex villain with sympathetic motives."
+                  text="Refactor this component for accessibility and keyboard flow."
                   onClick={onClickExample}
                 />
                 <ExamplePromptsConstructors
-                  text="Give me 5 creative writing prompts for flash fiction."
+                  text="Write tests for this utility with edge cases and failure paths."
                   onClick={onClickExample}
                 />
               </div>
             </div>
-          </div>
-        ) : (
-          <MessagesContainer
-            messages={messages}
-            model={
-              models.find((m) => m.code === selectedModel)?.name ||
-              "Unknown Model"
-            }
-            onCopyResponse={handleCopyResponse}
-            onBranchFromMessage={handleBranchFromMessage}
-            messageRefs={messageRefs}
-          />
-        )}
-        <div ref={messagesEndRef} className="mb-40" />
+          ) : (
+            <div className="px-3 pb-10 pt-5 sm:px-4">
+              <MessagesContainer
+                messages={messages}
+                model={selectedModelInfo?.name || "Unknown Model"}
+                onCopyResponse={handleCopyResponse}
+                onBranchFromMessage={handleBranchFromMessage}
+                messageRefs={messageRefs}
+                isSplitView={isSplitView}
+              />
+            </div>
+          )}
+          <div ref={messagesEndRef} className="h-56" />
+        </div>
       </div>
 
-      {/* Chat Input Form */}
-      <div className="absolute bottom-0 inset-x-0 mx-auto w-full max-w-4xl px-4 pb-4 pt-2 z-20">
-        <form onSubmit={handleSubmit} className="relative">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-background via-background/80 to-transparent px-3 pb-3 pt-10 sm:px-4 sm:pb-4">
+        <form
+          onSubmit={handleSubmit}
+          className={`pointer-events-auto mx-auto w-full ${
+            isSplitView ? "max-w-2xl" : "max-w-4xl"
+          }`}
+        >
           <ImagePreview images={images} onRemove={removeImage} />
-          <div className="relative bg-surface rounded-2xl shadow-2xl border border-border p-2">
+
+          <div
+            className={`relative rounded-2xl border p-2 shadow-[0_12px_40px_rgba(17,24,39,0.12)] transition-shadow ${
+              isActivePane
+                ? "border-border bg-background/95 backdrop-blur"
+                : "border-border bg-background/90"
+            }`}
+          >
+            <div
+              className={`pointer-events-none absolute right-3 top-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary transition-opacity duration-200 ${
+                isLoading ? "opacity-100" : "opacity-0"
+              }`}
+              aria-live="polite"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+              <span>Generating</span>
+            </div>
+
             <textarea
               ref={inputRef}
-              className={`w-full bg-transparent text-text-primary outline-none resize-none px-4 py-3 placeholder-text-muted text-base disabled:opacity-50 max-h-60 ${
+              rows={1}
+              disabled={isLoadingChats || voiceLoading || isLoading}
+              onInput={handleSize}
+              placeholder="Type your message"
+              aria-label="Message input"
+              className={`max-h-64 min-h-[48px] w-full resize-none bg-transparent px-3 py-2 text-base text-text-primary outline-none placeholder:text-text-muted disabled:opacity-60 ${
                 isLoading ? "animate-pulse" : ""
               }`}
-              rows={1}
-              onInput={handleSize}
-              disabled={isLoadingChats || voiceLoading || isLoading}
-              placeholder="Message Rapid-Chat"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                } else if (e.ctrlKey && e.shiftKey && e.key === "Backspace") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  deleteChatFunc();
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                  return;
+                }
+
+                if (
+                  event.ctrlKey &&
+                  event.shiftKey &&
+                  event.key === "Backspace"
+                ) {
+                  event.preventDefault();
+                  void deleteChatFunc();
                 }
               }}
-            ></textarea>
-            <div className="flex justify-between items-center px-2 pb-1 mt-2">
-              <div className="flex items-center">
-                <ModelSelector />
-              </div>
-              <div className="flex items-center gap-2">
+            />
+
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/80 px-1 pt-2">
+              <ModelSelector
+                selectedModel={selectedModel}
+                onChangeModel={handleModelChange}
+              />
+
+              <div className="flex items-center gap-1">
                 <button
-                  className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors"
-                  onClick={() => deleteChatFunc()}
-                  title="Delete chat"
                   type="button"
+                  onClick={() => {
+                    void deleteChatFunc();
+                  }}
+                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-surface hover:text-error"
+                  aria-label="Delete chat"
                 >
-                  <RiDeleteBin2Fill size={18} />
+                  <RiDeleteBin2Fill size={16} />
                 </button>
+
                 <AudioRecord setAudio={setAudio} />
-                {models.find(
-                  (item) => item.image === true && item.code === selectedModel,
-                ) && (
+
+                {(supportsImageUploads || supportsPdfUploads) && (
                   <label
-                    className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors cursor-pointer"
-                    title="Upload file"
-                    htmlFor="fileInput"
+                    htmlFor={fileInputId}
+                    className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface hover:text-text-primary"
+                    aria-label="Upload files"
                   >
                     <input
+                      id={fileInputId}
                       name="file"
                       type="file"
-                      accept={`image/png, image/jpeg, image/jpg, ${
-                        models.find((i) => i.code === selectedModel)?.pdf
-                          ? "application/pdf"
-                          : ""
-                      }`}
-                      className="hidden"
-                      id="fileInput"
-                      onChange={handleFileChange}
                       multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                      accept={uploadAccept}
                     />
-                    <FaUpload size={16} />
+                    <FaUpload size={14} />
                   </label>
                 )}
-                {/* Stop button - separate from submit */}
+
                 {isLoading && (
                   <button
                     type="button"
-                    className="p-2 rounded-lg text-text-muted hover:bg-surface-hover transition-colors"
-                    title="Stop generation (Esc)"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleStopGeneration();
+                    onClick={() => {
+                      void handleStopGeneration();
                     }}
+                    className="rounded-lg p-2 text-text-muted transition-colors hover:bg-surface hover:text-text-primary"
+                    aria-label="Stop generation"
                   >
-                    <FaStop size={20} />
+                    <FaStop size={17} />
                   </button>
                 )}
-                {/* Submit button */}
+
                 <button
                   type="submit"
                   disabled={
-                    isLoading || isUploadingImages || !inputValue.trim()
+                    isLoading ||
+                    isUploadingImages ||
+                    !inputValue.trim() ||
+                    !selectedModel
                   }
-                  className={`p-2 rounded-xl transition-all ${
-                    isLoading || isUploadingImages || !inputValue.trim()
-                      ? "text-text-muted cursor-not-allowed"
-                      : "text-text-primary bg-accent hover:bg-accent/90"
+                  className={`rounded-xl p-2.5 transition-colors ${
+                    isLoading ||
+                    isUploadingImages ||
+                    !inputValue.trim() ||
+                    !selectedModel
+                      ? "cursor-not-allowed text-text-muted"
+                      : "bg-accent text-white hover:bg-accent-strong"
                   }`}
-                  title={
-                    isUploadingImages
-                      ? "Waiting for images to upload..."
-                      : isLoading
-                        ? "Generation in progress..."
-                        : !inputValue.trim()
-                          ? "Type a message to send"
-                          : "Send message (Enter)"
-                  }
+                  aria-label="Send message"
                 >
                   {isUploadingImages ? (
-                    <ImCloudUpload size={20} />
+                    <ImCloudUpload size={18} />
+                  ) : isLoading ? (
+                    <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-text-muted border-t-text-primary" />
                   ) : (
-                    <FaArrowCircleRight size={20} />
+                    <FaArrowCircleRight size={18} />
                   )}
                 </button>
               </div>
             </div>
           </div>
-          {isLoading && (
-            <div className="absolute -top-10 left-4 flex items-center gap-2 text-xs text-text-muted bg-surface border border-border px-3 py-1.5 rounded-lg shadow-lg">
-              <div className="animate-spin rounded-full size-3 border-2 border-text-muted border-t-text-primary"></div>
-              <p>Generating...</p>
-            </div>
-          )}
+
         </form>
-        {/*<p className="text-center text-xs text-text-muted mt-2 px-4">
-          Rapid-Chat can make mistakes.
-        </p>*/}
       </div>
-    </div>
+    </section>
   );
 };
 

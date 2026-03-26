@@ -6,12 +6,12 @@ const Toast = () => {
   const { message, type, showToast } = useToast();
 
   if (!showToast) {
-    return <></>;
+    return null;
   }
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border transition-all duration-300 ease-in-out bg-surface ${
+      className={`fixed right-4 top-4 z-50 rounded-xl border bg-surface p-4 shadow-xl transition-all duration-300 ease-in-out ${
         type === "success"
           ? "border-success/50 text-success"
           : type === "error"
@@ -20,6 +20,8 @@ const Toast = () => {
               ? "border-yellow-500/50 text-yellow-500"
               : "border-accent/50 text-accent"
       }`}
+      role="status"
+      aria-live="polite"
     >
       <div className="flex items-center">
         {type === "success" && (

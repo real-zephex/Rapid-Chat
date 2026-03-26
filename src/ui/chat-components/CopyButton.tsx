@@ -1,7 +1,6 @@
 "use client";
 import { memo, useState, useCallback } from "react";
 
-// Copy button component for code blocks - Memoized to prevent unnecessary re-renders
 const CopyButton = memo(
   ({
     text,
@@ -26,9 +25,11 @@ const CopyButton = memo(
       <button
         onClick={handleCopy}
         className={`absolute ${
-          hasLanguageLabel ? "top-14" : "top-2"
-        } right-2 p-2 rounded-md bg-surface border border-border text-text-muted hover:text-text-primary transition-all duration-200 z-10 opacity-60 hover:opacity-100`}
+          hasLanguageLabel ? "top-9" : "top-2"
+        } right-2 rounded-md border border-border bg-surface p-1.5 text-text-muted opacity-70 transition-all duration-200 hover:opacity-100 hover:text-text-primary`}
         title={copied ? "Copied!" : "Copy code"}
+        aria-label={copied ? "Code copied" : "Copy code"}
+        type="button"
       >
         {copied ? (
           <svg

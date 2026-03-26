@@ -1,4 +1,4 @@
-import ChatInterface from "@/ui/chat-interface";
+import ChatWorkspace from "@/ui/chat-workspace";
 import { Metadata } from "next";
 
 export async function generateMetadata({
@@ -33,13 +33,18 @@ export async function generateMetadata({
 
 export default async function ChatPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ split?: string | string[] }>;
 }) {
   const { id } = await params;
+  const query = await searchParams;
+  const splitValue = Array.isArray(query.split) ? query.split[0] : query.split;
+
   return (
-    <div className="w-full relative border border-white/10">
-      <ChatInterface id={id} />
+    <div className="w-full">
+      <ChatWorkspace id={id} splitId={splitValue} />
     </div>
   );
 }

@@ -11,10 +11,10 @@
   "dependencies": {
     "@next/third-parties": "^15.5.9",
     "@openrouter/sdk": "^0.2.11",
-    "@supabase/supabase-js": "^2.89.0",
     "@tailwindcss/typography": "^0.5.19",
     "@vercel/analytics": "^1.6.1",
     "cheerio": "^1.1.2",
+    "convex": "^1.34.0",
     "framer-motion": "^12.23.26",
     "groq-sdk": "^0.30.0",
     "katex": "^0.16.27",
