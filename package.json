@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "model:upsert": "bun run scripts/upsert-models.ts"
   },
   "dependencies": {
     "@next/third-parties": "^15.5.9",

@@ -85,7 +85,7 @@ const MessagesContainer = memo(
   }: {
     messages: Message[];
     model: string;
-    onCopyResponse: (content: string) => void;
+    onCopyResponse: (content: string) => Promise<boolean>;
     onBranchFromMessage: (index: number) => void;
     messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
     isSplitView: boolean;
@@ -470,8 +470,10 @@ const ChatInterface = ({
   const handleCopyResponse = useCallback(async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
+      return true;
     } catch (error) {
       console.error("Error copying response:", error);
+      return false;
     }
   }, []);
 

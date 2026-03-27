@@ -145,7 +145,7 @@ Tools are defined in `src/utils/tools/schema/index.ts` with OpenAI-compatible sc
 
 ### Convex Model Records
 
-The app reads model configuration from Convex table `models` and increments `usage_count` every time a model is used for generation. Each document should include fields such as `model_code`, `display_name`, `provider`, `provider_code`, `system_prompt`, `max_completion_tokens`, `temperature`, `top_p`, `reasoning`, `tools`, `image_support`, `pdf_support`, `active`, and `usage_count`.
+The app reads model configuration from Convex table `models` and increments `usage_count` every time a model is used for generation. Each document should include fields such as `model_code`, `display_name`, `provider`, `provider_code`, `system_prompt`, `max_completion_tokens`, `temperature`, `top_p`, `reasoning`, `image_support`, `pdf_support`, `active`, and `usage_count`.
 
 ## Development
 
@@ -169,6 +169,8 @@ The app reads model configuration from Convex table `models` and increments `usa
 - `npm run build`: Production build.
 - `npm run start`: Production server.
 - `npm run lint`: ESLint.
+- `bun run model:upsert --interactive`: Insert or update one model interactively.
+- `bun run model:upsert --file ./models.json`: Insert or update one or many models from JSON.
 
 ## Privacy & Security
 

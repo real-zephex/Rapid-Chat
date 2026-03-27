@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCodeBranch, FaRegCopy } from "react-icons/fa6";
-import { GoCpu } from "react-icons/go";
+import { GoClock, GoCpu } from "react-icons/go";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -29,7 +29,7 @@ interface MessageComponentProps {
   message: Message;
   index: number;
   model: string;
-  onCopyResponse: (content: string) => void;
+  onCopyResponse: (content: string) => Promise<boolean>;
   onBranchFromMessage: (index: number) => void;
   isSplitView?: boolean;
 }
@@ -44,9 +44,45 @@ const MessageComponent = memo(
     isSplitView = false,
   }: MessageComponentProps) => {
     const [isReasoningOpen, setIsReasoningOpen] = useState(false);
+    const [copyFeedback, setCopyFeedback] = useState<{
+      target: "user" | "assistant" | null;
+      state: "idle" | "copied" | "failed";
+    }>({
+      target: null,
+      state: "idle",
+    });
+    const feedbackTimeoutRef = useRef<number | null>(null);
 
     const isUser = message.role === "user";
     const isStreaming = !message.endTime && !message.cancelled && !isUser;
+
+    useEffect(() => {
+      return () => {
+        if (feedbackTimeoutRef.current !== null) {
+          window.clearTimeout(feedbackTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    const handleCopyWithFeedback = useCallback(
+      async (target: "user" | "assistant", content: string) => {
+        if (feedbackTimeoutRef.current !== null) {
+          window.clearTimeout(feedbackTimeoutRef.current);
+        }
+
+        const success = await onCopyResponse(content);
+        setCopyFeedback({
+          target,
+          state: success ? "copied" : "failed",
+        });
+
+        feedbackTimeoutRef.current = window.setTimeout(() => {
+          setCopyFeedback({ target: null, state: "idle" });
+          feedbackTimeoutRef.current = null;
+        }, 1700);
+      },
+      [onCopyResponse],
+    );
 
     const displayedContent = useSmoothStream(message.content, isStreaming);
     const displayedReasoning = useSmoothStream(message.reasoning || "", isStreaming);
@@ -78,7 +114,20 @@ const MessageComponent = memo(
       return duration > 0 ? Number((totalTokens / duration).toFixed(2)) : 0;
     }, [message.endTime, message.startTime, totalTokens]);
 
+    const generationDuration = useMemo(() => {
+      if (!message.endTime || !message.startTime) {
+        return 0;
+      }
+
+      const duration = (message.endTime - message.startTime) / 1000;
+      return duration > 0 ? Number(duration.toFixed(2)) : 0;
+    }, [message.endTime, message.startTime]);
+
     const wrapperClass = isSplitView ? "max-w-none" : "max-w-5xl";
+    const userCopyState =
+      copyFeedback.target === "user" ? copyFeedback.state : "idle";
+    const assistantCopyState =
+      copyFeedback.target === "assistant" ? copyFeedback.state : "idle";
 
     if (isUser) {
       return (
@@ -95,14 +144,29 @@ const MessageComponent = memo(
                 {message.content}
               </div>
 
-              <div className="flex justify-end opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <div className="mt-1 flex justify-end">
                 <button
                   type="button"
-                  className="rounded-lg border border-border bg-surface p-2 text-text-muted transition-colors hover:text-text-primary"
-                  onClick={() => onCopyResponse(message.content)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    userCopyState === "copied"
+                      ? "border-success/45 bg-success/10 text-success"
+                      : userCopyState === "failed"
+                        ? "border-error/45 bg-error/10 text-error"
+                        : "border-border bg-surface text-text-muted hover:text-text-primary"
+                  }`}
+                  onClick={() => {
+                    void handleCopyWithFeedback("user", message.content);
+                  }}
                   aria-label="Copy user message"
                 >
                   <FaRegCopy size={13} />
+                  <span>
+                    {userCopyState === "copied"
+                      ? "Copied"
+                      : userCopyState === "failed"
+                        ? "Failed"
+                        : "Copy"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -223,13 +287,18 @@ const MessageComponent = memo(
                     const language = getLanguage(children);
 
                     return (
-                      <div className="group relative my-5 overflow-hidden rounded-xl border border-border bg-background">
+                      <div className="group relative my-4 overflow-hidden rounded-xl border border-border bg-background first:mt-3 last:mb-1">
                         {language && (
                           <div className="flex items-center justify-between border-b border-border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
                             <span>{language}</span>
                           </div>
                         )}
-                        <pre className="m-0 overflow-x-auto bg-transparent p-4 text-text-primary" {...props}>
+                        <pre
+                          className={`chat-code-pre m-0 overflow-x-auto bg-transparent text-text-primary ${
+                            language ? "px-4 pb-3 pt-2.5" : "p-4"
+                          }`}
+                          {...props}
+                        >
                           {children}
                         </pre>
                         <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -317,25 +386,43 @@ const MessageComponent = memo(
               </div>
             )}
 
-            <div className="mt-5 flex items-center gap-2 border-t border-border pt-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <button
-                type="button"
-                className="rounded-lg border border-border bg-background p-2 text-text-muted transition-colors hover:text-text-primary"
-                onClick={() => onCopyResponse(message.content)}
-                aria-label="Copy assistant response"
-              >
-                <FaRegCopy size={13} />
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-border bg-background p-2 text-text-muted transition-colors hover:text-text-primary"
-                onClick={() => onBranchFromMessage(index)}
-                aria-label="Branch from this response"
-              >
-                <FaCodeBranch size={13} />
-              </button>
+            <div className="mt-3 flex flex-col gap-2 border-t border-border/85 pt-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    assistantCopyState === "copied"
+                      ? "border-success/45 bg-success/10 text-success"
+                      : assistantCopyState === "failed"
+                        ? "border-error/45 bg-error/10 text-error"
+                        : "border-border bg-background text-text-muted hover:text-text-primary"
+                  }`}
+                  onClick={() => {
+                    void handleCopyWithFeedback("assistant", message.content);
+                  }}
+                  aria-label="Copy assistant response"
+                >
+                  <FaRegCopy size={13} />
+                  <span>
+                    {assistantCopyState === "copied"
+                      ? "Copied"
+                      : assistantCopyState === "failed"
+                        ? "Failed"
+                        : "Copy"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-text-muted transition-colors hover:text-text-primary"
+                  onClick={() => onBranchFromMessage(index)}
+                  aria-label="Branch from this response"
+                >
+                  <FaCodeBranch size={13} />
+                  <span>Branch</span>
+                </button>
+              </div>
 
-              <div className="ml-auto flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-text-muted">
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-text-muted sm:ml-auto">
                 {totalTokens > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
                     <TbAlphabetLatin size={11} />
@@ -346,6 +433,12 @@ const MessageComponent = memo(
                   <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
                     <GoCpu size={11} />
                     {tokensPerSecond} T/S
+                  </span>
+                )}
+                {generationDuration > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
+                    <GoClock size={11} />
+                    {generationDuration}s
                   </span>
                 )}
               </div>

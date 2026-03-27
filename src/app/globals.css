@@ -309,6 +309,12 @@ pre code.hljs {
   background: transparent;
 }
 
+.chat-markdown pre.chat-code-pre {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
 .chat-markdown :not(pre) > code {
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
   background: color-mix(in srgb, var(--surface) 72%, white);
