@@ -3,6 +3,7 @@
 import { useSidebar } from "@/context/SidebarContext";
 import { useTheme } from "@/context/ThemeContext";
 import { addTabs, deleteAllChats } from "@/utils/indexedDB";
+import { deleteCouncilSession } from "@/utils/councilIndexedDB";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MouseEvent, useState } from "react";
@@ -12,6 +13,7 @@ import {
   HiInformationCircle,
   HiMoon,
   HiOutlineRectangleGroup,
+  HiOutlineUserGroup,
   HiSun,
   HiOutlineViewColumns,
   HiPlus,
@@ -32,8 +34,18 @@ export async function handlePress(
   router.push(`/chat/${uuid}`);
 }
 
+const truncate = (text: string, max: number) =>
+  text.length > max ? text.slice(0, max) + "..." : text;
+
 const Sidebar = () => {
-  const { isOpen, titles, setIsOpen, refreshTitles } = useSidebar();
+  const {
+    isOpen,
+    titles,
+    councilSessions,
+    setIsOpen,
+    refreshTitles,
+    refreshCouncilSessions,
+  } = useSidebar();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { theme, toggleTheme, isHydrated } = useTheme();
 
@@ -45,6 +57,9 @@ const Sidebar = () => {
     ? pathname.split("/")[2] || ""
     : "";
   const splitChatId = searchParams.get("split") || "";
+  const activeCouncilId = pathname.startsWith("/council/")
+    ? pathname.split("/")[2] || ""
+    : "";
   const conversations = Object.entries(titles).reverse();
 
   useHotkeys("ctrl+shift+o", (event) => {
@@ -66,6 +81,19 @@ const Sidebar = () => {
   const openChat = (chatId: string) => {
     router.push(`/chat/${chatId}`);
     closeOnMobile();
+  };
+
+  const openCouncilSession = (sessionId: string) => {
+    router.push(`/council/${sessionId}`);
+    closeOnMobile();
+  };
+
+  const handleDeleteCouncilSession = async (sessionId: string) => {
+    await deleteCouncilSession(sessionId);
+    await refreshCouncilSessions();
+    if (activeCouncilId === sessionId) {
+      router.push("/council");
+    }
   };
 
   const openInSplit = async (chatId: string) => {
@@ -148,7 +176,89 @@ const Sidebar = () => {
             </button>
           </div>
 
-          <div className="px-4 pb-2 pt-4">
+          <div className="px-4 pb-2 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/council");
+                closeOnMobile();
+              }}
+              className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
+                pathname.startsWith("/council") && !activeCouncilId
+                  ? "border-accent/35 bg-accent/10 text-accent"
+                  : "border-transparent bg-surface text-text-secondary hover:border-border hover:text-text-primary"
+              }`}
+            >
+              <HiOutlineUserGroup size={15} />
+              <span>AI Council</span>
+            </button>
+          </div>
+
+          {councilSessions.length > 0 && (
+            <>
+              <div className="px-4 pb-1.5 pt-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+                  Council Sessions
+                </p>
+              </div>
+              <nav
+                className="scrollbar-track-only px-2 pb-2"
+                aria-label="Council session history"
+              >
+                <ul className="space-y-0.5">
+                  {councilSessions.map((session) => {
+                    const isActive = activeCouncilId === session.id;
+                    return (
+                      <li key={session.id}>
+                        <div
+                          className={`group flex items-center gap-1 rounded-xl border px-1 py-1 transition-colors ${
+                            isActive
+                              ? "border-accent/35 bg-accent/10"
+                              : "border-transparent hover:border-border hover:bg-surface"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+                            onClick={() => openCouncilSession(session.id)}
+                          >
+                            <span
+                              className={`h-2 w-2 shrink-0 rounded-full ${
+                                isActive ? "bg-accent" : "bg-border"
+                              }`}
+                            />
+                            <span
+                              className={`truncate text-sm ${
+                                isActive
+                                  ? "font-semibold text-text-primary"
+                                  : "text-text-secondary"
+                              }`}
+                            >
+                              {truncate(session.question, 35)}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleDeleteCouncilSession(session.id);
+                            }}
+                            className="rounded-md p-1.5 text-text-muted opacity-0 transition-opacity hover:bg-background hover:text-error group-hover:opacity-100"
+                            aria-label="Delete council session"
+                            title="Delete session"
+                          >
+                            <RiDeleteBin2Fill size={13} />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </>
+          )}
+
+          <div className="px-4 pb-2 pt-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
               Conversations
             </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
+import { listCouncilSessions } from "@/utils/councilIndexedDB";
 import { generateChatTitle } from "@/utils/titleGenerator";
 import React, {
   createContext,
@@ -8,15 +9,24 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
+
+interface CouncilSessionEntry {
+  id: string;
+  question: string;
+  timestamp: number;
+}
 
 interface SidebarContextType {
   isOpen: boolean;
   titles: Record<string, string>;
   tabs: string[];
+  councilSessions: CouncilSessionEntry[];
   setIsOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   refreshTitles: () => Promise<void>;
+  refreshCouncilSessions: () => Promise<void>;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
@@ -25,9 +35,25 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [tabs, setTabs] = useState<string[]>([]);
+  const [councilSessions, setCouncilSessions] = useState<CouncilSessionEntry[]>([]);
 
   const toggleSidebar = () => setIsOpen((prev) => !prev);
   const refreshTitles = async () => await fetchTabs();
+
+  const refreshCouncilSessions = useCallback(async () => {
+    try {
+      const sessions = await listCouncilSessions();
+      setCouncilSessions(
+        sessions.map((s) => ({
+          id: s.id,
+          question: s.question,
+          timestamp: s.timestamp,
+        })),
+      );
+    } catch (error) {
+      console.error("Error loading council sessions:", error);
+    }
+  }, []);
 
   // Non-context function
   const fetchTabs = async () => {
@@ -70,11 +96,21 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
     fetchTabs();
     getTabs();
-  }, []);
+    refreshCouncilSessions();
+  }, [refreshCouncilSessions]);
 
   return (
     <SidebarContext.Provider
-      value={{ isOpen, titles, tabs, setIsOpen, toggleSidebar, refreshTitles }}
+      value={{
+        isOpen,
+        titles,
+        tabs,
+        councilSessions,
+        setIsOpen,
+        toggleSidebar,
+        refreshTitles,
+        refreshCouncilSessions,
+      }}
     >
       {children}
     </SidebarContext.Provider>
