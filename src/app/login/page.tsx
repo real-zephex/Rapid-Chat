@@ -62,14 +62,14 @@ export default function LoginPage() {
   // Show skeleton while we determine if setup is needed
   if (adminExists === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background overflow-y-auto">
         <HiArrowPath className="h-6 w-6 animate-spin text-accent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex h-screen items-center justify-center bg-background p-4 overflow-y-auto">
       <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-surface p-8 shadow-xl">
         <div className="text-center">
           <h2 className="font-display text-3xl font-bold text-text-primary">

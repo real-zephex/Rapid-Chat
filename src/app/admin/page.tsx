@@ -82,7 +82,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary p-8 overflow-y-auto">
+    <div className="h-screen bg-background text-text-primary p-8 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
