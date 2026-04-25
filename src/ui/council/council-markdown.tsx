@@ -121,7 +121,7 @@ export const councilMarkdownComponents: Components = {
   },
   table: ({ children, ...props }) => (
     <div className="my-3 overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-sm text-text-primary" {...props}>
+      <table className="w-full text-[1.05rem] text-text-primary" {...props}>
         {children}
       </table>
     </div>
@@ -132,7 +132,7 @@ export const councilMarkdownComponents: Components = {
     </th>
   ),
   td: ({ children, ...props }) => (
-    <td className="border-b border-border px-3 py-2 text-sm text-text-primary" {...props}>
+    <td className="border-b border-border px-3 py-2 text-[1.05rem] text-text-primary" {...props}>
       {children}
     </td>
   ),

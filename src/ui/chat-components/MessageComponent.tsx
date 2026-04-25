@@ -140,7 +140,7 @@ const MessageComponent = memo(
                 </div>
               )}
 
-              <div className="rounded-2xl border border-accent/35 bg-accent px-4 py-3 text-[15px] leading-relaxed text-background shadow-sm">
+              <div className="rounded-2xl border border-accent/35 bg-accent px-4 py-3 text-[16px] sm:text-[1.05rem] leading-relaxed text-background shadow-sm">
                 {message.content}
               </div>
 
@@ -215,7 +215,7 @@ const MessageComponent = memo(
               </div>
             )}
 
-            <div className="chat-markdown prose prose-neutral max-w-none text-[1rem] leading-7 text-text-primary sm:text-[1.03rem]">
+            <div className="chat-markdown prose prose-neutral max-w-none text-[1.05rem] leading-8 text-text-primary sm:text-[1.1rem]">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeHighlight, rehypeKatex]}
