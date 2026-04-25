@@ -187,27 +187,32 @@ export async function generateAITitle(messages: Messages[]): Promise<string> {
   }));
 
   try {
-    const response = await openrouterClient.chat.send({
-      model: "openrouter/free",
-      messages: [
-        {
-          role: "system",
-          content: "Generate a 3-5 word title for the provided chat. Respond ONLY with the title. No intro, no quotes, no 'Title:', no punctuation."
-        },
-        {
-          role: "user",
-          content: `Chat History:\n${relevantHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nTitle:`
-        }
-      ],
-      maxTokens: 15,
-      temperature: 0.3,
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "openrouter/free",
+        messages: [
+          {
+            role: "system",
+            content: "Generate a 3-5 word title for the provided chat. Respond ONLY with the title. No intro, no quotes, no 'Title:', no punctuation."
+          },
+          {
+            role: "user",
+            content: `Chat History:\n${relevantHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nTitle:`
+          }
+        ],
+        max_tokens: 15,
+        temperature: 0.3,
+      })
     });
 
-    // Handle potential differences in SDK response structure
-    const choices = (response as any)?.choices;
-    if (!choices || choices.length === 0) return "";
-
-    let content = choices[0]?.message?.content;
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content;
+    
     if (typeof content !== "string") return "";
 
     // Post-process to remove common AI "chatter"
