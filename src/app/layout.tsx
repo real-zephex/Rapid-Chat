@@ -13,6 +13,7 @@ import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Manrope, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
+import CommandPalette from "@/ui/command-palette";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -221,6 +222,7 @@ export default function RootLayout({
                 <ModelProvider>
                   <Suspense fallback={null}>
                     <Sidebar />
+                    <CommandPalette />
                   </Suspense>
                   <MainContent>{children}</MainContent>
                   <Toast />
