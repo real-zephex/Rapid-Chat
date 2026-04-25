@@ -9,6 +9,12 @@ const modelTypeValidator = v.union(
 );
 
 export default defineSchema({
+  admins: defineTable({
+    email: v.string(),
+    password_hash: v.string(),
+    created_at: v.number(),
+  }).index("by_email", ["email"]),
+
   models: defineTable({
     model_code: v.string(),
     display_name: v.optional(v.string()),

@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { ModelProvider } from "@/context/ModelContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -216,17 +217,19 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider>
-          <ToastProvider>
-            <SidebarProvider>
-              <ModelProvider>
-                <Suspense fallback={null}>
-                  <Sidebar />
-                </Suspense>
-                <MainContent>{children}</MainContent>
-                <Toast />
-              </ModelProvider>
-            </SidebarProvider>
-          </ToastProvider>
+          <ConvexClientProvider>
+            <ToastProvider>
+              <SidebarProvider>
+                <ModelProvider>
+                  <Suspense fallback={null}>
+                    <Sidebar />
+                  </Suspense>
+                  <MainContent>{children}</MainContent>
+                  <Toast />
+                </ModelProvider>
+              </SidebarProvider>
+            </ToastProvider>
+          </ConvexClientProvider>
         </ThemeProvider>
       </body>
     </html>
