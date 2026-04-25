@@ -31,6 +31,8 @@
   --accent-strong: #000000;
   --success: #111111;
   --error: #d93025;
+  --selection-bg: #dcdcdc;
+  --selection-text: #000000;
   --page-background: 
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E"), 
     linear-gradient(180deg, #fbfbfb 0%, #f4f4f4 100%);
@@ -50,6 +52,8 @@
   --accent-strong: #ffffff;
   --success: #ededed;
   --error: #ff5555;
+  --selection-bg: #444444;
+  --selection-text: #ffffff;
   --page-background: 
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.06'/%3E%3C/svg%3E"), 
     linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%);
@@ -97,8 +101,8 @@ a {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 26%, white);
-  color: var(--text-primary);
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }
 
 ::-webkit-scrollbar {
