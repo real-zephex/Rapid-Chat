@@ -115,7 +115,8 @@ function parseArgs(argv: string[]): CLIOptions {
 }
 
 function getConvexClient() {
-  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL;
+  const convexUrl =
+    process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL;
 
   if (!convexUrl) {
     throw new Error(
@@ -126,7 +127,11 @@ function getConvexClient() {
   return new ConvexHttpClient(convexUrl, { logger: false });
 }
 
-function asString(value: unknown, field: string, required = true): string | undefined {
+function asString(
+  value: unknown,
+  field: string,
+  required = true,
+): string | undefined {
   if (value === undefined || value === null) {
     if (required) {
       throw new Error(`Missing required field: ${field}`);
@@ -225,11 +230,17 @@ function normalizeModelPayload(input: unknown): UpsertModelPayload {
       "max_completion_tokens",
       DEFAULTS.max_completion_tokens,
     ),
-    temperature: asNumber(candidate.temperature, "temperature", DEFAULTS.temperature),
+    temperature: asNumber(
+      candidate.temperature,
+      "temperature",
+      DEFAULTS.temperature,
+    ),
     top_p: asNumber(candidate.top_p, "top_p", DEFAULTS.top_p),
     stream: asBoolean(candidate.stream, "stream", DEFAULTS.stream),
     stop:
-      candidate.stop === undefined || candidate.stop === null || candidate.stop === ""
+      candidate.stop === undefined ||
+      candidate.stop === null ||
+      candidate.stop === ""
         ? DEFAULTS.stop
         : (asString(candidate.stop, "stop") as string),
     provider: asProvider(candidate.provider),
@@ -238,7 +249,11 @@ function normalizeModelPayload(input: unknown): UpsertModelPayload {
       "image_support",
       DEFAULTS.image_support,
     ),
-    pdf_support: asBoolean(candidate.pdf_support, "pdf_support", DEFAULTS.pdf_support),
+    pdf_support: asBoolean(
+      candidate.pdf_support,
+      "pdf_support",
+      DEFAULTS.pdf_support,
+    ),
     reasoning: asBoolean(candidate.reasoning, "reasoning", DEFAULTS.reasoning),
     active: asBoolean(candidate.active, "active", DEFAULTS.active),
   };
@@ -261,7 +276,9 @@ function extractModelsFromFileContent(content: string): unknown[] {
     return [record];
   }
 
-  throw new Error("JSON file must contain an object, an array, or { models: [...] }");
+  throw new Error(
+    "JSON file must contain an object, an array, or { models: [...] }",
+  );
 }
 
 async function readInteractiveModel(): Promise<UpsertModelPayload> {
@@ -270,12 +287,12 @@ async function readInteractiveModel(): Promise<UpsertModelPayload> {
   const ask = async (label: string, fallback?: string) => {
     const prompt = fallback ? `${label} [${fallback}]: ` : `${label}: `;
     const answer = (await rl.question(prompt)).trim();
-    return answer.length === 0 ? fallback ?? "" : answer;
+    return answer.length === 0 ? (fallback ?? "") : answer;
   };
 
   try {
     const payload = normalizeModelPayload({
-      model_code: await ask("Model code (unique)") ,
+      model_code: await ask("Model code (unique)"),
       display_name: await ask("Display name", ""),
       description: await ask("Description", ""),
       type: await ask("Type (reasoning/conversational/general)", DEFAULTS.type),
@@ -316,7 +333,9 @@ async function upsertModels(payloads: UpsertModelPayload[]) {
 
   for (const payload of payloads) {
     await client.mutation("models:upsertModel" as any, payload);
-    console.log(`Upserted model '${payload.model_code}' (${payload.provider}).`);
+    console.log(
+      `Upserted model '${payload.model_code}' (${payload.provider}).`,
+    );
   }
 }
 

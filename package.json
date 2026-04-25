@@ -22,7 +22,6 @@
     "next": "15.4.8",
     "nextjs-google-analytics": "^2.3.7",
     "nextjs-toploader": "^3.9.17",
-    "openai": "^5.23.2",
     "react": "^19.2.3",
     "react-device-detect": "^2.2.3",
     "react-dom": "^19.2.3",

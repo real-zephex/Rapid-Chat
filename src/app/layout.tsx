@@ -164,7 +164,7 @@ export default function RootLayout({
       "Privacy-first local storage",
       "Image and PDF processing",
       "Audio transcription",
-      "Multiple AI providers (Groq, OpenAI, OpenRouter)",
+      "Multiple AI providers (Groq, OpenRouter)",
     ],
     author: {
       "@type": "Organization",

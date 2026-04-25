@@ -1,202 +1,70 @@
 # Rapid Chat
 
-Privacy-focused AI chat application with multi-model support, real-time streaming responses, and function calling. Built with Next.js 15, React 19, and TypeScript. Conversations are stored locally in IndexedDB, with privacy considerations for external dependencies.
+A fast, privacy-focused AI chat interface built with Next.js 15 and React 19. Rapid Chat lets you use models from Groq and OpenRouter with a focus on speed, local data persistence, and powerful built-in tools.
 
-## Features
+## Key Features
 
-- **Privacy Focused**: Local storage using IndexedDB for chats and media. Bring your own API keys for direct calls to AI providers. No tracking on conversation content, but analytics for app usage and external API dependencies may involve data transmission.
-- **Performance**: Real-time streaming token-by-token responses. Instant model switching mid-conversation. Optimized UI with Next.js 15, React 19, and Tailwind CSS 4.
-- **AI Capabilities**: Support for multiple models from Groq (Llama, Qwen), OpenRouter, and OpenAI. Function calling with built-in tools. Reasoning display with <think> tag extraction. Real-time token metrics (count and tokens/second).
-- **Rich Media**: Image support (PNG/JPEG/JPG) via upload, paste, or drag-drop, stored locally. Audio recording and transcription via Groq Whisper (desktop only). Inline previews with automatic cleanup.
-- **Built-in Tools**:
-  - Web Content Reader: Fetch and parse webpage content via Jina AI.
-  - Calculator: Mathematical expressions with support for π, e, √, exponents, etc.
-  - Weather: Real-time weather data via Open-Meteo API.
-  - Code Executor: Run JavaScript, Python, and TypeScript in sandbox via Piston API.
-  - YouTube Transcription: Fetch video transcripts.
-- **Developer Experience**: Keyboard shortcuts (Shift+Esc to focus input, Ctrl+Shift+Backspace to delete chat). Markdown rendering with GFM support and syntax highlighting. Math support with KaTeX/LaTeX. Code copy functionality. Drag & drop for up to 5 files (10MB each).
+- **Privacy First**: All conversations and media are stored locally in IndexedDB. Bring your own API keys—we don't store your chats on any server.
+- **AI Council**: Compare multiple model responses side-by-side for the same prompt and let a "judge" model evaluate the best answer.
+- **Split View**: Multi-task or compare different models and conversations in a side-by-side layout.
+- **Speed**: Built for performance with real-time streaming, instant model switching, and optimized token-by-token rendering.
+- **Multi-Model Support**: Native support for Groq (Llama, Qwen) and OpenRouter providers. Includes reasoning display for models that support it.
+- **Rich Interaction**: Support for image uploads, voice recording (Whisper), full LaTeX/Math support, and real-time generation metrics (T/S).
+
+## Getting Started
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/real-zephex/Rapid-Chat.git
+cd Rapid-Chat
+npm install # or bun install
+```
+
+### 2. Environment Setup
+Create a `.env.local` file in the root directory:
+```env
+GROQ_API_KEY=your_groq_key
+OPENROUTER_API_KEY=your_openrouter_key
+NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
+```
+
+### 3. Run Development Server
+```bash
+npm run dev # or bun run dev
+```
+Visit `http://localhost:3000` to start chatting.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15.4.6 (App Router, Server Actions), React 19.2, TypeScript 5.9.
-- **AI SDKs**: groq-sdk (Llama, Qwen, Whisper), openai (OpenAI & OpenRouter).
-- **Storage & State**: IndexedDB for local persistence with auto-migration from localStorage.
-- **UI & Styling**: Tailwind CSS 4, react-markdown with remark/rehype, KaTeX for math, react-icons, react-hotkeys-hook.
-- **Other Dependencies**: Convex for model configuration and model usage trends, cheerio for web parsing, youtube-transcript-plus for YouTube, @vercel/analytics and nextjs-google-analytics for analytics, nextjs-toploader for loading indicators.
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS 4
+- **AI**: groq-sdk, OpenRouter
+- **Database/State**: IndexedDB (local), Convex (remote config & usage trends)
+- **Tooling Framework**: Infrastructure included for Jina AI (Web Reader), Piston (Code Execution), and Open-Meteo (Weather).
 
-## Quick Start
+## AI Council & Split View
 
-### Prerequisites
-
-- Node.js 18+
-- npm or Bun
-- API keys for AI providers (Groq, OpenRouter, OpenAI optional)
-
-### Installation
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/real-zephex/Rapid-Chat.git
-   cd Rapid-Chat
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   # or
-   bun install
-   ```
-
-3. Set up environment variables: Create `.env.local` in the project root with:
-   ```
-   GROQ_API_KEY=your_groq_key
-   OPENROUTER_API_KEY=your_openrouter_key
-   OPENAI_API_KEY=your_openai_key  # optional
-   NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
-   ```
-
-4. Start the development server:
-   ```
-   npm run dev
-   # or
-   bun run dev
-   ```
-
-Open http://localhost:3000 in your browser.
-
-### Production Deployment
-
-```
-npm run build && npm start
-# or
-bun run build && bun run start
-```
-
-## Usage
-
-### Basic Chat
-
-1. Open the sidebar to start a new chat or select an existing one.
-2. Select a model from the dropdown.
-3. Type a message and press Enter.
-4. View real-time streaming responses.
-
-### Using Tools (Function Calling)
-
-The AI automatically uses built-in tools based on queries:
-- "What's the weather in Tokyo?" → Uses weather tool.
-- "Calculate 2^10 + 5" → Uses calculator.
-- "Fetch content from example.com" → Uses web reader.
-- "Run this Python code: print('hello')" → Uses code executor.
-- "Transcribe this YouTube video: [URL]" → Uses YouTube transcription.
-
-### Media Support
-
-- Images: Drag-drop, paste, or upload PNG/JPEG/JPG files.
-- Audio: Click the microphone icon to record and transcribe voice messages (desktop only, requires MediaRecorder API).
-
-### Advanced Features
-
-- Reasoning Toggle: View AI's thinking process.
-- Token Metrics: Display token count and speed.
-- Code Copy: One-click copy for code blocks.
-- Keyboard Shortcuts: As listed in features.
-
-## Architecture
-
-### Project Structure
-
-```
-src/
-├── app/                      # Next.js App Router
-│   ├── chat/[id]/           # Dynamic chat routes
-│   └── layout.tsx           # Root layout
-├── models/                  # AI integrations
-│   ├── handler/
-│   │   └── generator.ts     # Function calling handler
-│   ├── groq/                # Groq models + Whisper
-│   ├── openrouter/          # OpenRouter providers
-│   └── index.ts             # Model router
-├── ui/                      # React components
-│   ├── chat-interface.tsx   # Main chat UI
-│   ├── sidebar.tsx          # Navigation
-│   └── chat-components/     # Specialized components
-├── utils/                   # Utilities
-│   ├── indexedDB.ts         # Local storage
-│   ├── model-list.ts        # Model configuration
-│   ├── responseCleaner.tsx  # Response processing
-│   └── tools/               # Function calling tools
-│       ├── calculator/
-│       ├── weather/
-│       ├── code-executor/
-│       ├── jina-ai-reader/
-│       ├── youtube-summarizer/
-│       └── schema/          # Tool definitions
-└── context/                 # React context providers
-```
-
-### Data Flow
-
-User Input → Chat Interface → Model Selection + Tool Schema → Server Action (streaming) → AI Response + Tool Calls → Tool Execution (if needed) → Response Processing (clean + extract reasoning) → IndexedDB Persistence + UI Update.
-
-### Function Calling
-
-Tools are defined in `src/utils/tools/schema/index.ts` with OpenAI-compatible schemas. Each tool returns `{ status: boolean, content?: string }`. Implementations are in respective folders, mapped in `src/utils/tools/schema/maps.ts`.
-
-### Convex Model Records
-
-The app reads model configuration from Convex table `models` and increments `usage_count` every time a model is used for generation. Each document should include fields such as `model_code`, `display_name`, `provider`, `provider_code`, `system_prompt`, `max_completion_tokens`, `temperature`, `top_p`, `reasoning`, `image_support`, `pdf_support`, `active`, and `usage_count`.
-
-## Development
-
-### Adding a New Tool
-
-1. Create a folder in `src/utils/tools/<tool-name>/`.
-2. Implement `index.ts` with the interface:
-   ```typescript
-   interface ToolReturnProps {
-     status: boolean;
-     content?: string;
-   }
-   ```
-3. Add schema to `src/utils/tools/schema/index.ts`.
-4. Register in `src/utils/tools/schema/maps.ts`.
-5. Test with function-calling models.
-
-### Scripts
-
-- `npm run dev`: Development server with Turbopack.
-- `npm run build`: Production build.
-- `npm run start`: Production server.
-- `npm run lint`: ESLint.
-- `bun run model:upsert --interactive`: Insert or update one model interactively.
-- `bun run model:upsert --file ./models.json`: Insert or update one or many models from JSON.
+- **AI Council**: Access via the sidebar to start a session where multiple AI models compete to answer your query.
+- **Split View**: Click the "Split" icon next to any conversation in the sidebar to open it side-by-side with your current chat.
 
 ## Privacy & Security
 
-- Conversations and user data stored locally in IndexedDB; no server-side storage for chats.
-- No tracking on conversation content; analytics libraries (@vercel/analytics, nextjs-google-analytics) track general app usage (e.g., page views, interactions) but not chat data.
-- Media files processed and stored locally; never uploaded without user intent.
-- Direct API calls to AI providers using user-provided keys; however, prompts and media may be sent to providers' servers per their policies.
-- External dependencies: Model configuration and model usage counters are stored in Convex; tools (e.g., weather via Open-Meteo, web reader via Jina AI, code executor via Piston) transmit queries to third-party APIs.
-- Open source for auditing; not fully zero-knowledge due to internet-required features.
+- **Local Storage**: Your chat history never leaves your browser. We use IndexedDB for persistence.
+- **Direct API Calls**: Responses are streamed directly from the AI providers using your keys.
+- **Analytics**: We use basic analytics (Vercel/Google) to track app usage, but we **never** track or store the content of your conversations.
 
-### Browser Requirements
+## Development
 
-- Modern browser with IndexedDB support.
-- Web Streams API for real-time rendering.
-- File API for drag-and-drop.
-- MediaRecorder API for audio (optional).
+### Project Structure
+- `src/app/`: Next.js routes and layouts.
+- `src/models/`: AI provider integrations, Council logic, and handlers.
+- `src/ui/`: UI components, split-view interface, and chat components.
+- `src/utils/tools/`: Implementation of the tooling framework.
 
-## Contributing
-
-1. Fork the repository.
-2. Create a feature branch.
-3. Make changes with tests.
-4. Submit a pull request.
-
-Guidelines: Use TypeScript strict mode, follow existing patterns, test streaming and tool functionality, update documentation.
+### Scripts
+- `npm run dev`: Start dev server.
+- `npm run build`: Production build.
+- `bun run model:upsert`: Interactively manage model configurations in Convex.
 
 ## License
 
-Apache License 2.0. See LICENSE file.
+Apache License 2.0. See [LICENSE](LICENSE) for details.
