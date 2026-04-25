@@ -7,8 +7,11 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useMemo,
 } from "react";
 import { useToast } from "./ToastContext";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface ModelContextType {
   selectedModel: string;
@@ -26,10 +29,26 @@ const DEFAULT_MODEL_KEY = "rapid-chat-default-model";
 
 export function ModelProvider({ children }: { children: ReactNode }) {
   const [selectedModel, setSelectedModelState] = useState<string>("");
-  const [models, setModels] = useState<ModelInfo[]>([]);
+  // We can keep setModels for manual overrides if needed, but primary source is convex
+  const [_manualModels, setModels] = useState<ModelInfo[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
 
   const { setMessage: sM, setType, fire } = useToast();
+
+  const rawModels = useQuery(api.models.listActiveModelInformation);
+
+  const models = useMemo(() => {
+    if (!rawModels) return _manualModels;
+    return rawModels.map((model) => ({
+      name: model.display_name,
+      code: model.model_code,
+      image: model.image_support,
+      pdf: model.pdf_support,
+      description: model.description || "No description available.",
+      type: model.type as "reasoning" | "conversational" | "general",
+      usageCount: model.usage_count ?? 0,
+    }));
+  }, [rawModels, _manualModels]);
 
   useEffect(() => {
     try {
@@ -51,40 +70,43 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshModels = async () => {
-    await modelInfo.refresh();
-    const refreshedModels = await modelInfo.retrieveFromLocal();
-    setModels(refreshedModels);
-
-    if (refreshedModels.length > 0) {
+  // Re-evaluate default model when models list updates reactively
+  useEffect(() => {
+    if (models.length > 0) {
       try {
         const stored = localStorage.getItem(DEFAULT_MODEL_KEY);
         const modelToCheck = stored || selectedModel;
         
-        const selectedExists = refreshedModels.some(
+        const selectedExists = models.some(
           (model) => model.code === modelToCheck,
         );
 
         if (selectedExists && modelToCheck) {
-          changeModel(modelToCheck);
+          if (selectedModel !== modelToCheck) {
+            changeModel(modelToCheck);
+          }
         } else {
-          changeModel(refreshedModels[0].code);
+          changeModel(models[0].code);
         }
       } catch {
-        changeModel(refreshedModels[0].code);
+        if (!selectedModel || !models.some(m => m.code === selectedModel)) {
+          changeModel(models[0].code);
+        }
       }
     }
+  }, [models]);
 
+  const refreshModels = async () => {
+    // With Convex useQuery, this is mostly a manual trigger for the toast
+    // and to force a local cache update if the user still uses modelInfo elsewhere.
+    await modelInfo.refresh();
+    
     setTimeout(() => {
-      sM("Models refreshed successfully!");
+      sM("Models are synced with server.");
       setType("info");
       fire();
     }, 500);
   };
-
-  useEffect(() => {
-    refreshModels();
-  }, []);
 
   return (
     <ModelContext.Provider
@@ -106,7 +128,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
 export function useModel() {
   const context = useContext(ModelContext);
   if (context === undefined) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
+    throw new Error("useModel must be used within a ModelProvider");
   }
   return context;
 }
