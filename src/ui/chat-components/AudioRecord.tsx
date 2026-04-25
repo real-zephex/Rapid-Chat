@@ -122,34 +122,32 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
       />
 
       {isRecording && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md">
-          <div className="mx-4 flex max-w-lg flex-col items-center gap-6 rounded-3xl border border-border bg-surface p-10 shadow-2xl">
-            <div className="flex size-20 items-center justify-center rounded-full bg-error/20 animate-pulse">
-              <AiFillAudio className="text-error size-10" />
-            </div>
-            <div className="text-center">
-              <span className="mb-2 block text-2xl font-semibold text-text-primary">
-                Voice Recording
-              </span>
-              <p className="text-text-muted text-base leading-relaxed">
-                Recording your message. Speak clearly and press anywhere to stop.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background/50 px-6 py-3">
-              <MyStopwatch />
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (mediaRecorder) mediaRecorder.stop();
-                setIsRecording(false);
-              }}
-              className="mt-4 rounded-xl bg-error px-8 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-all hover:bg-error/90"
-              type="button"
-            >
-              Stop Recording
-            </button>
+        <div className="fixed bottom-28 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-4 rounded-full border border-error/30 bg-surface/95 px-5 py-2.5 shadow-2xl backdrop-blur-md transition-all">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-error opacity-75"></span>
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-error"></span>
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+              Recording
+            </span>
           </div>
+          
+          <div className="font-mono text-sm font-bold text-text-primary">
+            <MyStopwatch />
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (mediaRecorder) mediaRecorder.stop();
+              setIsRecording(false);
+            }}
+            className="ml-2 rounded-full bg-error/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-error transition-colors hover:bg-error/20"
+            type="button"
+          >
+            Stop
+          </button>
         </div>
       )}
     </div>
