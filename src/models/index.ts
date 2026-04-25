@@ -192,25 +192,32 @@ export async function generateAITitle(messages: Messages[]): Promise<string> {
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant that generates extremely concise, 3-5 word titles for chat conversations. Respond ONLY with the title, no quotes, no period."
+          content: "Generate a 3-5 word title for the provided chat. Respond ONLY with the title. No intro, no quotes, no 'Title:', no punctuation."
         },
         {
           role: "user",
-          content: `Generate a title for this conversation:\n${JSON.stringify(relevantHistory)}`
+          content: `Chat History:\n${relevantHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nTitle:`
         }
       ],
-      maxTokens: 20,
-      temperature: 0.5,
+      maxTokens: 15,
+      temperature: 0.3,
     });
 
     // Handle potential differences in SDK response structure
     const choices = (response as any)?.choices;
     if (!choices || choices.length === 0) return "";
 
-    const content = choices[0]?.message?.content;
+    let content = choices[0]?.message?.content;
     if (typeof content !== "string") return "";
 
-    return content.trim().replace(/^["']|["']$/g, "");
+    // Post-process to remove common AI "chatter"
+    content = content
+      .replace(/^(Title|Summary|Topic|Chat Title|Conversation Title):\s+/i, "")
+      .replace(/^["']|["']$/g, "")
+      .replace(/\.$/, "")
+      .trim();
+
+    return content;
   } catch (error) {
     console.error("AI Title generation failed:", error);
     return ""; 
