@@ -197,7 +197,7 @@ const CouncilInput = ({
                         }}
                         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
                           isSelected
-                            ? "bg-accent text-white"
+                            ? "bg-accent text-background"
                             : "text-text-secondary hover:bg-background hover:text-text-primary"
                         }`}
                       >
@@ -219,14 +219,14 @@ const CouncilInput = ({
             onKeyDown={handleKeyDown}
             placeholder="Ask the council a question..."
             rows={2}
-            className="flex-1 resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="flex-1 resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
             disabled={isRunning}
           />
           <button
             type="button"
             onClick={onSubmit}
             disabled={!question.trim() || isRunning}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-background transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Submit to council"
           >
             <FaArrowCircleRight size={16} />

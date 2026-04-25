@@ -1,15 +1,15 @@
 "use client";
 
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaPlus, FaSync, FaSignOutAlt, FaEdit } from "react-icons/fa";
+import { HiPlus, HiArrowPath, HiArrowRightOnRectangle, HiPencil, HiTrash } from "react-icons/hi2";
 
 export default function AdminDashboard() {
   const models = useQuery(api.admin.listAllModels);
   const upsertModel = useMutation(api.models.upsertModel);
-  const fetchExternal = useAction(api.admin.fetchExternalModels);
+  const deleteModel = useMutation(api.models.deleteModel);
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   };
 
   const [isAdding, setIsAdding] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [externalModels, setExternalModels] = useState<any[]>([]);
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,10 +44,16 @@ export default function AdminDashboard() {
   const handleFetchExternal = async (provider: "groq" | "openrouter") => {
     setLoadingExternal(true);
     try {
-      const data = await fetchExternal({ provider });
+      const res = await fetch(`/api/admin/models/${provider}`);
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Failed to fetch models.");
+        return;
+      }
+      const data = await res.json();
       setExternalModels(data);
-    } catch (err) {
-      alert("Failed to fetch models from " + provider);
+    } catch {
+      alert("Network error fetching models from " + provider);
     } finally {
       setLoadingExternal(false);
     }
@@ -79,15 +86,15 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold font-syne">Admin Dashboard</h1>
+            <h1 className="text-4xl font-bold font-display">Admin Dashboard</h1>
             <p className="text-text-secondary mt-1">Manage AI models and system configuration</p>
           </div>
           <div className="flex gap-4">
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border hover:bg-surface transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border hover:bg-surface transition-colors text-sm font-semibold uppercase tracking-wider"
             >
-              <FaSignOutAlt /> Sign Out
+              <HiArrowRightOnRectangle size={18} /> Sign Out
             </button>
           </div>
         </div>
@@ -97,53 +104,88 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Active Models</h2>
+                <h2 className="text-xl font-bold font-display">Active Models</h2>
                 <button
                   onClick={() => setIsAdding(!isAdding)}
-                  className="bg-accent text-white px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-accent-strong transition-colors"
+                  className="bg-accent text-background px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-accent-strong transition-colors text-sm font-semibold uppercase tracking-wider"
                 >
-                  <FaPlus /> {isAdding ? "Cancel" : "Add Model"}
+                  <HiPlus size={18} /> {isAdding ? "Cancel" : "Add Model"}
                 </button>
               </div>
 
               <div className="space-y-4">
                 {models?.map((model) => (
-                  <div key={model._id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background hover:border-accent/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-2 h-2 rounded-full ${model.active ? 'bg-success' : 'bg-text-muted'}`} />
-                      <div>
-                        <div className="font-bold">{model.display_name || model.model_code}</div>
-                        <div className="text-xs text-text-secondary font-mono">{model.provider_code} | {model.provider}</div>
+                  <div key={model._id} className="rounded-xl border border-border bg-background transition-colors hover:border-accent/50">
+                    {confirmDelete === model.model_code ? (
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <p className="text-sm text-text-secondary">
+                          Delete <span className="font-bold text-text-primary">{model.display_name || model.model_code}</span>?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold hover:bg-surface transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await deleteModel({ model_code: model.model_code });
+                              setConfirmDelete(null);
+                            }}
+                            className="rounded-lg bg-error/10 border border-error/30 px-3 py-1.5 text-xs font-bold text-error hover:bg-error/20 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          setFormData({
-                            model_code: model.model_code,
-                            display_name: model.display_name || "",
-                            description: model.description || "",
-                            type: model.type || "general",
-                            provider_code: model.provider_code,
-                            system_prompt: model.system_prompt,
-                            max_completion_tokens: model.max_completion_tokens,
-                            temperature: model.temperature,
-                            top_p: model.top_p,
-                            stream: model.stream,
-                            stop: model.stop,
-                            provider: model.provider,
-                            image_support: model.image_support || false,
-                            pdf_support: model.pdf_support || false,
-                            reasoning: model.reasoning || false,
-                            active: model.active,
-                          });
-                          setIsAdding(true);
-                        }}
-                        className="p-2 hover:bg-surface rounded-lg text-text-secondary hover:text-accent transition-colors"
-                      >
-                        <FaEdit />
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-2 h-2 rounded-full ${model.active ? 'bg-success' : 'bg-text-muted'}`} />
+                          <div>
+                            <div className="font-bold">{model.display_name || model.model_code}</div>
+                            <div className="text-xs text-text-secondary font-mono">{model.provider_code} | {model.provider}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                model_code: model.model_code,
+                                display_name: model.display_name || "",
+                                description: model.description || "",
+                                type: model.type || "general",
+                                provider_code: model.provider_code,
+                                system_prompt: model.system_prompt,
+                                max_completion_tokens: model.max_completion_tokens,
+                                temperature: model.temperature,
+                                top_p: model.top_p,
+                                stream: model.stream,
+                                stop: model.stop,
+                                provider: model.provider,
+                                image_support: model.image_support || false,
+                                pdf_support: model.pdf_support || false,
+                                reasoning: model.reasoning || false,
+                                active: model.active,
+                              });
+                              setIsAdding(true);
+                            }}
+                            className="p-2 rounded-lg text-text-secondary hover:bg-surface hover:text-accent transition-colors"
+                            title="Edit model"
+                          >
+                            <HiPencil size={18} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(model.model_code)}
+                            className="p-2 rounded-lg text-text-secondary hover:bg-surface hover:text-error transition-colors"
+                            title="Delete model"
+                          >
+                            <HiTrash size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {!models && <div className="text-center py-8 text-text-muted">Loading models...</div>}
@@ -155,7 +197,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {isAdding ? (
               <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
-                <h2 className="text-xl font-bold mb-6">Model Configuration</h2>
+                <h2 className="text-xl font-bold mb-6 font-display">Model Configuration</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
@@ -243,7 +285,7 @@ export default function AdminDashboard() {
 
                   <button 
                     type="submit"
-                    className="w-full bg-accent text-white py-3 rounded-xl font-bold hover:bg-accent-strong transition-colors mt-4"
+                    className="w-full bg-accent text-background py-3 rounded-xl font-bold hover:bg-accent-strong transition-colors mt-4"
                   >
                     Save Model
                   </button>
@@ -251,26 +293,26 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
-                <h2 className="text-xl font-bold mb-6">Discover Models</h2>
+                <h2 className="text-xl font-bold mb-6 font-display">Discover Models</h2>
                 <div className="flex gap-2 mb-6">
                   <button 
                     onClick={() => handleFetchExternal("groq")}
                     disabled={loadingExternal}
-                    className="flex-1 bg-surface border border-border px-3 py-2 rounded-xl text-xs font-bold hover:border-accent transition-colors disabled:opacity-50"
+                    className="flex-1 bg-background border border-border px-3 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.14em] hover:border-accent transition-colors disabled:opacity-50"
                   >
                     Fetch Groq
                   </button>
                   <button 
                     onClick={() => handleFetchExternal("openrouter")}
                     disabled={loadingExternal}
-                    className="flex-1 bg-surface border border-border px-3 py-2 rounded-xl text-xs font-bold hover:border-accent transition-colors disabled:opacity-50"
+                    className="flex-1 bg-background border border-border px-3 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.14em] hover:border-accent transition-colors disabled:opacity-50"
                   >
                     Fetch OpenRouter
                   </button>
                 </div>
 
                 <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                  {loadingExternal && <div className="text-center py-4"><FaSync className="animate-spin inline mr-2" /> Fetching...</div>}
+                  {loadingExternal && <div className="text-center py-4"><HiArrowPath className="animate-spin inline mr-2" /> Fetching...</div>}
                   {externalModels.map((m) => (
                     <div key={m.id} className="group p-3 rounded-xl border border-border bg-background hover:border-accent/50 transition-all">
                       <div className="text-xs font-bold truncate mb-2">{m.name}</div>

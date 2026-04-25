@@ -83,7 +83,7 @@ const ModelSelector = ({
                   aria-selected={isSelected}
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
                     isSelected
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-background"
                       : "text-text-secondary hover:bg-background hover:text-text-primary"
                   }`}
                 >

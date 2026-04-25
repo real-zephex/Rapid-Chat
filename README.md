@@ -1,15 +1,20 @@
 # Rapid Chat
 
-A fast, privacy-focused AI chat interface built with Next.js 15 and React 19. Rapid Chat lets you use models from Groq and OpenRouter with a focus on speed, local data persistence, and powerful built-in tools.
+A fast, privacy-focused AI chat interface built with Next.js 15 and React 19. Rapid Chat features an **editorial minimalist aesthetic** with a focus on speed, local data persistence, and powerful built-in tools.
+
+> [!IMPORTANT]
+> **Self-Hosting Required**: This project is designed to be **self-hosted**. Any live demo or hosted version is for **testing purposes only**. We highly recommend deploying your own instance to ensure full control over your privacy and API keys.
 
 ## Key Features
 
 - **Privacy First**: All conversations and media are stored locally in IndexedDB. Bring your own API keys—we don't store your chats on any server.
+- **Editorial Minimalist Aesthetic**: A brutally minimal, high-contrast design featuring Playfair Display typography and a tactile paper-grain interface.
 - **AI Council**: Compare multiple model responses side-by-side for the same prompt and let a "judge" model evaluate the best answer.
 - **Split View**: Multi-task or compare different models and conversations in a side-by-side layout.
-- **Speed**: Built for performance with real-time streaming, instant model switching, and optimized token-by-token rendering.
-- **Multi-Model Support**: Native support for Groq (Llama, Qwen) and OpenRouter providers. Includes reasoning display for models that support it.
+- **Smart Scroll**: Intelligent sticky-scrolling that respects your position during message generation.
+- **Multi-Model Support**: Native support for Groq (Llama, Mixtral, Qwen) and OpenRouter providers. Includes reasoning display for models like DeepSeek.
 - **Rich Interaction**: Support for image uploads, voice recording (Whisper), full LaTeX/Math support, and real-time generation metrics (T/S).
+- **VS Code Syntax**: Beautiful, developer-centric code highlighting that mirrors your local IDE environment.
 
 ## Getting Started
 

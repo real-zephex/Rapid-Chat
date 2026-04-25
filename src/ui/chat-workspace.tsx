@@ -139,7 +139,7 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
             }}
             className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
               mobilePane === "primary"
-                ? "border-accent bg-accent text-white"
+                ? "border-accent bg-accent text-background"
                 : "border-border bg-surface text-text-secondary"
             }`}
           >
@@ -153,7 +153,7 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
             }}
             className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
               mobilePane === "secondary"
-                ? "border-accent bg-accent text-white"
+                ? "border-accent bg-accent text-background"
                 : "border-border bg-surface text-text-secondary"
             }`}
           >

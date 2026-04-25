@@ -146,6 +146,7 @@ const ChatInterface = ({
   );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -664,6 +665,18 @@ const ChatInterface = ({
       return;
     }
 
+    // Sticky scroll logic: only auto-scroll if the user is already at the bottom
+    const container = scrollContainerRef.current;
+    if (container && isLoading) {
+      const threshold = 100; // px
+      const isAtBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+      
+      if (!isAtBottom) {
+        return;
+      }
+    }
+
     scrollToBottom(isLoading ? "auto" : "smooth");
   }, [isLoading, messages, scrollToBottom]);
 
@@ -751,7 +764,7 @@ const ChatInterface = ({
         <div
           className={`flex items-center justify-between border-b border-border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] ${
             isActivePane
-              ? "bg-accent text-white"
+              ? "bg-accent text-background"
               : "bg-surface text-text-secondary"
           }`}
         >
@@ -789,7 +802,7 @@ const ChatInterface = ({
           </button>
         )}
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto">
           {isLoadingChats ? (
             <div className="flex h-full items-center justify-center gap-3">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-text-muted border-t-accent" />
@@ -955,7 +968,7 @@ const ChatInterface = ({
                     !inputValue.trim() ||
                     !selectedModel
                       ? "cursor-not-allowed text-text-muted"
-                      : "bg-accent text-white hover:bg-accent-strong"
+                      : "bg-accent text-background hover:bg-accent-strong"
                   }`}
                   aria-label="Send message"
                 >

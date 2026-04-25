@@ -188,3 +188,18 @@ export const upsertModel = mutation({
     return existing._id;
   },
 });
+
+export const deleteModel = mutation({
+  args: {
+    model_code: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const model = await ctx.db
+      .query("models")
+      .withIndex("by_model_code", (q) => q.eq("model_code", args.model_code))
+      .unique();
+
+    if (!model) throw new Error("Model not found.");
+    await ctx.db.delete(model._id);
+  },
+});

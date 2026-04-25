@@ -17,6 +17,7 @@ import {
   HiSun,
   HiOutlineViewColumns,
   HiPlus,
+  HiOutlineCog8Tooth,
 } from "react-icons/hi2";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
@@ -164,7 +165,7 @@ const Sidebar = () => {
 
             <button
               type="button"
-              className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-accent-strong"
+              className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-background transition-colors hover:bg-accent-strong"
               onClick={(event) => {
                 void handlePress(event, router);
               }}
@@ -176,7 +177,7 @@ const Sidebar = () => {
             </button>
           </div>
 
-          <div className="px-4 pb-2 pt-3">
+          <div className="px-4 pb-2 pt-3 space-y-2">
             <button
               type="button"
               onClick={() => {
@@ -191,6 +192,21 @@ const Sidebar = () => {
             >
               <HiOutlineUserGroup size={15} />
               <span>AI Council</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/admin");
+                closeOnMobile();
+              }}
+              className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
+                pathname.startsWith("/admin")
+                  ? "border-accent/35 bg-accent/10 text-accent"
+                  : "border-transparent bg-surface text-text-secondary hover:border-border hover:text-text-primary"
+              }`}
+            >
+              <HiOutlineCog8Tooth size={15} />
+              <span>Admin</span>
             </button>
           </div>
 

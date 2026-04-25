@@ -1,4 +1,5 @@
 import { type Components } from "react-markdown";
+import { FaCodeBranch } from "react-icons/fa6";
 import CopyButton from "@/ui/chat-components/CopyButton";
 
 const getTextContent = (node: unknown): string => {
@@ -95,15 +96,18 @@ export const councilMarkdownComponents: Components = {
     const language = getLanguage(children);
 
     return (
-      <div className="group relative my-3 overflow-hidden rounded-xl border border-border bg-background first:mt-2 last:mb-1">
+      <div className="vscode-code-container group relative my-3 overflow-hidden rounded-xl border border-border first:mt-2 last:mb-1 shadow-sm">
         {language && (
-          <div className="flex items-center justify-between border-b border-border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
-            <span>{language}</span>
+          <div className="vscode-code-header flex items-center justify-between border-b border-border px-4 py-2 text-xs font-sans text-text-secondary">
+            <span className="flex items-center gap-2">
+              <FaCodeBranch size={12} className="opacity-70" />
+              {language}
+            </span>
           </div>
         )}
         <pre
-          className={`chat-code-pre m-0 overflow-x-auto bg-transparent text-text-primary ${
-            language ? "px-4 pb-3 pt-2.5" : "p-4"
+          className={`chat-code-pre m-0 overflow-x-auto bg-transparent ${
+            language ? "px-4 pb-4 pt-3" : "p-4"
           }`}
           {...props}
         >

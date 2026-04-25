@@ -11,27 +11,25 @@ import Toast from "@/ui/toast";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Public_Sans, Syne } from "next/font/google";
+import { JetBrains_Mono, Manrope, Playfair_Display } from "next/font/google";
 import { Suspense } from "react";
 
-const publicSans = Public_Sans({
+const manrope = Manrope({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-public-sans",
+  variable: "--font-sans",
 });
 
-const syne = Syne({
-  weight: ["500", "600", "700", "800"],
+const playfair = Playfair_Display({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-syne",
+  variable: "--font-display",
 });
 
-const plexMono = IBM_Plex_Mono({
-  weight: ["400", "500", "600"],
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-plex-mono",
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -208,7 +206,7 @@ export default function RootLayout({
       <Analytics />
       <GoogleAnalytics gaId="G-8F9MJ8CCTN" />
       <body
-        className={`${publicSans.variable} ${syne.variable} ${plexMono.variable} m-0 h-full overflow-hidden bg-background font-sans text-text-primary antialiased`}
+        className={`${manrope.variable} ${playfair.variable} ${jetbrainsMono.variable} m-0 h-full overflow-hidden bg-background font-sans text-text-primary antialiased`}
       >
         <a
           href="#main-content"

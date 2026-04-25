@@ -1,5 +1,6 @@
 "use client";
 
+import { HiArrowPath } from "react-icons/hi2";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
@@ -62,7 +63,7 @@ export default function LoginPage() {
   if (adminExists === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-text-muted border-t-accent" />
+        <HiArrowPath className="h-6 w-6 animate-spin text-accent" />
       </div>
     );
   }
@@ -71,7 +72,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-surface p-8 shadow-xl">
         <div className="text-center">
-          <h2 className="font-syne text-3xl font-bold text-text-primary">
+          <h2 className="font-display text-3xl font-bold text-text-primary">
             {isSetup ? "First-Time Setup" : "Admin Login"}
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
@@ -94,7 +95,7 @@ export default function LoginPage() {
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-text-primary placeholder-text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-text-primary placeholder-text-muted outline-none focus:border-accent"
           />
 
           <input
@@ -103,15 +104,21 @@ export default function LoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-text-primary placeholder-text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-text-primary placeholder-text-muted outline-none focus:border-accent"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+            className="w-full rounded-xl bg-accent py-3 text-xs font-bold uppercase tracking-[0.14em] text-background transition-colors hover:bg-accent-strong disabled:opacity-60"
           >
-            {loading ? "Please wait..." : isSetup ? "Create Account & Continue" : "Sign In"}
+            {loading ? (
+              <HiArrowPath className="mx-auto h-4 w-4 animate-spin" />
+            ) : isSetup ? (
+              "Create Account & Continue"
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
       </div>
