@@ -22,26 +22,34 @@ interface ModelContextType {
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 const modelInfo = new ModelInformation();
+const DEFAULT_MODEL_KEY = "rapid-chat-default-model";
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, changeModel] = useState<string>("gpt_oss");
+  const [selectedModel, setSelectedModelState] = useState<string>("");
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
 
   const { setMessage: sM, setType, fire } = useToast();
 
-  // This function is not needed, as I want fresh models to be fetched on first load.
-  // async function getModelsFromLocal() {
-  //   const storedModels = await modelInfo.retrieveFromLocal();
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(DEFAULT_MODEL_KEY);
+      if (stored) {
+        setSelectedModelState(stored);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  //   setModels(storedModels);
-  //   setTimeout(() => {
-  //     sM("Models loaded successfully!");
-  //     setType("success");
-  //     fire();
-  //   }, 500);
-  //   console.info("Models loaded successfully.");
-  // }
+  const changeModel = (modelCode: string) => {
+    setSelectedModelState(modelCode);
+    try {
+      localStorage.setItem(DEFAULT_MODEL_KEY, modelCode);
+    } catch {
+      // ignore
+    }
+  };
 
   const refreshModels = async () => {
     await modelInfo.refresh();
@@ -49,11 +57,20 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     setModels(refreshedModels);
 
     if (refreshedModels.length > 0) {
-      const selectedStillExists = refreshedModels.some(
-        (model) => model.code === selectedModel,
-      );
+      try {
+        const stored = localStorage.getItem(DEFAULT_MODEL_KEY);
+        const modelToCheck = stored || selectedModel;
+        
+        const selectedExists = refreshedModels.some(
+          (model) => model.code === modelToCheck,
+        );
 
-      if (!selectedStillExists) {
+        if (selectedExists && modelToCheck) {
+          changeModel(modelToCheck);
+        } else {
+          changeModel(refreshedModels[0].code);
+        }
+      } catch {
         changeModel(refreshedModels[0].code);
       }
     }
