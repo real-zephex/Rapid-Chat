@@ -606,9 +606,6 @@ const ChatInterface = ({
       )
       .finally(() => {
         setIsLoading(false);
-        if (updatedMessages.length <= 2) {
-          void refreshTitles();
-        }
       });
   };
 

@@ -8,12 +8,6 @@ import {
 import ModelHandler from "./handler/generator";
 import { ModelData } from "./handler/types";
 import { Messages } from "./types";
-import { OpenRouter } from "@openrouter/sdk";
-
-const openrouterClient = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 
 type RuntimeModelData = ModelData & { active: boolean };
 
@@ -175,52 +169,6 @@ export async function cancelModelRun(runId: string) {
   }
 
   return false;
-}
-
-export async function generateAITitle(messages: Messages[]): Promise<string> {
-  if (messages.length === 0) return "";
-
-  // Only use the first few messages to generate a title to save tokens/time
-  const relevantHistory = messages.slice(0, 3).map(m => ({
-    role: m.role,
-    content: m.content
-  }));
-
-  try {
-    const response = await openrouterClient.chat.send({
-      model: "openrouter/free",
-      messages: [
-        {
-          role: "system",
-          content: "Generate a 3-5 word title for the provided chat. Respond ONLY with the title. No intro, no quotes, no 'Title:', no punctuation."
-        },
-        {
-          role: "user",
-          content: `Chat History:\n${relevantHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nTitle:`
-        }
-      ],
-      maxTokens: 15,
-      temperature: 0.3,
-      stream: false
-    });
-
-    // Cast the response to access choices directly when not streaming
-    let content = (response as { choices: Array<{ message: { content: string } }> }).choices?.[0]?.message?.content;
-    
-    if (typeof content !== "string") return "";
-
-    // Post-process to remove common AI "chatter"
-    content = content
-      .replace(/^(Title|Summary|Topic|Chat Title|Conversation Title):\s+/i, "")
-      .replace(/^["']|["']$/g, "")
-      .replace(/\.$/, "")
-      .trim();
-
-    return content;
-  } catch (error) {
-    console.error("AI Title generation failed:", error);
-    return ""; 
-  }
 }
 
 export default ModelProvider;

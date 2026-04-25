@@ -1,6 +1,6 @@
 "use client";
 
-import { retrieveChats, retrieveTabs, getChatMetadata, updateChatTitle } from "@/utils/indexedDB";
+import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
 import { listCouncilSessions } from "@/utils/councilIndexedDB";
 import { generateChatTitle } from "@/utils/titleGenerator";
 import React, {
@@ -61,40 +61,16 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
     const newTitles: Record<string, string> = {};
     for (const tab of tabs) {
-      const metadata = await getChatMetadata(tab);
-      
-      if (metadata.title) {
-        newTitles[tab] = metadata.title;
-        continue;
-      }
-
       const chats = await retrieveChats(tab);
       if (chats.length === 0) {
         newTitles[tab] = "New Chat";
       } else {
-        // Use intelligent title generation for chats with conversation history
-        try {
-          const generatedTitle = await generateChatTitle(chats);
-          newTitles[tab] = generatedTitle;
-          
-          // Save the title if we got one
-          if (generatedTitle && generatedTitle !== "New Chat") {
-            await updateChatTitle(tab, generatedTitle);
-          }
-        } catch (error) {
-          console.error(
-            "Fallback to simple title generation for tab:",
-            tab,
-            error
-          );
-          // Fallback to simple title generation if AI fails
-          const lastMessage = chats[chats.length - 1];
-          newTitles[tab] =
-            lastMessage.role === "user"
-              ? lastMessage.content.slice(0, 50) +
-                (lastMessage.content.length > 50 ? "..." : "")
-              : lastMessage.content.slice(0, 50) + "...";
-        }
+        const lastMessage = chats[chats.length - 1];
+        newTitles[tab] =
+          lastMessage.role === "user"
+            ? lastMessage.content.slice(0, 50) +
+              (lastMessage.content.length > 50 ? "..." : "")
+            : lastMessage.content.slice(0, 50) + "...";
       }
     }
     setTitles(newTitles);
