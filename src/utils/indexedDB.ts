@@ -70,6 +70,7 @@ const performDBOperation = async <T>(
 interface ChatData {
   id: string;
   messages: Messages[];
+  title?: string;
   parentId?: string;
   branchFromIndex?: number;
   createdAt?: number;
@@ -78,15 +79,20 @@ interface ChatData {
 export const saveChats = async (
   id: string,
   messages: Messages[],
-  options?: { parentId?: string; branchFromIndex?: number }
+  options?: { title?: string; parentId?: string; branchFromIndex?: number }
 ) => {
   try {
+    const existing = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
+      store.get(id),
+    );
+
     const chatData: ChatData = {
       id,
       messages,
-      parentId: options?.parentId,
-      branchFromIndex: options?.branchFromIndex,
-      createdAt: Date.now(),
+      title: options?.title || existing?.title,
+      parentId: options?.parentId || existing?.parentId,
+      branchFromIndex: options?.branchFromIndex || existing?.branchFromIndex,
+      createdAt: existing?.createdAt || Date.now(),
     };
 
     await performDBOperation(
@@ -190,18 +196,37 @@ export const retrieveTabs = async (): Promise<string[]> => {
 
 export const getChatMetadata = async (
   id: string,
-): Promise<{ parentId?: string; branchFromIndex?: number }> => {
+): Promise<{ title?: string; parentId?: string; branchFromIndex?: number }> => {
   try {
     const result = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
       store.get(id),
     );
     return {
+      title: result?.title,
       parentId: result?.parentId,
       branchFromIndex: result?.branchFromIndex,
     };
   } catch (error) {
     console.error("Error retrieving chat metadata:", error);
     return {};
+  }
+};
+
+export const updateChatTitle = async (id: string, title: string) => {
+  try {
+    const chatData = await performDBOperation<ChatData>(CHATS_STORE, (store) =>
+      store.get(id),
+    );
+    if (chatData) {
+      chatData.title = title;
+      await performDBOperation(
+        CHATS_STORE,
+        (store) => store.put(chatData),
+        "readwrite",
+      );
+    }
+  } catch (error) {
+    console.error("Error updating chat title:", error);
   }
 };
 

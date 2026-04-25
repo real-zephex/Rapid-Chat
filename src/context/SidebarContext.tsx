@@ -1,6 +1,6 @@
 "use client";
 
-import { retrieveChats, retrieveTabs } from "@/utils/indexedDB";
+import { retrieveChats, retrieveTabs, getChatMetadata, updateChatTitle } from "@/utils/indexedDB";
 import { listCouncilSessions } from "@/utils/councilIndexedDB";
 import { generateChatTitle } from "@/utils/titleGenerator";
 import React, {
@@ -61,6 +61,13 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
     const newTitles: Record<string, string> = {};
     for (const tab of tabs) {
+      const metadata = await getChatMetadata(tab);
+      
+      if (metadata.title) {
+        newTitles[tab] = metadata.title;
+        continue;
+      }
+
       const chats = await retrieveChats(tab);
       if (chats.length === 0) {
         newTitles[tab] = "New Chat";
@@ -69,6 +76,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         try {
           const generatedTitle = await generateChatTitle(chats);
           newTitles[tab] = generatedTitle;
+          
+          // Only save if it's not a generic title and we have actual messages
+          if (generatedTitle !== "New Chat" && chats.length >= 2) {
+            await updateChatTitle(tab, generatedTitle);
+          }
         } catch (error) {
           console.error(
             "Fallback to simple title generation for tab:",

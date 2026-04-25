@@ -2,12 +2,14 @@
   "name": "fast_ai",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun@1.2.4",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "model:upsert": "bun run scripts/upsert-models.ts"
+    "model:upsert": "bun run scripts/upsert-models.ts",
+    "convex:dev": "bunx convex dev"
   },
   "dependencies": {
     "@next/third-parties": "^15.5.15",

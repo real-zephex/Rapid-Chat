@@ -22,7 +22,7 @@ A fast, privacy-focused AI chat interface built with Next.js 15 and React 19. Ra
 ```bash
 git clone https://github.com/real-zephex/Rapid-Chat.git
 cd Rapid-Chat
-npm install # or bun install
+bun install
 ```
 
 ### 2. Environment Setup
@@ -38,6 +38,12 @@ NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
 JWT_SECRET=your_long_random_secret_string
 ```
 
+### 3. Run Development Server
+```bash
+bun run dev
+```
+Visit `http://localhost:3000` to start chatting.
+
 ## Backend with Convex
 
 Rapid Chat uses **Convex** as its robust backend engine. While your chat data stays local (IndexedDB), Convex handles the critical system infrastructure:
@@ -46,7 +52,7 @@ Rapid Chat uses **Convex** as its robust backend engine. While your chat data st
 - **Dynamic Updates**: Allows for real-time updates to model configurations without requiring a frontend redeploy.
 
 To set up the backend:
-1. Run `npx convex dev` to initialize your Convex project.
+1. Run `bunx convex dev` to initialize your Convex project.
 2. The command will automatically populate `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` in your environment.
 3. Generate a secure `JWT_SECRET` for the admin authentication layer.
 
@@ -78,8 +84,8 @@ To set up the backend:
 - `src/utils/tools/`: Implementation of the tooling framework.
 
 ### Scripts
-- `npm run dev`: Start dev server.
-- `npm run build`: Production build.
+- `bun run dev`: Start dev server.
+- `bun run build`: Production build.
 - `bun run model:upsert`: Interactively manage model configurations in Convex.
 
 ## License

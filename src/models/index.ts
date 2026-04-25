@@ -8,6 +8,12 @@ import {
 import ModelHandler from "./handler/generator";
 import { ModelData } from "./handler/types";
 import { Messages } from "./types";
+import { OpenRouter } from "@openrouter/sdk";
+
+const openrouterClient = new OpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
+
 
 type RuntimeModelData = ModelData & { active: boolean };
 
@@ -169,6 +175,41 @@ export async function cancelModelRun(runId: string) {
   }
 
   return false;
+}
+
+export async function generateAITitle(messages: Messages[]): Promise<string> {
+  if (messages.length === 0) return "New Chat";
+
+  // Only use the first few messages to generate a title to save tokens/time
+  const relevantHistory = messages.slice(0, 3).map(m => ({
+    role: m.role,
+    content: m.content
+  }));
+
+  try {
+    const response = await openrouterClient.chat.send({
+      model: "openrouter/free",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that generates extremely concise, 3-5 word titles for chat conversations. Respond ONLY with the title, no quotes, no period."
+        },
+        {
+          role: "user",
+          content: `Generate a title for this conversation:\n${JSON.stringify(relevantHistory)}`
+        }
+      ],
+      maxTokens: 20,
+      temperature: 0.5,
+    });
+
+    const rawTitle = response?.choices?.[0]?.message?.content || "";
+    const title = typeof rawTitle === "string" ? rawTitle : "";
+    return title.trim().replace(/^["']|["']$/g, "") || "Untitled Chat";
+  } catch (error) {
+    console.error("AI Title generation failed:", error);
+    return ""; // Return empty to trigger fallback
+  }
 }
 
 export default ModelProvider;
