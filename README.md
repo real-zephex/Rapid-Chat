@@ -28,22 +28,34 @@ npm install # or bun install
 ### 2. Environment Setup
 Create a `.env.local` file in the root directory:
 ```env
+# AI Providers
 GROQ_API_KEY=your_groq_key
 OPENROUTER_API_KEY=your_openrouter_key
+
+# Convex (Backend & Configuration)
+CONVEX_DEPLOYMENT=your_deployment_name
 NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
+JWT_SECRET=your_long_random_secret_string
 ```
 
-### 3. Run Development Server
-```bash
-npm run dev # or bun run dev
-```
-Visit `http://localhost:3000` to start chatting.
+## Backend with Convex
+
+Rapid Chat uses **Convex** as its robust backend engine. While your chat data stays local (IndexedDB), Convex handles the critical system infrastructure:
+- **Global Configuration**: Manages the list of available AI models, provider settings, and system prompts.
+- **Admin Authentication**: Securely manages admin access using JWT tokens and server-side validation.
+- **Dynamic Updates**: Allows for real-time updates to model configurations without requiring a frontend redeploy.
+
+To set up the backend:
+1. Run `npx convex dev` to initialize your Convex project.
+2. The command will automatically populate `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` in your environment.
+3. Generate a secure `JWT_SECRET` for the admin authentication layer.
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS 4
+- **Backend**: **Convex** (Serverless Database & Functions)
 - **AI**: groq-sdk, OpenRouter
-- **Database/State**: IndexedDB (local), Convex (remote config & usage trends)
+- **Database/State**: IndexedDB (Local chat history), Convex (Remote system config)
 - **Tooling Framework**: Infrastructure included for Jina AI (Web Reader), Piston (Code Execution), and Open-Meteo (Weather).
 
 ## AI Council & Split View
