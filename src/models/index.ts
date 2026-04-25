@@ -178,7 +178,7 @@ export async function cancelModelRun(runId: string) {
 }
 
 export async function generateAITitle(messages: Messages[]): Promise<string> {
-  if (messages.length === 0) return "New Chat";
+  if (messages.length === 0) return "";
 
   // Only use the first few messages to generate a title to save tokens/time
   const relevantHistory = messages.slice(0, 3).map(m => ({
@@ -203,12 +203,17 @@ export async function generateAITitle(messages: Messages[]): Promise<string> {
       temperature: 0.5,
     });
 
-    const rawTitle = response?.choices?.[0]?.message?.content || "";
-    const title = typeof rawTitle === "string" ? rawTitle : "";
-    return title.trim().replace(/^["']|["']$/g, "") || "Untitled Chat";
+    // Handle potential differences in SDK response structure
+    const choices = (response as any)?.choices;
+    if (!choices || choices.length === 0) return "";
+
+    const content = choices[0]?.message?.content;
+    if (typeof content !== "string") return "";
+
+    return content.trim().replace(/^["']|["']$/g, "");
   } catch (error) {
     console.error("AI Title generation failed:", error);
-    return ""; // Return empty to trigger fallback
+    return ""; 
   }
 }
 

@@ -77,8 +77,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
           const generatedTitle = await generateChatTitle(chats);
           newTitles[tab] = generatedTitle;
           
-          // Only save if it's not a generic title and we have actual messages
-          if (generatedTitle !== "New Chat" && chats.length >= 2) {
+          // Save the title if we got one
+          if (generatedTitle && generatedTitle !== "New Chat") {
             await updateChatTitle(tab, generatedTitle);
           }
         } catch (error) {
