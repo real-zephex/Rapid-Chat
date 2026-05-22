@@ -9,6 +9,7 @@
 interface Messages {
   role: "user" | "assistant";
   content: string;
+  model?: string;
   images?: { mimeType: string; data: Uint8Array }[]; // Store images directly with messages
   reasoning?: string;
   startTime?: number;

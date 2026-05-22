@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaCodeBranch, FaRegCopy } from "react-icons/fa6";
+import { FaCodeBranch, FaRegCopy, FaRobot } from "react-icons/fa6";
 import { GoClock, GoCpu } from "react-icons/go";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -18,6 +18,7 @@ import ImageDisplay from "./ImageDisplay";
 type Message = {
   role: "user" | "assistant";
   content: string;
+  model?: string;
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
   startTime?: number;
@@ -28,7 +29,6 @@ type Message = {
 interface MessageComponentProps {
   message: Message;
   index: number;
-  model: string;
   onCopyResponse: (content: string) => Promise<boolean>;
   onBranchFromMessage: (index: number) => void;
   isSplitView?: boolean;
@@ -38,7 +38,6 @@ const MessageComponent = memo(
   ({
     message,
     index,
-    model,
     onCopyResponse,
     onBranchFromMessage,
     isSplitView = false,
@@ -140,7 +139,7 @@ const MessageComponent = memo(
                 </div>
               )}
 
-              <div className="rounded-2xl border border-accent/35 bg-accent px-4 py-3 text-[16px] sm:text-[1.05rem] leading-relaxed text-background shadow-sm">
+              <div className="rounded-2xl border border-accent/35 bg-accent px-4 py-3 text-[16px] sm:text-[1.05rem] leading-relaxed text-background shadow-sm whitespace-pre-wrap">
                 {message.content}
               </div>
 
@@ -179,11 +178,6 @@ const MessageComponent = memo(
       <article className="group w-full">
         <div className={`mx-auto w-full ${wrapperClass} px-1 py-5 sm:px-3`}>
           <div className="w-full rounded-2xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-6 sm:py-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                {model}
-              </span>
-            </div>
 
             {displayedReasoning && (
               <div className="mb-5 overflow-hidden rounded-xl border border-border bg-background">
@@ -311,19 +305,34 @@ const MessageComponent = memo(
                     );
                   },
                   h1: ({ children, ...props }) => (
-                    <h1 className="mb-5 mt-8 text-2xl font-semibold text-text-primary" {...props}>
+                    <h1 className="mb-5 mt-8 font-sans text-2xl font-semibold text-text-primary" {...props}>
                       {children}
                     </h1>
                   ),
                   h2: ({ children, ...props }) => (
-                    <h2 className="mb-4 mt-7 text-xl font-semibold text-text-primary" {...props}>
+                    <h2 className="mb-4 mt-7 font-sans text-xl font-semibold text-text-primary" {...props}>
                       {children}
                     </h2>
                   ),
                   h3: ({ children, ...props }) => (
-                    <h3 className="mb-3 mt-6 text-lg font-semibold text-text-primary" {...props}>
+                    <h3 className="mb-3 mt-6 font-sans text-lg font-semibold text-text-primary" {...props}>
                       {children}
                     </h3>
+                  ),
+                  h4: ({ children, ...props }) => (
+                    <h4 className="mb-3 mt-5 font-sans text-base font-semibold text-text-primary" {...props}>
+                      {children}
+                    </h4>
+                  ),
+                  h5: ({ children, ...props }) => (
+                    <h5 className="mb-2 mt-4 font-sans text-sm font-semibold text-text-primary" {...props}>
+                      {children}
+                    </h5>
+                  ),
+                  h6: ({ children, ...props }) => (
+                    <h6 className="mb-2 mt-4 font-sans text-xs font-semibold uppercase tracking-wider text-text-primary" {...props}>
+                      {children}
+                    </h6>
                   ),
                   p: ({ children, ...props }) => (
                     <p className="mb-4 last:mb-0" {...props}>
@@ -426,6 +435,10 @@ const MessageComponent = memo(
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-text-muted sm:ml-auto">
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
+                  <FaRobot size={11} />
+                  {message.model || "Unknown Model"}
+                </span>
                 {totalTokens > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
                     <TbAlphabetLatin size={11} />

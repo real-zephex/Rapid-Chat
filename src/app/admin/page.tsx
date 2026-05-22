@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HiPlus, HiArrowPath, HiArrowRightOnRectangle, HiPencil, HiTrash } from "react-icons/hi2";
+import { HiPlus, HiArrowPath, HiArrowRightOnRectangle, HiPencil, HiTrash, HiPlay } from "react-icons/hi2";
 
 export default function AdminDashboard() {
   const models = useQuery(api.admin.listAllModels);
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [externalModels, setExternalModels] = useState<any[]>([]);
   const [loadingExternal, setLoadingExternal] = useState(false);
+  const [testStates, setTestStates] = useState<Record<string, { loading: boolean; result?: string; success?: boolean }>>({});
   const [formData, setFormData] = useState({
     model_code: "",
     display_name: "",
@@ -78,6 +79,34 @@ export default function AdminDashboard() {
       alert("Model saved successfully!");
     } catch (err) {
       alert("Failed to save model");
+    }
+  };
+
+  const handleTest = async (modelCode: string) => {
+    setTestStates((prev) => ({ ...prev, [modelCode]: { loading: true } }));
+
+    try {
+      const res = await fetch("/api/admin/models/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_code: modelCode }),
+      });
+
+      const data = await res.json();
+
+      setTestStates((prev) => ({
+        ...prev,
+        [modelCode]: {
+          loading: false,
+          success: data.success,
+          result: data.success ? data.response : data.error || "Unknown error",
+        },
+      }));
+    } catch {
+      setTestStates((prev) => ({
+        ...prev,
+        [modelCode]: { loading: false, success: false, result: "Network error." },
+      }));
     }
   };
 
@@ -140,7 +169,8 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between p-4">
+                      <>
+                        <div className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-4">
                           <div className={`w-2 h-2 rounded-full ${model.active ? 'bg-success' : 'bg-text-muted'}`} />
                           <div>
@@ -149,6 +179,18 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="flex gap-1">
+                          <button
+                            onClick={() => handleTest(model.model_code)}
+                            disabled={testStates[model.model_code]?.loading}
+                            className="p-2 rounded-lg text-text-secondary hover:bg-surface hover:text-accent transition-colors disabled:opacity-40"
+                            title="Test model"
+                          >
+                            {testStates[model.model_code]?.loading ? (
+                              <HiArrowPath size={18} className="animate-spin" />
+                            ) : (
+                              <HiPlay size={18} />
+                            )}
+                          </button>
                           <button
                             onClick={() => {
                               setFormData({
@@ -185,6 +227,14 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                       </div>
+                      {testStates[model.model_code]?.result !== undefined && (
+                        <div className={`px-4 pb-3 ${testStates[model.model_code]?.success ? 'text-success' : 'text-error'}`}>
+                          <div className={`rounded-lg px-3 py-2 text-xs font-medium ${testStates[model.model_code]?.success ? 'bg-success/10 border border-success/25' : 'bg-error/10 border border-error/25'}`}>
+                            {testStates[model.model_code]?.success ? '✓' : '✗'} {testStates[model.model_code]?.result}
+                          </div>
+                        </div>
+                      )}
+                      </>
                     )}
                   </div>
                 ))}

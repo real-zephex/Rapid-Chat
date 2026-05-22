@@ -4,6 +4,7 @@ import { saveChats } from "@/utils/indexedDB";
 type Message = {
   role: "user" | "assistant";
   content: string;
+  model?: string;
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
   startTime?: number;
@@ -36,6 +37,7 @@ class GenerationManager {
     images: { mimeType: string; data: Uint8Array }[],
     abortId: string,
     initialMessages: Message[],
+    modelName?: string,
   ) {
     const existingTask = this.activeTasks.get(chatId);
     if (existingTask) {
@@ -64,6 +66,7 @@ class GenerationManager {
       abortId,
       initialMessages,
       task,
+      modelName,
     });
 
     try {
@@ -94,6 +97,7 @@ class GenerationManager {
     abortId,
     initialMessages,
     task,
+    modelName,
   }: {
     chatId: string;
     input: string;
@@ -102,12 +106,13 @@ class GenerationManager {
     abortId: string;
     initialMessages: Message[];
     task: GenerationTask;
+    modelName?: string;
   }) {
     let assistantContent = "";
     let assistantReasoning = "";
     let currentMessages: Message[] = [
       ...initialMessages,
-      { role: "assistant", content: "", reasoning: "" },
+      { role: "assistant", content: "", reasoning: "", model: modelName },
     ];
     let pendingEventBuffer = "";
     let hasDoneEvent = false;
@@ -123,6 +128,7 @@ class GenerationManager {
         role: "assistant",
         content: assistantContent,
         reasoning: assistantReasoning,
+        model: modelName,
         ...overrides,
       };
 

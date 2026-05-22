@@ -41,6 +41,7 @@ import ModelSelector from "./model-selector/selector";
 type Message = {
   role: "user" | "assistant";
   content: string;
+  model?: string;
   images?: { mimeType: string; data: Uint8Array }[];
   reasoning?: string;
   startTime?: number;
@@ -77,14 +78,12 @@ const isEditableTarget = (target: EventTarget | null) => {
 const MessagesContainer = memo(
   ({
     messages,
-    model,
     onCopyResponse,
     onBranchFromMessage,
     messageRefs,
     isSplitView,
   }: {
     messages: Message[];
-    model: string;
     onCopyResponse: (content: string) => Promise<boolean>;
     onBranchFromMessage: (index: number) => void;
     messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
@@ -110,7 +109,6 @@ const MessagesContainer = memo(
             <MessageComponent
               message={message}
               index={index}
-              model={model}
               onCopyResponse={onCopyResponse}
               onBranchFromMessage={onBranchFromMessage}
               isSplitView={isSplitView}
@@ -571,6 +569,7 @@ const ChatInterface = ({
     const userMessage: Message = {
       role: "user",
       content: input,
+      model: selectedModelInfo?.name,
       ...(images.length > 0 && { images: [...images] }),
     };
 
@@ -603,6 +602,7 @@ const ChatInterface = ({
         imagesToSend,
         abortId,
         updatedMessages,
+        selectedModelInfo?.name,
       )
       .finally(() => {
         setIsLoading(false);
@@ -836,7 +836,6 @@ const ChatInterface = ({
             <div className="px-3 pb-10 pt-5 sm:px-4">
               <MessagesContainer
                 messages={messages}
-                model={selectedModelInfo?.name || "Unknown Model"}
                 onCopyResponse={handleCopyResponse}
                 onBranchFromMessage={handleBranchFromMessage}
                 messageRefs={messageRefs}
