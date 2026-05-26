@@ -139,6 +139,7 @@ const ChatInterface = ({
   const [voiceLoading, setVoiceLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [selectedModel, setSelectedModel] = useState<string>("");
+  const [hoveredDot, setHoveredDot] = useState<{ index: number; top: number; left: number } | null>(null);
   const [images, setImages] = useState<{ mimeType: string; data: Uint8Array }[]>(
     [],
   );
@@ -775,20 +776,42 @@ const ChatInterface = ({
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {messages.length > 0 && !isSplitView && (
-          <div className="absolute right-3 top-1/2 z-10 hidden max-h-[55%] -translate-y-1/2 flex-col gap-2 overflow-y-auto rounded-full border border-border bg-surface/85 p-2 backdrop-blur-sm lg:flex">
-            {messages
-              .map((message, index) => ({ message, index }))
-              .filter(({ message }) => message.role === "user")
-              .map(({ index }) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => scrollToMessage(index)}
-                  className="h-2 w-2 rounded-full bg-text-muted transition-colors hover:bg-accent"
-                  aria-label={`Jump to prompt ${Math.floor(index / 2) + 1}`}
-                />
-              ))}
-          </div>
+          <>
+            <div className="absolute right-3 top-1/2 z-10 hidden max-h-[55%] -translate-y-1/2 flex-col gap-2 overflow-y-auto rounded-full border border-border bg-surface/85 p-2 backdrop-blur-sm lg:flex">
+              {messages
+                .map((message, index) => ({ message, index }))
+                .filter(({ message }) => message.role === "user")
+                .map(({ message, index }) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => scrollToMessage(index)}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setHoveredDot({ index, top: rect.top + rect.height / 2, left: rect.left });
+                    }}
+                    onMouseLeave={() => setHoveredDot(null)}
+                    className="h-2 w-2 rounded-full bg-text-muted transition-colors hover:bg-accent"
+                    aria-label={`Jump to prompt ${Math.floor(index / 2) + 1}`}
+                  />
+                ))}
+            </div>
+            {hoveredDot && messages[hoveredDot.index] && (
+              <div
+                className="pointer-events-none fixed z-50 max-w-72 rounded-xl border border-border bg-surface/95 px-3 py-2 text-xs leading-relaxed text-text-primary shadow-lg backdrop-blur-sm"
+                style={{
+                  top: hoveredDot.top,
+                  left: hoveredDot.left,
+                  transform: 'translate(calc(-100% - 12px), -50%)',
+                  animation: 'dot-tooltip-enter 150ms ease-out',
+                }}
+              >
+                <p className="line-clamp-4 whitespace-pre-wrap break-words">
+                  {messages[hoveredDot.index].content}
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {messages.length > 0 && (

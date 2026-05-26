@@ -385,3 +385,8 @@ pre code.hljs {
   background-color: #252526;
 }
 
+@keyframes dot-tooltip-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+

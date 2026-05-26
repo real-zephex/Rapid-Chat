@@ -86,7 +86,7 @@ export default function AdminDashboard() {
     setTestStates((prev) => ({ ...prev, [modelCode]: { loading: true } }));
 
     try {
-      const res = await fetch("/api/admin/models/test", {
+      const res = await fetch("/api/admin/test-model", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model_code: modelCode }),
