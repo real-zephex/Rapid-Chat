@@ -5,18 +5,21 @@ import {
   type CouncilSessionData,
 } from "@/utils/councilIndexedDB";
 
-export type CouncilMemberState = {
+export type CouncilTurnState = {
   modelCode: string;
   modelName: string;
+  round: number;
   content: string;
-  status: "pending" | "streaming" | "done" | "error";
+  status: "waiting" | "streaming" | "done" | "error";
   errorMessage?: string;
 };
 
 export type CouncilState = {
   sessionId: string;
   question: string;
-  members: CouncilMemberState[];
+  rounds: number;
+  currentRound: number;
+  turns: CouncilTurnState[];
   judgment: { content: string; status: "pending" | "streaming" | "done" };
   status: "idle" | "running" | "done" | "error";
 };
@@ -38,6 +41,7 @@ class CouncilManager {
     memberModelCodes: string[],
     judgeModelCode: string,
     images: { mimeType: string; data: Uint8Array }[],
+    rounds: number = 2,
   ) {
     if (this.activeSession) {
       await this.stopCouncil();
@@ -51,12 +55,9 @@ class CouncilManager {
     const initialState: CouncilState = {
       sessionId,
       question,
-      members: memberModelCodes.map((code) => ({
-        modelCode: code,
-        modelName: code,
-        content: "",
-        status: "pending",
-      })),
+      rounds,
+      currentRound: 0,
+      turns: [],
       judgment: { content: "", status: "pending" },
       status: "running",
     };
@@ -77,6 +78,7 @@ class CouncilManager {
       memberModelCodes,
       judgeModelCode,
       images,
+      rounds,
       session,
     );
 
@@ -104,6 +106,7 @@ class CouncilManager {
     memberModelCodes: string[],
     judgeModelCode: string,
     images: { mimeType: string; data: Uint8Array }[],
+    rounds: number,
     session: {
       sessionId: string;
       promise: Promise<void>;
@@ -121,6 +124,7 @@ class CouncilManager {
         question,
         memberModelCodes,
         judgeModelCode,
+        rounds,
         chats: [],
         imageData,
         sessionId,
@@ -196,43 +200,44 @@ class CouncilManager {
       const event = JSON.parse(rawEvent) as CouncilEvent;
 
       switch (event.type) {
-        case "member_start": {
-          const member = session.state.members.find(
-            (m) => m.modelCode === event.modelCode,
-          );
-          if (member) {
-            member.status = "streaming";
-            member.modelName = event.modelName || event.modelCode;
-          }
+        case "round_start": {
+          session.state.currentRound = event.round;
+          break;
+        }
+        case "member_turn_start": {
+          session.state.turns = [
+            ...session.state.turns,
+            {
+              modelCode: event.modelCode,
+              modelName: event.modelName || event.modelCode,
+              round: event.round,
+              content: "",
+              status: "streaming" as const,
+            },
+          ];
           break;
         }
         case "member_chunk": {
-          const member = session.state.members.find(
-            (m) => m.modelCode === event.modelCode,
-          );
-          if (member) {
-            member.content += event.delta;
+          const turn = session.state.turns[session.state.turns.length - 1];
+          if (turn && turn.modelCode === event.modelCode) {
+            turn.content += event.delta;
           }
           break;
         }
-        case "member_done": {
-          const member = session.state.members.find(
-            (m) => m.modelCode === event.modelCode,
-          );
-          if (member) {
-            member.content = event.content;
-            member.status = "done";
+        case "member_turn_done": {
+          const turn = session.state.turns[session.state.turns.length - 1];
+          if (turn && turn.modelCode === event.modelCode) {
+            turn.content = event.content;
+            turn.status = "done";
           }
           break;
         }
-        case "member_error": {
-          const member = session.state.members.find(
-            (m) => m.modelCode === event.modelCode,
-          );
-          if (member) {
-            member.status = "error";
-            member.errorMessage = event.message;
-            member.content = event.message;
+        case "member_turn_error": {
+          const turn = session.state.turns[session.state.turns.length - 1];
+          if (turn && turn.modelCode === event.modelCode) {
+            turn.status = "error";
+            turn.errorMessage = event.message;
+            turn.content = event.message;
           }
           break;
         }
@@ -262,9 +267,16 @@ class CouncilManager {
   private publishUpdate() {
     if (!this.activeSession) return;
 
+    const state = this.activeSession.state;
+    const freshState: CouncilState = {
+      ...state,
+      turns: state.turns.map((t) => ({ ...t })),
+      judgment: { ...state.judgment },
+    };
+
     for (const callback of this.listeners) {
       try {
-        callback(this.activeSession.state);
+        callback(freshState);
       } catch (error) {
         console.error("Error notifying council subscriber:", error);
       }
@@ -276,11 +288,14 @@ class CouncilManager {
       const sessionData: CouncilSessionData = {
         id: state.sessionId,
         question: state.question,
-        memberModels: state.members.map((m) => m.modelCode),
+        memberModels: [],
         judgeModel: judgeModelCode,
-        memberResponses: state.members.map((m) => ({
-          modelCode: m.modelCode,
-          content: m.content,
+        rounds: state.rounds,
+        turns: state.turns.map((t) => ({
+          modelCode: t.modelCode,
+          modelName: t.modelName,
+          round: t.round,
+          content: t.content,
         })),
         judgment: state.judgment.content,
         timestamp: Date.now(),

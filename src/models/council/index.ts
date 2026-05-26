@@ -8,13 +8,13 @@ import {
 import ModelHandler from "../handler/generator";
 import { ModelData } from "../handler/types";
 import { Messages } from "../types";
-import { buildJudgePrompt, JUDGE_SYSTEM_PROMPT } from "./prompts";
 
 export type CouncilEvent =
-  | { type: "member_start"; modelCode: string; modelName: string }
-  | { type: "member_chunk"; modelCode: string; delta: string }
-  | { type: "member_done"; modelCode: string; content: string }
-  | { type: "member_error"; modelCode: string; message: string }
+  | { type: "round_start"; round: number; totalRounds: number }
+  | { type: "member_turn_start"; modelCode: string; modelName: string; round: number }
+  | { type: "member_chunk"; modelCode: string; delta: string; round: number }
+  | { type: "member_turn_done"; modelCode: string; content: string; round: number }
+  | { type: "member_turn_error"; modelCode: string; message: string; round: number }
   | { type: "judge_start" }
   | { type: "judge_chunk"; delta: string }
   | { type: "judge_done"; content: string }
@@ -41,81 +41,120 @@ const fallbackModel: RuntimeModelData = {
 };
 
 const controllers = new Map<string, AbortController>();
-
 const serializeEvent = (event: CouncilEvent) => `${JSON.stringify(event)}\n`;
 
 async function resolveModel(modelCode: string): Promise<RuntimeModelData> {
   const model = await fetchActiveModelByCode(modelCode);
   if (model) return model;
-
   const models = await fetchActiveModels();
   const match = models.find((m) => m.model_code === modelCode);
   if (match) return match;
-
   return fallbackModel;
 }
 
-async function collectMemberResponse(
-  modelCode: string,
+function buildConversationHistory(
   question: string,
-  chatHistory: Messages[],
-  imageData?: fileUploads[],
-  signal?: AbortSignal,
-): Promise<string> {
-  const modelData = await resolveModel(modelCode);
-  let content = "";
+  allTurns: Array<{ modelCode: string; modelName: string; round: number; content: string }>,
+  currentRound: number,
+  totalRounds: number,
+): string {
+  const lines: string[] = [`Original Question: ${question}\n`];
 
+  if (allTurns.length === 0) {
+    lines.push("This is the first response. No prior discussion yet.");
+    return lines.join("\n");
+  }
+
+  let currentRoundStart = 1;
+  for (const turn of allTurns) {
+    if (turn.round > currentRoundStart) {
+      lines.push(`--- End of Round ${currentRoundStart} ---`);
+      currentRoundStart = turn.round;
+    }
+    lines.push(`${turn.modelName}: ${turn.content}`);
+  }
+
+  lines.push(`\nCurrent Round: ${currentRound} of ${totalRounds}`);
+  lines.push("Build on the previous discussion. Reference and respond to the points made by other models.");
+
+  return lines.join("\n\n");
+}
+
+async function* streamMemberResponse(
+  modelCode: string,
+  systemPrompt: string,
+  userPrompt: string,
+  chatHistory: Messages[],
+  imageData: fileUploads[] | undefined,
+  signal: AbortSignal | undefined,
+): AsyncGenerator<string> {
+  const modelData = await resolveModel(modelCode);
   const inc = {
-    message: question,
+    message: userPrompt,
     chats: chatHistory,
     imageData,
   };
 
-  for await (const chunk of ModelHandler({ inc, model_data: modelData, signal })) {
+  const modelWithSystem: RuntimeModelData = {
+    ...modelData,
+    system_prompt: systemPrompt,
+  };
+
+  for await (const chunk of ModelHandler({ inc, model_data: modelWithSystem, signal })) {
     if (signal?.aborted) break;
     if (chunk.type === "content") {
-      content += chunk.delta;
+      yield chunk.delta;
     }
   }
-
-  return content.trim();
 }
 
-async function* generateJudgeStream(
-  judgeModelCode: string,
+const COUNCIL_MEMBER_SYSTEM_PROMPT = `You are a member of an AI Council. You will participate in a structured multi-round debate with other AI models.
+
+Guidelines:
+- Keep responses focused and substantive
+- Reference and build upon points made by other council members in previous rounds
+- If you agree with a previous point, say so and extend it
+- If you disagree, explain your reasoning respectfully
+- Be concise — quality over quantity
+- Adapt your position as new information emerges from other members`;
+
+const JUDGE_SYSTEM_PROMPT = `You are the presiding judge of an AI Council. Multiple AI models have debated the user's question over multiple rounds. Your role is to synthesize their discussion into a single, authoritative final judgment.
+
+Instructions:
+- Carefully analyze each model's contributions across all rounds for strengths, weaknesses, and unique insights
+- Identify areas of agreement and disagreement between the models
+- Resolve disagreements by weighing the reasoning quality of each position
+- Combine the strongest arguments into a cohesive, well-structured answer
+- If models disagree significantly, acknowledge the disagreement and explain which position you find most compelling and why
+- Reference which models contributed key insights where it adds credibility
+- Your judgment should be comprehensive yet concise — aim for clarity over verbosity
+- Format your response using markdown for readability`;
+
+function buildJudgePrompt(
   question: string,
-  memberResponses: Array<{ modelCode: string; content: string }>,
-  signal?: AbortSignal,
-): AsyncGenerator<{ type: "content" | "reasoning"; delta: string }> {
-  const modelData = await resolveModel(judgeModelCode);
+  allTurns: Array<{ modelCode: string; modelName: string; round: number; content: string }>,
+): string {
+  const lines: string[] = [`## User's Question\n\n${question}\n`];
 
-  const judgePrompt = buildJudgePrompt(question, memberResponses);
-
-  const inc = {
-    message: judgePrompt,
-    chats: [],
-    imageData: undefined,
-  };
-
-  const judgeModelData: RuntimeModelData = {
-    ...modelData,
-    system_prompt: JUDGE_SYSTEM_PROMPT,
-  };
-
-  for await (const chunk of ModelHandler({
-    inc,
-    model_data: judgeModelData,
-    signal,
-  })) {
-    if (signal?.aborted) break;
-    yield chunk;
+  let currentRound = 1;
+  for (const turn of allTurns) {
+    if (turn.round > currentRound) {
+      lines.push(`--- End of Round ${currentRound} ---`);
+      currentRound = turn.round;
+    }
+    lines.push(`### ${turn.modelName} (Round ${turn.round})\n\n${turn.content}`);
   }
+
+  lines.push("\n---\nBased on the above multi-round debate, provide your final synthesized judgment.");
+
+  return lines.join("\n\n");
 }
 
 const CouncilProvider = async ({
   question,
   memberModelCodes,
   judgeModelCode,
+  rounds = 2,
   chats,
   imageData,
   sessionId,
@@ -123,6 +162,7 @@ const CouncilProvider = async ({
   question: string;
   memberModelCodes: string[];
   judgeModelCode: string;
+  rounds?: number;
   chats: Messages[];
   imageData?: fileUploads[];
   sessionId?: string;
@@ -136,60 +176,65 @@ const CouncilProvider = async ({
         controllers.set(sessionId, abortController);
       }
 
-      const memberResponses: Array<{ modelCode: string; content: string }> = [];
+      const allTurns: Array<{ modelCode: string; modelName: string; round: number; content: string }> = [];
       const chatHistory = chats.slice(-24);
 
       try {
-        const memberPromises = memberModelCodes.map(async (modelCode) => {
-          controller.enqueue(
-            serializeEvent({
-              type: "member_start",
-              modelCode,
-              modelName: modelCode,
-            }),
-          );
+        for (let round = 1; round <= rounds; round++) {
+          if (signal.aborted) break;
 
-          try {
-            const content = await collectMemberResponse(
-              modelCode,
-              question,
-              chatHistory,
-              imageData,
-              signal,
+          controller.enqueue(serializeEvent({ type: "round_start", round, totalRounds: rounds }));
+
+          for (const modelCode of memberModelCodes) {
+            if (signal.aborted) break;
+
+            const modelName = modelCode;
+            controller.enqueue(
+              serializeEvent({ type: "member_turn_start", modelCode, modelName, round }),
             );
 
-            if (!signal.aborted) {
-              controller.enqueue(
-                serializeEvent({
-                  type: "member_done",
-                  modelCode,
-                  content,
-                }),
-              );
-              memberResponses.push({ modelCode, content });
-            }
-          } catch (error) {
-            if (!signal.aborted) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Model failed to respond";
-              controller.enqueue(
-                serializeEvent({
-                  type: "member_error",
-                  modelCode,
-                  message,
-                }),
-              );
-              memberResponses.push({
+            const conversationHistory = buildConversationHistory(
+              question,
+              allTurns,
+              round,
+              rounds,
+            );
+
+            try {
+              let content = "";
+              for await (const delta of streamMemberResponse(
                 modelCode,
-                content: `[Error: ${message}]`,
-              });
+                COUNCIL_MEMBER_SYSTEM_PROMPT,
+                conversationHistory,
+                chatHistory,
+                imageData,
+                signal,
+              )) {
+                if (signal.aborted) break;
+                content += delta;
+                controller.enqueue(
+                  serializeEvent({ type: "member_chunk", modelCode, delta, round }),
+                );
+              }
+
+              if (!signal.aborted) {
+                content = content.trim();
+                controller.enqueue(
+                  serializeEvent({ type: "member_turn_done", modelCode, content, round }),
+                );
+                allTurns.push({ modelCode, modelName, round, content });
+              }
+            } catch (error) {
+              if (!signal.aborted) {
+                const message = error instanceof Error ? error.message : "Model failed to respond";
+                controller.enqueue(
+                  serializeEvent({ type: "member_turn_error", modelCode, message, round }),
+                );
+                allTurns.push({ modelCode, modelName, round, content: `[Error: ${message}]` });
+              }
             }
           }
-        });
-
-        await Promise.all(memberPromises);
+        }
 
         if (signal.aborted) {
           controller.close();
@@ -199,30 +244,25 @@ const CouncilProvider = async ({
         controller.enqueue(serializeEvent({ type: "judge_start" }));
 
         let judgeContent = "";
-        for await (const chunk of generateJudgeStream(
+        const judgePrompt = buildJudgePrompt(question, allTurns);
+        const judgeModelData = await resolveModel(judgeModelCode);
+
+        for await (const delta of streamMemberResponse(
           judgeModelCode,
-          question,
-          memberResponses,
+          JUDGE_SYSTEM_PROMPT,
+          judgePrompt,
+          chatHistory,
+          imageData,
           signal,
         )) {
           if (signal.aborted) break;
-          if (chunk.type === "content") {
-            judgeContent += chunk.delta;
-            controller.enqueue(
-              serializeEvent({
-                type: "judge_chunk",
-                delta: chunk.delta,
-              }),
-            );
-          }
+          judgeContent += delta;
+          controller.enqueue(serializeEvent({ type: "judge_chunk", delta }));
         }
 
         if (!signal.aborted) {
           controller.enqueue(
-            serializeEvent({
-              type: "judge_done",
-              content: judgeContent.trim(),
-            }),
+            serializeEvent({ type: "judge_done", content: judgeContent.trim() }),
           );
           controller.enqueue(serializeEvent({ type: "done" }));
         }
@@ -232,10 +272,7 @@ const CouncilProvider = async ({
           controller.enqueue(
             serializeEvent({
               type: "error",
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "An error occurred during the council session",
+              message: error instanceof Error ? error.message : "An error occurred during the council session",
             }),
           );
         }

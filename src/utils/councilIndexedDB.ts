@@ -1,21 +1,30 @@
 "use client";
 
+export interface CouncilTurnData {
+  modelCode: string;
+  modelName: string;
+  round: number;
+  content: string;
+}
+
 export interface CouncilSessionData {
   id: string;
   question: string;
   memberModels: string[];
   judgeModel: string;
-  memberResponses: Array<{ modelCode: string; content: string }>;
+  rounds: number;
+  turns: CouncilTurnData[];
   judgment: string;
   timestamp: number;
 }
 
 const DB_NAME = "FastAIChats";
 const COUNCIL_STORE = "councilSessions";
+const DB_VERSION = 3;
 
 const initCouncilDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 2);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -79,7 +88,28 @@ export const loadCouncilSession = async (
       COUNCIL_STORE,
       (store) => store.get(id),
     );
-    return result ?? null;
+    if (!result) return null;
+
+    if (!("rounds" in result)) {
+      const old = result as any;
+      return {
+        id: old.id,
+        question: old.question,
+        memberModels: old.memberModels,
+        judgeModel: old.judgeModel,
+        rounds: 1,
+        turns: (old.memberResponses || []).map((r: any) => ({
+          modelCode: r.modelCode,
+          modelName: r.modelCode,
+          round: 1,
+          content: r.content,
+        })),
+        judgment: old.judgment || "",
+        timestamp: old.timestamp,
+      };
+    }
+
+    return result;
   } catch (error) {
     console.error("Error loading council session:", error);
     return null;
