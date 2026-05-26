@@ -89,6 +89,10 @@ body {
     font-family: var(--font-display), "Trebuchet MS", sans-serif;
     color: var(--text-primary);
   }
+
+  a {
+    color: inherit;
+  }
 }
 
 code,
@@ -96,10 +100,6 @@ pre,
 kbd,
 samp {
   font-family: var(--font-mono), "Consolas", monospace;
-}
-
-a {
-  color: inherit;
 }
 
 ::selection {
