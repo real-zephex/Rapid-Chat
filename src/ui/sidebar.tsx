@@ -208,6 +208,21 @@ const Sidebar = () => {
               <HiOutlineCog8Tooth size={15} />
               <span>Admin</span>
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/about");
+                closeOnMobile();
+              }}
+              className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
+                pathname.startsWith("/about")
+                  ? "border-accent/35 bg-accent/10 text-accent"
+                  : "border-transparent bg-surface text-text-secondary hover:border-border hover:text-text-primary"
+              }`}
+            >
+              <HiInformationCircle size={15} />
+              <span>About</span>
+            </button>
           </div>
 
           {councilSessions.length > 0 && (
@@ -376,13 +391,25 @@ const Sidebar = () => {
                   onClick={toggleTheme}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
                   title={
-                    theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                    isHydrated
+                      ? theme === "dark"
+                        ? "Switch to light mode"
+                        : "Switch to dark mode"
+                      : "Toggle theme"
                   }
                   aria-label={
-                    theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                    isHydrated
+                      ? theme === "dark"
+                        ? "Switch to light mode"
+                        : "Switch to dark mode"
+                      : "Toggle theme"
                   }
                 >
-                  {theme === "dark" ? <HiSun size={12} /> : <HiMoon size={12} />}
+                  {isHydrated ? (
+                    theme === "dark" ? <HiSun size={12} /> : <HiMoon size={12} />
+                  ) : (
+                    <HiMoon size={12} />
+                  )}
                   <span>{isHydrated ? theme : "Theme"}</span>
                 </button>
 

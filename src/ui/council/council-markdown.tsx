@@ -1,6 +1,6 @@
 import { type Components } from "react-markdown";
-import { FaCodeBranch } from "react-icons/fa6";
 import CopyButton from "@/ui/chat-components/CopyButton";
+import DownloadCodeButton from "@/ui/chat-components/DownloadCodeButton";
 
 const getTextContent = (node: unknown): string => {
   if (typeof node === "string") return node;
@@ -95,13 +95,29 @@ export const councilMarkdownComponents: Components = {
     const codeText = getTextContent(children);
     const language = getLanguage(children);
 
+    const LANGUAGE_EXTENSIONS: Record<string, string> = {
+      typescript: "ts", javascript: "js", jsx: "jsx", tsx: "tsx",
+      python: "py", rust: "rs", go: "go", java: "java", cpp: "cpp",
+      c: "c", cs: "cs", ruby: "rb", php: "php", swift: "swift",
+      kotlin: "kt", scala: "scala", html: "html", css: "css",
+      scss: "scss", sass: "sass", less: "less", sql: "sql",
+      bash: "sh", shell: "sh", sh: "sh", zsh: "sh", fish: "sh",
+      json: "json", yaml: "yml", yml: "yml", toml: "toml",
+      xml: "xml", markdown: "md", md: "md", dockerfile: "Dockerfile",
+      graphql: "graphql", prisma: "prisma", terraform: "tf",
+      solidity: "sol", lua: "lua", elixir: "ex",
+    };
+    const ext = language ? LANGUAGE_EXTENSIONS[language] : null;
+    const filename = ext ? `code.${ext}` : "code.txt";
+
     return (
       <div className="vscode-code-container group relative my-3 overflow-hidden rounded-xl border border-border first:mt-2 last:mb-1 shadow-sm">
         {language && (
           <div className="vscode-code-header flex items-center justify-between border-b border-border px-4 py-2 text-xs font-sans text-text-secondary">
-            <span className="flex items-center gap-2">
-              <FaCodeBranch size={12} className="opacity-70" />
-              {language}
+            <span>{language}</span>
+            <span className="flex items-center gap-1">
+              <DownloadCodeButton text={codeText} filename={filename} />
+              <CopyButton text={codeText} />
             </span>
           </div>
         )}
@@ -113,9 +129,12 @@ export const councilMarkdownComponents: Components = {
         >
           {children}
         </pre>
-        <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <CopyButton text={codeText} hasLanguageLabel={Boolean(language)} />
-        </div>
+        {!language && (
+          <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <DownloadCodeButton text={codeText} filename={filename} />
+            <CopyButton text={codeText} />
+          </div>
+        )}
       </div>
     );
   },

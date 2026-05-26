@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaCodeBranch, FaRegCopy, FaRobot } from "react-icons/fa6";
+import { FaCodeBranch, FaRegCopy, FaRegEye, FaRobot } from "react-icons/fa6";
 import { GoClock, GoCpu } from "react-icons/go";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -13,6 +13,7 @@ import { TbAlphabetLatin } from "react-icons/tb";
 import { useSmoothStream } from "@/hooks/useSmoothStream";
 
 import CopyButton from "./CopyButton";
+import DownloadCodeButton from "./DownloadCodeButton";
 import ImageDisplay from "./ImageDisplay";
 
 type Message = {
@@ -32,6 +33,7 @@ interface MessageComponentProps {
   onCopyResponse: (content: string) => Promise<boolean>;
   onBranchFromMessage: (index: number) => void;
   isSplitView?: boolean;
+  onToggleArtifacts?: () => void;
 }
 
 const MessageComponent = memo(
@@ -41,6 +43,7 @@ const MessageComponent = memo(
     onCopyResponse,
     onBranchFromMessage,
     isSplitView = false,
+    onToggleArtifacts,
   }: MessageComponentProps) => {
     const [isReasoningOpen, setIsReasoningOpen] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<{
@@ -280,13 +283,45 @@ const MessageComponent = memo(
                     const codeText = getTextContent(children);
                     const language = getLanguage(children);
 
+                    const LANGUAGE_EXTENSIONS: Record<string, string> = {
+                      typescript: "ts", javascript: "js", jsx: "jsx", tsx: "tsx",
+                      python: "py", rust: "rs", go: "go", java: "java", cpp: "cpp",
+                      c: "c", cs: "cs", ruby: "rb", php: "php", swift: "swift",
+                      kotlin: "kt", scala: "scala", html: "html", css: "css",
+                      scss: "scss", sass: "sass", less: "less", sql: "sql",
+                      bash: "sh", shell: "sh", sh: "sh", zsh: "sh", fish: "sh",
+                      json: "json", yaml: "yml", yml: "yml", toml: "toml",
+                      xml: "xml", markdown: "md", md: "md", dockerfile: "Dockerfile",
+                      graphql: "graphql", prisma: "prisma", terraform: "tf",
+                      solidity: "sol", lua: "lua", elixir: "ex",
+                    };
+                    const ext = language ? LANGUAGE_EXTENSIONS[language] : null;
+                    const filename = ext ? `code.${ext}` : "code.txt";
+
+                    const WEB_LANGUAGES = new Set([
+                      "html", "css", "javascript", "js", "typescript", "ts", "jsx", "tsx",
+                    ]);
+                    const isWebLanguage = language ? WEB_LANGUAGES.has(language) : false;
+
                     return (
                       <div className="vscode-code-container group relative my-4 overflow-hidden rounded-xl border border-border first:mt-3 last:mb-1 shadow-sm">
                         {language && (
                           <div className="vscode-code-header flex items-center justify-between border-b border-border px-4 py-2 text-xs font-sans text-text-secondary">
-                            <span className="flex items-center gap-2">
-                              <FaCodeBranch size={12} className="opacity-70" />
-                              {language}
+                            <span>{language}</span>
+                            <span className="flex items-center gap-1">
+                              {isWebLanguage && onToggleArtifacts && (
+                                <button
+                                  type="button"
+                                  onClick={onToggleArtifacts}
+                                  className="rounded-md border border-border bg-surface p-1.5 text-text-muted opacity-70 transition-all duration-200 hover:opacity-100 hover:text-text-primary"
+                                  title="Preview"
+                                  aria-label="Preview in artifacts panel"
+                                >
+                                  <FaRegEye size={13} />
+                                </button>
+                              )}
+                              <DownloadCodeButton text={codeText} filename={filename} />
+                              <CopyButton text={codeText} />
                             </span>
                           </div>
                         )}
@@ -298,9 +333,12 @@ const MessageComponent = memo(
                         >
                           {children}
                         </pre>
-                        <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                          <CopyButton text={codeText} hasLanguageLabel={Boolean(language)} />
-                        </div>
+                        {!language && (
+                          <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            <DownloadCodeButton text={codeText} filename={filename} />
+                            <CopyButton text={codeText} />
+                          </div>
+                        )}
                       </div>
                     );
                   },

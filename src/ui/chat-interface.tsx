@@ -58,6 +58,8 @@ interface ChatInterfaceProps {
   isActivePane?: boolean;
   onActivatePane?: () => void;
   onDeleteChat?: () => void;
+  onMessagesUpdate?: (messages: { content: string; index: number }[]) => void;
+  onToggleArtifacts?: () => void;
 }
 
 const CHAT_MODEL_PREFERENCES_KEY = "rapid-chat-model-preferences";
@@ -82,12 +84,14 @@ const MessagesContainer = memo(
     onBranchFromMessage,
     messageRefs,
     isSplitView,
+    onToggleArtifacts,
   }: {
     messages: Message[];
     onCopyResponse: (content: string) => Promise<boolean>;
     onBranchFromMessage: (index: number) => void;
     messageRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
     isSplitView: boolean;
+    onToggleArtifacts?: () => void;
   }) => {
     return (
       <div
@@ -112,6 +116,7 @@ const MessagesContainer = memo(
               onCopyResponse={onCopyResponse}
               onBranchFromMessage={onBranchFromMessage}
               isSplitView={isSplitView}
+              onToggleArtifacts={onToggleArtifacts}
             />
           </div>
         ))}
@@ -128,6 +133,8 @@ const ChatInterface = ({
   isActivePane = true,
   onActivatePane,
   onDeleteChat,
+  onMessagesUpdate,
+  onToggleArtifacts,
 }: ChatInterfaceProps) => {
   const { refreshTitles } = useSidebar();
   const { selectedModel: defaultSelectedModel, models } = useModel();
@@ -633,6 +640,21 @@ const ChatInterface = ({
     loadChats();
   }, [id]);
 
+  // Notify parent about message content changes for artifact detection
+  const prevSerialized = useRef("");
+  useEffect(() => {
+    if (!onMessagesUpdate) return;
+    const serialized = messages.map((m, i) => ({
+      content: m.content,
+      index: i,
+    }));
+    const str = JSON.stringify(serialized);
+    if (str !== prevSerialized.current) {
+      prevSerialized.current = str;
+      onMessagesUpdate(serialized);
+    }
+  }, [messages, onMessagesUpdate]);
+
   useEffect(() => {
     const handleGenerationUpdate = (updatedMessages: Message[]) => {
       setMessages(updatedMessages);
@@ -863,6 +885,7 @@ const ChatInterface = ({
                 onBranchFromMessage={handleBranchFromMessage}
                 messageRefs={messageRefs}
                 isSplitView={isSplitView}
+                onToggleArtifacts={onToggleArtifacts}
               />
             </div>
           )}

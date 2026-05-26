@@ -4,10 +4,8 @@ import { memo, useState, useCallback } from "react";
 const CopyButton = memo(
   ({
     text,
-    hasLanguageLabel,
   }: {
     text: string;
-    hasLanguageLabel?: boolean;
   }) => {
     const [copied, setCopied] = useState(false);
 
@@ -24,9 +22,7 @@ const CopyButton = memo(
     return (
       <button
         onClick={handleCopy}
-        className={`absolute ${
-          hasLanguageLabel ? "top-9" : "top-2"
-        } right-2 rounded-md border border-border bg-surface p-1.5 text-text-muted opacity-70 transition-all duration-200 hover:opacity-100 hover:text-text-primary`}
+        className={`rounded-md border border-border bg-surface p-1.5 text-text-muted opacity-70 transition-all duration-200 hover:opacity-100 hover:text-text-primary`}
         title={copied ? "Copied!" : "Copy code"}
         aria-label={copied ? "Code copied" : "Copy code"}
         type="button"

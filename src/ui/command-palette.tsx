@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
+  HiInformationCircle,
   HiOutlineChatBubbleLeft,
   HiOutlineCog8Tooth,
   HiOutlineMoon,
@@ -79,6 +80,15 @@ export default function CommandPalette() {
         category: "Navigation",
         perform: () => {
           router.push("/admin");
+        },
+      },
+      {
+        id: "about",
+        name: "About Rapid Chat",
+        icon: <HiInformationCircle size={16} />,
+        category: "Navigation",
+        perform: () => {
+          router.push("/about");
         },
       },
       {

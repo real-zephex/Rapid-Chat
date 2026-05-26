@@ -385,6 +385,58 @@ pre code.hljs {
   background-color: #252526;
 }
 
+@keyframes about-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes about-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes about-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes about-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes about-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.about-animate-fade-up {
+  animation: about-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.about-animate-fade-in {
+  animation: about-fade-in 0.6s ease forwards;
+  opacity: 0;
+}
+
+.about-animate-scale-in {
+  animation: about-scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
 @keyframes dot-tooltip-enter {
   from { opacity: 0; }
   to { opacity: 1; }

@@ -2,10 +2,12 @@
 
 import { useHotkeys } from "react-hotkeys-hook";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HiArrowsRightLeft, HiOutlineRectangleGroup, HiXMark } from "react-icons/hi2";
 
 import ChatInterface from "@/ui/chat-interface";
+import ArtifactPanel from "@/ui/chat-components/ArtifactPanel";
+import { detectArtifacts, type Artifact } from "@/hooks/useArtifactDetector";
 
 type Pane = "primary" | "secondary";
 
@@ -26,6 +28,51 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
   const hasSplit = normalizedSplitId.length > 0;
   const [activePane, setActivePane] = useState<Pane>("primary");
   const [mobilePane, setMobilePane] = useState<Pane>("primary");
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [showArtifacts, setShowArtifacts] = useState(false);
+
+  const primaryMessagesRef = useRef<{ content: string; index: number }[]>([]);
+  const secondaryMessagesRef = useRef<{ content: string; index: number }[]>([]);
+
+  const updateArtifacts = useCallback(() => {
+    const allMessages = [
+      ...primaryMessagesRef.current,
+      ...secondaryMessagesRef.current.map((m) => ({
+        ...m,
+        index: m.index + primaryMessagesRef.current.length,
+      })),
+    ];
+    const detected = detectArtifacts(allMessages);
+    setArtifacts((prev) => {
+      if (JSON.stringify(prev) !== JSON.stringify(detected)) {
+        if (detected.length > 0) {
+          setShowArtifacts(true);
+        }
+        return detected;
+      }
+      return prev;
+    });
+  }, []);
+
+  const handlePrimaryUpdate = useCallback(
+    (msgs: { content: string; index: number }[]) => {
+      primaryMessagesRef.current = msgs;
+      updateArtifacts();
+    },
+    [updateArtifacts],
+  );
+
+  const handleSecondaryUpdate = useCallback(
+    (msgs: { content: string; index: number }[]) => {
+      secondaryMessagesRef.current = msgs;
+      updateArtifacts();
+    },
+    [updateArtifacts],
+  );
+
+  const handleToggleArtifacts = useCallback(() => {
+    setShowArtifacts((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     if (!hasSplit) {
@@ -164,7 +211,13 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
 
       <div
         className={`grid min-h-0 flex-1 overflow-hidden ${
-          hasSplit ? "lg:grid-cols-2" : "grid-cols-1"
+          hasSplit
+            ? showArtifacts
+              ? "lg:grid-cols-[1fr_1fr_400px]"
+              : "lg:grid-cols-2"
+            : showArtifacts
+              ? "grid-cols-[1fr_400px]"
+              : "grid-cols-1"
         }`}
       >
         <div
@@ -183,6 +236,8 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
             isActivePane={hasSplit ? activePane === "primary" : true}
             onActivatePane={() => setActivePane("primary")}
             onDeleteChat={() => handleDeleteChat("primary")}
+            onMessagesUpdate={handlePrimaryUpdate}
+            onToggleArtifacts={handleToggleArtifacts}
           />
         </div>
 
@@ -199,6 +254,17 @@ const ChatWorkspace = ({ id, splitId }: ChatWorkspaceProps) => {
               isActivePane={activePane === "secondary"}
               onActivatePane={() => setActivePane("secondary")}
               onDeleteChat={() => handleDeleteChat("secondary")}
+              onMessagesUpdate={handleSecondaryUpdate}
+              onToggleArtifacts={handleToggleArtifacts}
+            />
+          </div>
+        )}
+
+        {showArtifacts && artifacts.length > 0 && (
+          <div className="hidden lg:block min-h-0 overflow-hidden">
+            <ArtifactPanel
+              artifacts={artifacts}
+              onClose={() => setShowArtifacts(false)}
             />
           </div>
         )}
