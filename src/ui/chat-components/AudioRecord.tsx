@@ -1,13 +1,24 @@
 "use client";
 import { useState, useEffect, JSX } from "react";
 import { AiFillAudio } from "react-icons/ai";
+import { FiRefreshCw } from "react-icons/fi";
 import MyStopwatch from "../stopwatch";
 
 interface AudioRecordProps {
   setAudio: (file: Blob | null) => void;
+  voiceLoading: boolean;
+  transcriptionFailed: boolean;
+  onRetry: () => void;
+  clearRetry: () => void;
 }
 
-const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
+const AudioRecord = ({
+  setAudio,
+  voiceLoading,
+  transcriptionFailed,
+  onRetry,
+  clearRetry,
+}: AudioRecordProps): JSX.Element => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null,
@@ -29,6 +40,12 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
   ) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (voiceLoading) return;
+
+    if (transcriptionFailed) {
+      clearRetry();
+    }
 
     try {
       if (isRecording && mediaRecorder) {
@@ -102,24 +119,66 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
   };
 
   return (
-    <div
-      className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          void handleClick(event);
-        }
-      }}
-      aria-label="Record audio"
-    >
-      <AiFillAudio
-        color={isRecording ? "var(--error)" : "currentColor"}
-        title="Click to record audio. Click again to stop."
-        size={16}
-      />
+    <>
+      {transcriptionFailed ? (
+        <>
+          <button
+            type="button"
+            disabled={voiceLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetry();
+            }}
+            className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-40"
+            aria-label="Retry transcription"
+          >
+            <FiRefreshCw
+              size={16}
+              className={voiceLoading ? "animate-spin" : ""}
+              title="Retry transcription"
+            />
+          </button>
+          <div
+            className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+            onClick={handleClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                void handleClick(event);
+              }
+            }}
+            aria-label="Record new audio"
+          >
+            <AiFillAudio
+              color="currentColor"
+              title="Record new audio"
+              size={16}
+            />
+          </div>
+        </>
+      ) : (
+        <div
+          className="cursor-pointer rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+          onClick={handleClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              void handleClick(event);
+            }
+          }}
+          aria-label="Record audio"
+        >
+          <AiFillAudio
+            color={isRecording ? "var(--error)" : "currentColor"}
+            title="Click to record audio. Click again to stop."
+            size={16}
+          />
+        </div>
+      )}
 
       {isRecording && (
         <div className="fixed bottom-28 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-4 rounded-full border border-error/30 bg-surface/95 px-5 py-2.5 shadow-2xl backdrop-blur-md transition-all">
@@ -150,7 +209,7 @@ const AudioRecord = ({ setAudio }: AudioRecordProps): JSX.Element => {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

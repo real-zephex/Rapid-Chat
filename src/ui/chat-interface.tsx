@@ -144,6 +144,7 @@ const ChatInterface = ({
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [voiceLoading, setVoiceLoading] = useState(false);
+  const [retryBlob, setRetryBlob] = useState<Blob | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [hoveredDot, setHoveredDot] = useState<{ index: number; top: number; left: number } | null>(null);
@@ -517,6 +518,7 @@ const ChatInterface = ({
     }
 
     setVoiceLoading(true);
+    setRetryBlob(null);
 
     try {
       if (file === null) {
@@ -531,11 +533,39 @@ const ChatInterface = ({
       }
     } catch (error) {
       console.error("Error while transcribing audio.", error);
-      input.value = "";
+      input.value = "Transcription failed. Tap the retry button or record again.";
+      setRetryBlob(file);
+      handleSize();
     } finally {
       setVoiceLoading(false);
     }
   };
+
+  const handleRetryTranscription = async () => {
+    if (!retryBlob) return;
+    const input = inputRef.current;
+    if (!input) return;
+
+    setVoiceLoading(true);
+
+    try {
+      input.value = "Transcribing audio...";
+      handleSize();
+      const text = await Whisper(retryBlob);
+      input.value = text.toString();
+      setRetryBlob(null);
+      handleSize();
+    } catch (error) {
+      console.error("Retry transcription failed:", error);
+      input.value =
+        "Transcription failed. Tap the mic to record again.";
+      handleSize();
+    } finally {
+      setVoiceLoading(false);
+    }
+  };
+
+  const clearRetry = () => setRetryBlob(null);
 
   const onClickExample = (text: string) => {
     const input = inputRef.current;
@@ -965,7 +995,13 @@ const ChatInterface = ({
                   <RiDeleteBin2Fill size={16} />
                 </button>
 
-                <AudioRecord setAudio={setAudio} />
+                <AudioRecord
+                  setAudio={setAudio}
+                  voiceLoading={voiceLoading}
+                  transcriptionFailed={retryBlob !== null}
+                  onRetry={handleRetryTranscription}
+                  clearRetry={clearRetry}
+                />
 
                 {(supportsImageUploads || supportsPdfUploads) && (
                   <label
